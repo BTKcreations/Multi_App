@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Application Dashboard</title>
+    <style>
+        /* --- General Layout & Theme --- */
+        :root {
+            --primary-bg: #1e1e2f;
+            --secondary-bg: #27293d;
+            --card-bg: #3b3d55;
+            --text-color: #dcdce0;
+            --accent-color: #03a9f4;
+            --border-color: #4a4c6a;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            background-color: var(--primary-bg);
+            color: var(--text-color);
+            transition: background-color 0.3s;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            /* padding: 20px; */
+        }
+
+        /* --- Header & Back Button --- */
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 5px;
+            padding-top: 5px;
+            margin-bottom: 10px;
+        }
+
+        header h3 {
+            margin: 0;
+            color: var(--accent-color);
+        }
+
+        #back-button {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            display: none; /* Hidden by default */
+        }
+
+        #back-button:hover {
+            background-color: #0288d1;
+        }
+
+        /* --- Dashboard Card Grid --- */
+        #dashboard-view {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 25px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            border-left: 4px solid var(--accent-color);
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(3, 169, 244, 0.3);
+        }
+
+        .card h2 {
+            margin-top: 0;
+            color: #fff;
+        }
+
+        .card p {
+            color: var(--text-color);
+            opacity: 0.8;
+        }
+
+        /* --- App Viewer --- */
+        #app-viewer-view {
+            display: none; /* Hidden by default */
+            width: 100%;
+            /* height: 100vh;  */
+            height: calc(100vh - 72px); 
+            /* Full height minus header/padding */
+        }
+
+        #app-iframe {
+            width: 100%;
+            height: 100%;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            background-color: white; /* Show a background while app loads */
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h3 id="header-title">Dashboard</h3>
+            <button id="back-button" onclick="showDashboard()">←</button>
+        </header>
+
+        <div id="dashboard-view">
+            </div>
+
+        <div id="app-viewer-view">
+            <iframe id="app-iframe" name="app-frame"></iframe>
+        </div>
+    </div>
+
+    <script>
+        /************************************************************************
+         * CONFIGURATION
+         * Because a browser cannot automatically read a folder's contents,
+         * you must list your application HTML files here manually.
+         *
+         * TO ADD A NEW APP:
+         * 1. Create your new file (e.g., "app3.html").
+         * 2. Add its name to this list. For example:
+         * const applicationFiles = ["app1.html", "app2.html", "app3.html"];
+         ************************************************************************/
+        const applicationFiles = [
+            "Fake News Detecction System.html",
+            "PDF Extraction.html",
+            "Math Problem Solver.html",
+            "Math_Gallery.html",
+            "Math Gallery Camera.html",
+            "Math.html",
+            "Math_Cropable.html"
+            // Add "app3.html", "my-new-app.html", etc. here
+        ];
+
+
+        // --- Get references to the HTML elements we need to control ---
+        const dashboardView = document.getElementById('dashboard-view');
+        const appView = document.getElementById('app-viewer-view');
+        const appIframe = document.getElementById('app-iframe');
+        const backButton = document.getElementById('back-button');
+        const headerTitle = document.getElementById('header-title');
+
+
+        // --- Core Functions ---
+
+        /**
+         * Generates the cards on the dashboard based on the applicationFiles list.
+         */
+        function renderDashboard() {
+            // Clear any existing cards
+            dashboardView.innerHTML = '';
+
+            applicationFiles.forEach(filename => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.setAttribute('data-app-file', filename); // Store filename in the element
+
+                // Create a nice title from the filename
+                const appName = filename.split('.')[0]
+                                        .replace(/[-_]/g, ' ') // replace hyphens/underscores with spaces
+                                        .replace(/\b\w/g, l => l.toUpperCase()); // Capitalize each word
+
+                card.innerHTML = `
+                    <h2>${appName}</h2>
+                    <p>Click to launch this application.</p>
+                `;
+                dashboardView.appendChild(card);
+            });
+        }
+
+        /**
+         * Loads a specific application into the iframe and shows it.
+         * @param {string} filename - The HTML file to load (e.g., "app1.html").
+         */
+        function loadApp(filename) {
+            appIframe.src = filename; // Load the file into the iframe
+            showAppViewer(filename);
+        }
+
+        /**
+         * Hides the dashboard and shows the app viewer.
+         */
+        function showAppViewer(filename) {
+            const appName = filename.split('.')[0].replace(/\b\w/g, l => l.toUpperCase());
+            headerTitle.textContent = appName;
+            dashboardView.style.display = 'none';
+            appView.style.display = 'block';
+            backButton.style.display = 'block';
+        }
+
+        /**
+         * Hides the app viewer and shows the dashboard.
+         */
+        function showDashboard() {
+            headerTitle.textContent = "Dashboard";
+            appView.style.display = 'none';
+            backButton.style.display = 'none';
+            dashboardView.style.display = 'grid'; // Use grid to restore layout
+            appIframe.src = 'about:blank'; // Clear the iframe to free up memory
+        }
+
+
+        // --- Event Listeners ---
+
+        // Listen for clicks on the dashboard. This is more efficient than adding a listener to every card.
+        dashboardView.addEventListener('click', (event) => {
+            const card = event.target.closest('.card'); // Find the card that was clicked
+            if (card) {
+                const filename = card.getAttribute('data-app-file');
+                loadApp(filename);
+            }
+        });
+
+        // This runs when the whole page has loaded.
+        document.addEventListener('DOMContentLoaded', () => {
+            renderDashboard();
+            showDashboard();
+        });
+
+    </script>
+</body>
+</html>

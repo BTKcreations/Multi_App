@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math Notes Generator with Gemini (JSON)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .handwriting {
+            font-family: 'Kalam', cursive;
+        }
+        .notebook-paper {
+            background-color: #fefdf9;
+            border: 1px solid #dcdcdc;
+            border-left: 3px solid #ff8a80;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            background-image: repeating-linear-gradient(to bottom, #e0e0e0, #e0e0e0 1px, transparent 1px, transparent 2.25rem);
+            line-height: 2.25rem;
+        }
+        .feature-button {
+            transition: all 0.3s ease-in-out;
+            transform-origin: center;
+        }
+        .feature-button:hover {
+            transform: scale(1.05);
+        }
+        .solution-step {
+            margin-bottom: 1rem;
+        }
+        .step-formula {
+            color: #1e3a8a; /* darker blue */
+            font-weight: bold;
+            margin-left: 1rem;
+        }
+        .final-answer-box {
+            border: 2px solid #4b5563; /* gray-600 */
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            margin-top: 2rem;
+            text-align: center;
+            display: inline-block;
+        }
+        .final-answer-formula {
+            font-weight: bold;
+            font-size: 1.5rem; /* text-2xl */
+            color: #991b1b; /* darker red */
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-3xl mx-auto">
+        <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+            <h1 class="text-3xl font-bold text-center text-gray-800 mb-2">Math Problem Solver</h1>
+            <p class="text-center text-gray-500 mb-6">Enter any math question or use your camera to get a solution from Gemini.</p>
+            
+            <div class="space-y-4">
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <input type="text" id="math-question" placeholder="Type your math problem here..." class="flex-grow p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none transition">
+                    <button id="solve-button" class="bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-indigo-700 shadow-md flex items-center justify-center feature-button">
+                        <span class="button-text">✨ Solve</span>
+                    </button>
+                </div>
+
+                <div class="flex items-center justify-center">
+                    <span class="text-gray-500 mx-4">OR</span>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <input type="file" id="image-upload-input" class="hidden" accept="image/*">
+                    <label for="image-upload-input" class="w-full bg-gray-200 text-gray-700 font-bold py-3 px-6 rounded-lg hover:bg-gray-300 shadow-md flex items-center justify-center feature-button cursor-pointer">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l-1.586-1.586a2 2 0 00-2.828 0L6 14m6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                        Upload Image
+                    </label>
+                    <button id="camera-button" class="w-full bg-blue-200 text-blue-800 font-bold py-3 px-6 rounded-lg hover:bg-blue-300 shadow-md flex items-center justify-center feature-button cursor-pointer">
+                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                        Capture with Camera
+                    </button>
+                </div>
+
+                <div id="camera-view" class="hidden space-y-4">
+                    <video id="video-stream" autoplay playsinline class="w-full rounded-lg shadow-md"></video>
+                    <button id="snap-button" class="w-full bg-red-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-red-700 shadow-md">Snap Photo</button>
+                </div>
+                <canvas id="canvas" class="hidden"></canvas>
+                
+                <div id="image-preview-container" class="text-center hidden">
+                    <img id="image-preview" src="#" alt="Image Preview" class="max-w-xs mx-auto rounded-lg shadow-md"/>
+                </div>
+            </div>
+
+
+            <div id="loading-indicator" class="text-center my-4 hidden">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500 mx-auto"></div>
+                <p id="loading-text" class="text-gray-600 mt-2">Generating solution...</p>
+            </div>
+
+            <div id="error-message" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-6 hidden" role="alert">
+                <strong class="font-bold">Oops!</strong>
+                <span class="block sm:inline" id="error-text"></span>
+            </div>
+
+            <div id="solution-container" class="notebook-paper rounded-lg hidden mt-6">
+                <!-- Content generated by JS -->
+            </div>
+
+            <div id="extra-features" class="mt-6 text-center hidden">
+                 <p class="text-gray-600 mb-4">Want to explore this topic more?</p>
+                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <button id="explain-button" class="bg-green-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-600 shadow-md flex items-center justify-center gap-2 feature-button">
+                        <svg class="animate-spin h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        <span class="button-text">✨ Explain It Differently</span>
+                    </button>
+                    <button id="practice-button" class="bg-purple-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-purple-600 shadow-md flex items-center justify-center gap-2 feature-button">
+                         <svg class="animate-spin h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        <span class="button-text">✨ Create a Practice Problem</span>
+                    </button>
+                     <button id="mistakes-button" class="bg-red-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-red-600 shadow-md flex items-center justify-center gap-2 feature-button">
+                         <svg class="animate-spin h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        <span class="button-text">✨ Find Common Mistakes</span>
+                    </button>
+                     <button id="real-world-button" class="bg-blue-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-600 shadow-md flex items-center justify-center gap-2 feature-button">
+                         <svg class="animate-spin h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        <span class="button-text">✨ See a Real-World Example</span>
+                    </button>
+                </div>
+            </div>
+
+             <div id="extra-content-container" class="notebook-paper rounded-lg hidden mt-6">
+                <!-- Content generated by JS -->
+             </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const solveButton = document.getElementById('solve-button');
+        const mathQuestionInput = document.getElementById('math-question');
+        const imageUploadInput = document.getElementById('image-upload-input');
+        const cameraButton = document.getElementById('camera-button');
+        const cameraView = document.getElementById('camera-view');
+        const videoStream = document.getElementById('video-stream');
+        const snapButton = document.getElementById('snap-button');
+        const canvas = document.getElementById('canvas');
+        const imagePreviewContainer = document.getElementById('image-preview-container');
+        const imagePreview = document.getElementById('image-preview');
+        const solutionContainer = document.getElementById('solution-container');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const loadingText = document.getElementById('loading-text');
+        const errorMessage = document.getElementById('error-message');
+        const errorText = document.getElementById('error-text');
+        const extraFeaturesDiv = document.getElementById('extra-features');
+        const explainButton = document.getElementById('explain-button');
+        const practiceButton = document.getElementById('practice-button');
+        const mistakesButton = document.getElementById('mistakes-button');
+        const realWorldButton = document.getElementById('real-world-button');
+        const extraContentContainer = document.getElementById('extra-content-container');
+
+        // State
+        let currentQuestion = '';
+        let stream;
+
+        // --- Schemas for Gemini API ---
+        const solutionSchema = { type: "OBJECT", properties: { question: { type: "STRING" }, steps: { type: "ARRAY", items: { type: "OBJECT", properties: { explanation: { type: "STRING", description: "A very brief note for the step, like 'add 7 to both sides'." }, formula: { type: "STRING", description: "The mathematical calculation." } }, required: ["explanation", "formula"] } }, finalAnswer: { type: "STRING", description: "The final result, e.g., 'x = 6'." } }, required: ["question", "steps", "finalAnswer"] };
+        const extraContentSchema = { type: "OBJECT", properties: { title: { type: "STRING" }, content: { type: "STRING", description: "The full content formatted with newlines, as if written in a notebook." } }, required: ["title", "content"] };
+
+        // Event Listeners
+        solveButton.addEventListener('click', handleSolveClick);
+        mathQuestionInput.addEventListener('keyup', (event) => { if (event.key === 'Enter') handleSolveClick(); });
+        imageUploadInput.addEventListener('change', handleImageUpload);
+        cameraButton.addEventListener('click', startCamera);
+        snapButton.addEventListener('click', takeSnapshot);
+        explainButton.addEventListener('click', handleExplainClick);
+        practiceButton.addEventListener('click', handlePracticeClick);
+        mistakesButton.addEventListener('click', handleMistakesClick);
+        realWorldButton.addEventListener('click', handleRealWorldClick);
+
+        // --- Core Logic ---
+
+        async function startCamera() {
+            hideAllContainers();
+            try {
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                }
+                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                videoStream.srcObject = stream;
+                cameraView.classList.remove('hidden');
+            } catch (err) {
+                console.error("Error accessing camera: ", err);
+                showError("Could not access the camera. Please check permissions and try again.");
+            }
+        }
+
+        function takeSnapshot() {
+            cameraView.classList.add('hidden');
+            const context = canvas.getContext('2d');
+            canvas.width = videoStream.videoWidth;
+            canvas.height = videoStream.videoHeight;
+            context.drawImage(videoStream, 0, 0, canvas.width, canvas.height);
+            
+            stream.getTracks().forEach(track => track.stop());
+
+            const dataUrl = canvas.toDataURL('image/jpeg');
+            processImage(dataUrl, 'image/jpeg');
+        }
+
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                processImage(reader.result, file.type);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function processImage(dataUrl, mimeType) {
+            hideAllContainers();
+            imagePreview.src = dataUrl;
+            imagePreviewContainer.classList.remove('hidden');
+            setLoading(true, "Extracting question from image...");
+            
+            try {
+                const base64Data = dataUrl.split(',')[1];
+                const extractionPrompt = "Extract the mathematical question from this image. Return only the text of the question itself, with no extra phrases or explanations.";
+                const imageData = { mimeType: mimeType, data: base64Data };
+                const extractedText = await callGeminiWithRetry(extractionPrompt, null, imageData);
+                
+                mathQuestionInput.value = extractedText;
+                await handleSolveClick();
+            } catch (error) {
+                console.error("Error processing image:", error);
+                showError("Could not read the question from the image. Please try a clearer image or type the question manually.");
+                setLoading(false);
+            }
+        }
+
+        async function handleSolveClick() {
+            currentQuestion = mathQuestionInput.value.trim();
+            if (!currentQuestion) {
+                showError("Please enter a math question.");
+                return;
+            }
+
+            hideAllContainers(true);
+            setLoading(true, "Generating solution...");
+
+            const prompt = `You are a meticulous math student solving a problem in your notebook. Your goal is to show every single step of your work, no matter how small. Provide a complete, exhaustive, step-by-step solution. For each step, provide a brief explanation and the corresponding mathematical calculation. Respond with a JSON object that follows the provided schema. Problem: "${currentQuestion}"`;
+
+            try {
+                const result = await callGeminiWithRetry(prompt, solutionSchema);
+                displayStructuredSolution(result);
+                extraFeaturesDiv.classList.remove('hidden');
+            } catch (error) {
+                console.error("Error generating solution:", error);
+                showError("Failed to generate a structured solution. The model might have returned an unexpected format. Please try again.");
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        async function handleExplainClick() {
+            const prompt = `You are a student writing notes. For the topic "${currentQuestion}", explain it with a simple analogy. Respond with a JSON object following the schema. The title should be the analogy, and the content should be a concise, note-style explanation.`;
+            await fetchAndDisplayExtraContent(explainButton, prompt, "explanation");
+        }
+
+        async function handlePracticeClick() {
+            const prompt = `You are a student writing notes. Based on "${currentQuestion}", create one new practice problem and solve it. Respond with a JSON object following the schema. The title should be the new problem. The content should be the quick, note-style solution.`;
+            await fetchAndDisplayExtraContent(practiceButton, prompt, "practice problem");
+        }
+        
+        async function handleMistakesClick() {
+            const prompt = `You are a student writing notes. For the problem type "${currentQuestion}", list 2-3 common mistakes. Respond with a JSON object following the schema. The title should be "Common Mistakes". The content should be a short, bulleted list.`;
+            await fetchAndDisplayExtraContent(mistakesButton, prompt, "list of common mistakes");
+        }
+
+        async function handleRealWorldClick() {
+            const prompt = `You are a student writing notes. For the math concept in "${currentQuestion}", give one quick real-world example. Respond with a JSON object following the schema. The title should be "Real-World Example". The content should be a concise example.`;
+            await fetchAndDisplayExtraContent(realWorldButton, prompt, "real-world example");
+        }
+
+        async function fetchAndDisplayExtraContent(button, prompt, featureName) {
+            if (!currentQuestion) return;
+            
+            setFeatureButtonLoading(button, true);
+            hideError();
+            extraContentContainer.classList.add('hidden');
+
+            try {
+                const result = await callGeminiWithRetry(prompt, extraContentSchema);
+                displayExtraContent(result);
+            } catch (error) {
+                console.error(`Error generating ${featureName}:`, error);
+                showError(`Failed to generate the ${featureName}. Please try again.`);
+            } finally {
+                setFeatureButtonLoading(button, false);
+            }
+        }
+
+        // --- Gemini API Call ---
+
+        async function callGeminiWithRetry(prompt, schema = null, imageData = null, maxRetries = 3) {
+            let attempt = 0;
+            while (attempt < maxRetries) {
+                try {
+                    return await callGeminiAPI(prompt, schema, imageData);
+                } catch (error) {
+                    console.error(`Attempt ${attempt + 1} failed.`, error);
+                    attempt++;
+                    if (attempt >= maxRetries) throw error;
+                    const delay = Math.pow(2, attempt) * 100;
+                    await new Promise(res => setTimeout(res, delay));
+                }
+            }
+        }
+
+        async function callGeminiAPI(prompt, schema, imageData) {
+            const apiKey = "AIzaSyD_hF3zYDCo4UoGn-LPdqa0nL9lbG3v4nA"; // Provided by the environment
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+            
+            const parts = [{ text: prompt }];
+            if (imageData) {
+                parts.push({ inlineData: { mimeType: imageData.mimeType, data: imageData.data } });
+            }
+
+            const payload = { contents: [{ role: "user", parts: parts }] };
+
+            if (schema) {
+                payload.generationConfig = {
+                    responseMimeType: "application/json",
+                    responseSchema: schema
+                };
+            }
+
+            const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            if (!response.ok) throw new Error(`API call failed with status: ${response.status}`);
+            
+            const result = await response.json();
+            const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (!text) throw new Error("Invalid response structure from API.");
+
+            if (schema) {
+                try {
+                    return JSON.parse(text);
+                } catch (e) {
+                    console.error("Failed to parse JSON response:", text);
+                    throw new Error("API returned non-JSON response when one was expected.");
+                }
+            }
+            return text;
+        }
+
+        // --- UI Helper Functions ---
+
+        function displayStructuredSolution(data) {
+            solutionContainer.innerHTML = '';
+            const questionHeader = document.createElement('h2');
+            questionHeader.className = 'text-2xl font-bold handwriting text-gray-800 border-b-2 border-gray-300 pb-2 mb-4';
+            questionHeader.textContent = `${data.question}`;
+            solutionContainer.appendChild(questionHeader);
+            data.steps.forEach(step => {
+                const stepDiv = document.createElement('div');
+                stepDiv.className = 'solution-step handwriting text-xl';
+                const explanationP = document.createElement('span');
+                explanationP.textContent = `→ ${step.explanation}: `;
+                stepDiv.appendChild(explanationP);
+                const formulaSpan = document.createElement('span');
+                formulaSpan.className = 'step-formula';
+                formulaSpan.textContent = step.formula;
+                stepDiv.appendChild(formulaSpan);
+                solutionContainer.appendChild(stepDiv);
+            });
+            const answerContainer = document.createElement('div');
+            answerContainer.className = 'w-full text-center';
+            const finalAnswerDiv = document.createElement('div');
+            finalAnswerDiv.className = 'final-answer-box handwriting';
+            const finalAnswerFormula = document.createElement('p');
+            finalAnswerFormula.className = 'final-answer-formula';
+            finalAnswerFormula.textContent = data.finalAnswer;
+            finalAnswerDiv.appendChild(finalAnswerFormula);
+            answerContainer.appendChild(finalAnswerDiv);
+            solutionContainer.appendChild(answerContainer);
+            solutionContainer.classList.remove('hidden');
+        }
+
+        function displayExtraContent(data) {
+            extraContentContainer.innerHTML = '';
+            const titleHeader = document.createElement('h3');
+            titleHeader.className = 'text-2xl font-bold handwriting text-gray-800 border-b-2 border-gray-300 pb-2 mb-4';
+            titleHeader.textContent = data.title;
+            extraContentContainer.appendChild(titleHeader);
+            const contentP = document.createElement('p');
+            contentP.className = 'handwriting text-xl text-gray-700';
+            contentP.style.whiteSpace = 'pre-wrap';
+            contentP.textContent = data.content;
+            extraContentContainer.appendChild(contentP);
+            extraContentContainer.classList.remove('hidden');
+        }
+
+        function setLoading(isLoading, message = "Generating solution...") {
+            loadingText.textContent = message;
+            loadingIndicator.classList.toggle('hidden', !isLoading);
+            solveButton.disabled = isLoading;
+        }
+
+        function setFeatureButtonLoading(button, isLoading) {
+            const spinner = button.querySelector('svg');
+            const text = button.querySelector('.button-text');
+            button.disabled = isLoading;
+            if (spinner) spinner.classList.toggle('hidden', !isLoading);
+            if (text) text.classList.toggle('opacity-75', isLoading);
+        }
+        
+        function hideAllContainers(keepImagePreview = false) {
+            hideError();
+            solutionContainer.classList.add('hidden');
+            extraFeaturesDiv.classList.add('hidden');
+            extraContentContainer.classList.add('hidden');
+            cameraView.classList.add('hidden');
+            if (!keepImagePreview) {
+                imagePreviewContainer.classList.add('hidden');
+            }
+        }
+
+        function showError(message) {
+            errorText.textContent = message;
+            errorMessage.classList.remove('hidden');
+        }
+
+        function hideError() {
+            errorMessage.classList.add('hidden');
+        }
+    </script>
+</body>
+</html>

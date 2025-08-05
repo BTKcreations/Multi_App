@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Challenge of Fake News: An Interactive Analysis</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals -->
+    <!-- Application Structure Plan: The SPA is designed as a guided journey. It starts with a high-impact hero section to state the problem. The core is a multi-part interactive dashboard with a sticky nav, allowing users to explore methodologies, challenges, and applications non-linearity. This is better than a simple long-scroll page because it breaks the dense academic content into manageable, thematic chunks (The Problem, How it Works, Challenges, Real World, AI Analysis, Google News Analysis), facilitating user-driven exploration and preventing information overload. The interactive process diagram and comparison chart are key to making abstract concepts concrete and understandable. The AI Analysis section provides a practical demonstration of LLM capabilities, including a visual 'fake/real' poll, a text rewriting feature, a fact-checking query generation feature, and now a suspicious phrase highlighting feature. The Google News Analysis section simulates fetching news, analyzing it, and includes a summarization feature, offering a more direct and comprehensive application of the AI analysis. -->
+    <!-- Visualization & Content Choices: 1. Societal Impact (Inform): Used large stat cards to make key numbers (54% human accuracy, 6x faster spread) immediately impactful. 2. Methodologies (Organize/Compare): Used a horizontal bar chart (Chart.js/Canvas) to visually compare ML algorithm accuracies, which is more effective than a text list. An interactive HTML/CSS process flow diagram explains the detection pipeline step-by-step, making a complex process tangible. 3. Challenges & Applications (Organize): Used a tabbed/card layout to organize dense information, allowing users to select topics of interest without being overwhelmed. This structure provides a high-level overview with options to drill down, enhancing usability. 4. AI Analysis (Engage/Demonstrate): A text input field and button trigger an LLM (Gemini API) to perform a simulated fake news analysis. The LLM's structured response (JSON) is then used to dynamically update a Chart.js horizontal bar chart, visually representing a 'fake/real' poll. A new button triggers another LLM call to rewrite the input text for neutrality, showcasing generative AI. A new button now generates a neutral fact-checking search query using LLMs. A new button highlights suspicious phrases in the text, with explanations, using LLMs. 5. Google News Analysis (Engage/Demonstrate): A new section that fetches real news snippets based on a keyword using the google_search tool, applies the same LLM analysis and poll bar visualization, and now includes a button to summarize the fetched news using the Gemini API, providing a more contextualized and complete demonstration of AI in news processing. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F8F7F4;
+            color: #2c3e50;
+        }
+        .nav-link {
+            transition: color 0.3s ease, border-bottom-color 0.3s ease;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #3498db;
+            border-bottom-color: #3498db;
+        }
+        .stat-card {
+            background-color: #ffffff;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.07);
+        }
+        .tab-button {
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        .tab-button.active {
+            background-color: #3498db;
+            color: #ffffff;
+        }
+        .content-section {
+            display: none;
+        }
+        .content-section.active {
+            display: block;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 400px;
+            max-height: 50vh;
+        }
+        @media (max-width: 768px) {
+            .chart-container {
+                height: 300px;
+            }
+        }
+        .poll-chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px; /* Smaller max-width for poll bar */
+            margin-left: auto;
+            margin-right: auto;
+            height: 80px; /* Fixed height for a single bar */
+            max-height: 10vh;
+        }
+        .process-step {
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        .process-step:hover {
+            transform: scale(1.05);
+            border-color: #3498db;
+        }
+        .arrow {
+            font-size: 2rem;
+            color: #bdc3c7;
+        }
+        .loading-spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #3498db;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+            margin-left: 8px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .highlighted-text {
+            background-color: #fefcbf; /* Light yellow background for highlight */
+            padding: 1rem;
+            border-radius: 0.5rem;
+            line-height: 1.8;
+        }
+        .highlighted-phrase {
+            background-color: #fde68a; /* Slightly darker yellow for the actual highlight */
+            border-radius: 0.25rem;
+            padding: 0.1rem 0.3rem;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50">
+        <nav class="container mx-auto px-6 py-3 flex justify-between items-center">
+            <h1 class="text-xl md:text-2xl font-bold text-gray-800">Fake News Detector</h1>
+            <div class="hidden md:flex space-x-8">
+                <a href="#intro" class="nav-link">The Problem</a>
+                <a href="#methods" class="nav-link">How It Works</a>
+                <a href="#challenges" class="nav-link">Challenges</a>
+                <a href="#applications" class="nav-link">Applications</a>
+                <a href="#ai-analysis" class="nav-link">AI Analysis</a>
+                <a href="#google-news-analysis" class="nav-link">Google News Analysis</a>
+                <a href="#future" class="nav-link">The Future</a>
+            </div>
+            <button id="mobile-menu-button" class="md:hidden text-gray-600 focus:outline-none">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+            </button>
+        </nav>
+        <div id="mobile-menu" class="hidden md:hidden px-6 pb-4">
+            <a href="#intro" class="block py-2 text-gray-700 hover:text-blue-500">The Problem</a>
+            <a href="#methods" class="block py-2 text-gray-700 hover:text-blue-500">How It Works</a>
+            <a href="#challenges" class="block py-2 text-gray-700 hover:text-blue-500">Challenges</a>
+            <a href="#applications" class="block py-2 text-gray-700 hover:text-blue-500">Applications</a>
+            <a href="#ai-analysis" class="block py-2 text-gray-700 hover:text-blue-500">AI Analysis</a>
+            <a href="#google-news-analysis" class="block py-2 text-gray-700 hover:text-blue-500">Google News Analysis</a>
+            <a href="#future" class="block py-2 text-gray-700 hover:text-blue-500">The Future</a>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-6 py-8 md:py-12">
+
+        <section id="intro" class="text-center mb-16 md:mb-24 scroll-mt-20">
+            <h2 class="text-3xl md:text-5xl font-bold mb-4 text-gray-800">The Digital Pandemic</h2>
+            <h2 class="text-3xl md:text-5xl font-bold mb-4 text-gray-800"><a href="./other.html" class="text-blue-500 hover:underline">Other Documents</a></h2>
+            <p class="text-lg md:text-xl max-w-3xl mx-auto text-gray-600 mb-8">Fake news is more than just misinformation; it's a deliberate threat to democracy, public health, and social stability. This interactive report explores the technology built to fight back.</p>
+            <div class="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+                <div class="stat-card text-center">
+                    <p class="text-5xl font-bold text-red-500 mb-2">6x</p>
+                    <p class="font-semibold text-gray-700">Faster Spread</p>
+                    <p class="text-sm text-gray-500">False information disseminates significantly faster than truth on social media.</p>
+                </div>
+                <div class="stat-card text-center">
+                    <p class="text-5xl font-bold text-blue-500 mb-2">54%</p>
+                    <p class="font-semibold text-gray-700">Human Accuracy</p>
+                    <p class="text-sm text-gray-500">Unaided humans are only slightly better than a coin toss at identifying fake news.</p>
+                </div>
+                <div class="stat-card text-center">
+                    <p class="text-5xl font-bold text-green-500 mb-2">99%</p>
+                    <p class="font-semibold text-gray-700">AI Potential</p>
+                    <p class="text-sm text-gray-500">Advanced AI models have demonstrated near-perfect accuracy in detection tasks.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="methods" class="mb-16 md:mb-24 scroll-mt-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold mb-3 text-gray-800">How Detection Systems Work</h2>
+                <p class="text-lg max-w-3xl mx-auto text-gray-600">This section breaks down the core methodologies used to automatically detect fake news. Explore the pipeline from raw text to final classification, compare the performance of different AI algorithms, and dive into the specific techniques that power these systems.</p>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-lg p-6 md:p-8">
+                <div class="mb-8">
+                    <h3 class="text-2xl font-bold text-center mb-6 text-gray-700">The Detection Pipeline</h3>
+                    <div class="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-2">
+                        <div class="process-step bg-gray-100 p-4 rounded-lg text-center w-full md:w-auto">
+                            <div class="text-3xl mb-2">📰</div>
+                            <h4 class="font-semibold">1. Content Input</h4>
+                            <p class="text-xs text-gray-500">News articles, tweets, posts</p>
+                        </div>
+                        <div class="arrow hidden md:block">&rarr;</div>
+                        <div class="arrow block md:hidden">&darr;</div>
+                        <div class="process-step bg-gray-100 p-4 rounded-lg text-center w-full md:w-auto">
+                            <div class="text-3xl mb-2">🔍</div>
+                            <h4 class="font-semibold">2. NLP Analysis</h4>
+                            <p class="text-xs text-gray-500">Feature extraction, sentiment analysis</p>
+                        </div>
+                        <div class="arrow hidden md:block">&rarr;</div>
+                        <div class="arrow block md:hidden">&darr;</div>
+                        <div class="process-step bg-gray-100 p-4 rounded-lg text-center w-full md:w-auto">
+                            <div class="text-3xl mb-2">🧠</div>
+                            <h4 class="font-semibold">3. AI Modeling</h4>
+                            <p class="text-xs text-gray-500">ML & Deep Learning algorithms</p>
+                        </div>
+                        <div class="arrow hidden md:block">&rarr;</div>
+                        <div class="arrow block md:hidden">&darr;</div>
+                        <div class="process-step bg-green-100 p-4 rounded-lg text-center w-full md:w-auto">
+                            <div class="text-3xl mb-2">✅/❌</div>
+                            <h4 class="font-semibold">4. Classification</h4>
+                            <p class="text-xs text-gray-500">Real or Fake determination</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="border-t border-gray-200 pt-8 mb-8">
+                    <h3 class="text-2xl font-bold text-center mb-2 text-gray-700">Algorithm Performance Comparison</h3>
+                    <p class="text-center text-gray-500 mb-6 max-w-2xl mx-auto">Different machine learning algorithms show varying success in identifying fake news. This chart compares the accuracy of several common models based on a study of Twitter data.</p>
+                    <div class="chart-container">
+                        <canvas id="mlAccuracyChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="border-t border-gray-200 pt-8">
+                    <h3 class="text-2xl font-bold text-center mb-6 text-gray-700">A Closer Look at the Techniques</h3>
+                    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div class="stat-card">
+                            <h4 class="font-bold text-lg mb-2 text-blue-600">Natural Language Processing (NLP)</h4>
+                            <p class="text-sm text-gray-600">The foundation. NLP transforms unstructured text into numerical data for analysis. It involves text cleaning, sentiment analysis, topic modeling, and extracting linguistic features that distinguish real from fake content.</p>
+                        </div>
+                        <div class="stat-card">
+                            <h4 class="font-bold text-lg mb-2 text-blue-600">Machine Learning (ML)</h4>
+                            <p class="text-sm text-gray-600">The workhorse. Supervised algorithms like SVM and Random Forests are trained on labeled datasets to classify new articles. They learn patterns from word frequencies, source credibility, and other features.</p>
+                        </div>
+                        <div class="stat-card">
+                            <h4 class="font-bold text-lg mb-2 text-blue-600">Deep Learning (DL)</h4>
+                            <p class="text-sm text-gray-600">The powerhouse. Architectures like LSTMs and Transformers (e.g., BERT) capture complex context and semantic meaning. They excel at understanding nuance and long-range dependencies in text, leading to state-of-the-art accuracy.</p>
+                        </div>
+                        <div class="stat-card">
+                            <h4 class="font-bold text-lg mb-2 text-blue-600">Hybrid & Knowledge-Based</h4>
+                            <p class="text-sm text-gray-600">The reality check. These approaches combine AI with human expertise or external knowledge bases (like fact-checking sites). This synergy improves accuracy by blending computational scale with nuanced human judgment.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="challenges" class="mb-16 md:mb-24 scroll-mt-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold mb-3 text-gray-800">The Uphill Battle</h2>
+                <p class="text-lg max-w-3xl mx-auto text-gray-600">Creating effective detection systems is not straightforward. This section outlines the primary obstacles researchers and developers face, from data limitations to complex ethical dilemmas that arise when automating the judgment of truth.</p>
+            </div>
+            <div class="max-w-4xl mx-auto">
+                <div class="flex flex-wrap justify-center -mb-px border-b border-gray-200">
+                    <button class="tab-button mr-2 py-2 px-4 bg-gray-200 text-gray-700 rounded-t-lg font-semibold active" data-tab="data">Data Challenges</button>
+                    <button class="tab-button mr-2 py-2 px-4 bg-gray-200 text-gray-700 rounded-t-lg font-semibold" data-tab="model">Model Limitations</button>
+                    <button class="tab-button py-2 px-4 bg-gray-200 text-gray-700 rounded-t-lg font-semibold" data-tab="ethical">Ethical & Safety</button>
+                </div>
+                <div class="bg-white p-6 md:p-8 rounded-b-lg rounded-r-lg shadow-lg">
+                    <div id="data" class="content-section active">
+                        <h3 class="font-bold text-xl mb-4 text-gray-800">Data-Related Challenges</h3>
+                        <ul class="list-disc list-inside space-y-2 text-gray-600">
+                            <li><strong>Lack of Sufficient Data:</strong> High-quality, large-scale, labeled datasets are scarce and time-consuming to create.</li>
+                            <li><strong>Oversimplified Labels:</strong> Most datasets use a simple "real/fake" binary, ignoring content that is partially true or misleading.</li>
+                            <li><strong>Domain Specificity:</strong> Models trained on political news may fail when applied to health or science misinformation.</li>
+                            <li><strong>Missing Multimodality:</strong> There is a significant lack of datasets that integrate text with corresponding images and videos.</li>
+                        </ul>
+                    </div>
+                    <div id="model" class="content-section">
+                        <h3 class="font-bold text-xl mb-4 text-gray-800">Model-Related Limitations</h3>
+                        <ul class="list-disc list-inside space-y-2 text-gray-600">
+                            <li><strong>Overfitting:</strong> Models can learn patterns specific to the training data that don't generalize to new, unseen fake news.</li>
+                            <li><strong>Scalability:</strong> Traditional ML models struggle to process the massive volume of data generated on social media.</li>
+                            <li><strong>Context Loss:</strong> Models like BERT have token limits, forcing them to truncate long articles and potentially lose crucial context.</li>
+                            <li><strong>Feature Engineering:</strong> Shallow models rely on manually created features, which is difficult and can introduce human bias.</li>
+                        </ul>
+                    </div>
+                    <div id="ethical" class="content-section">
+                        <h3 class="font-bold text-xl mb-4 text-gray-800">Ethical & Safety Considerations</h3>
+                        <ul class="list-disc list-inside space-y-2 text-gray-600">
+                            <li><strong>Algorithmic Bias:</strong> Systems trained on biased data can perpetuate societal biases, unfairly silencing marginalized groups or opinions.</li>
+                            <li><strong>Privacy Risks:</strong> Detection systems often process personal data, raising concerns about data collection, storage, and usage.</li>
+                            <li><strong>Lack of Transparency:</b> Many AI models are "black boxes," making it difficult to understand their decisions or hold them accountable for errors.</li>
+                            <li><strong>Freedom of Speech:</strong> There is a fine line between flagging harmful misinformation and censoring legitimate, albeit controversial, expression.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="applications" class="mb-16 md:mb-24 scroll-mt-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold mb-3 text-gray-800">Real-World Battlegrounds</h2>
+                <p class="text-lg max-w-3xl mx-auto text-gray-600">Fake news detection technology is not just theoretical. It's actively being deployed across critical sectors to protect the public and preserve the integrity of information. Here's a look at where these systems are making an impact.</p>
+            </div>
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="stat-card">
+                    <div class="text-3xl mb-3">📰</div>
+                    <h3 class="font-bold text-xl mb-2 text-gray-800">Journalism</h3>
+                    <p class="text-sm text-gray-600">Tools like ClaimBuster and Full Fact AI help journalists automatically verify claims, monitor public debates, and detect deepfakes, streamlining the fact-checking process and upholding journalistic standards.</p>
+                </div>
+                <div class="stat-card">
+                    <div class="text-3xl mb-3">📱</div>
+                    <h3 class="font-bold text-xl mb-2 text-gray-800">Social Media</h3>
+                    <p class="text-sm text-gray-600">Platforms like Meta, X, and TikTok use AI for automated content moderation, labeling misleading posts, reducing the spread of debunked information, and identifying coordinated misinformation campaigns.</p>
+                </div>
+                <div class="stat-card">
+                    <div class="text-3xl mb-3">⚕️</div>
+                    <h3 class="font-bold text-xl mb-2 text-gray-800">Public Health</h3>
+                    <p class="text-sm text-gray-600">During crises like COVID-19, AI systems act as early warning systems, filtering social media to counter dangerous rumors about vaccines and treatments, and helping officials communicate accurate information.</p>
+                </div>
+                <div class="stat-card">
+                    <div class="text-3xl mb-3">🏛️</div>
+                    <h3 class="font-bold text-xl mb-2 text-gray-800">Government</h3>
+                    <p class="text-sm text-gray-600">Governments use these technologies to protect electoral integrity. Initiatives in Brazil and the EU monitor for disinformation, partner with platforms, and launch public awareness campaigns to safeguard democratic processes.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="ai-analysis" class="mb-16 md:mb-24 scroll-mt-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold mb-3 text-gray-800">✨ AI Text Analysis ✨</h2>
+                <p class="text-lg max-w-3xl mx-auto text-gray-600">Curious how AI might analyze text for characteristics of fake news? Enter any short text below and let our simulated AI provide a quick assessment based on common patterns.</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-lg p-6 md:p-8 max-w-3xl mx-auto">
+                <div class="mb-6">
+                    <label for="text-input" class="block text-gray-700 text-sm font-bold mb-2">Enter text for analysis:</label>
+                    <textarea id="text-input" rows="6" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline resize-y" placeholder="e.g., 'BREAKING: Scientists discover cure for all diseases, but governments are hiding it!'"></textarea>
+                </div>
+                <div class="flex flex-wrap items-center justify-center mb-6 space-x-4 space-y-2 md:space-y-0">
+                    <button id="analyze-button" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center">
+                        Analyze Text ✨
+                        <span id="loading-spinner" class="loading-spinner hidden"></span>
+                    </button>
+                    <button id="rewrite-button" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center" disabled>
+                        Rewrite for Neutrality ✨
+                        <span id="rewrite-loading-spinner" class="loading-spinner hidden"></span>
+                    </button>
+                    <button id="generate-query-button" class="bg-teal-500 hover:bg-teal-600 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center" disabled>
+                        Generate Fact-Check Query ✨
+                        <span id="generate-query-loading-spinner" class="loading-spinner hidden"></span>
+                    </button>
+                    <button id="highlight-phrases-button" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center" disabled>
+                        Highlight Suspicious Phrases ✨
+                        <span id="highlight-loading-spinner" class="loading-spinner hidden"></span>
+                    </button>
+                </div>
+                <div id="analysis-result" class="bg-gray-100 p-4 rounded-lg text-gray-700 hidden">
+                    <h3 class="font-bold text-lg mb-2">Analysis Result:</h3>
+                    <p id="assessment-label" class="font-semibold text-lg mb-2"></p>
+                    <p id="explanation-text" class="text-base mb-4"></p>
+                    <div class="poll-chart-container">
+                        <canvas id="fakeRealPollChart"></canvas>
+                    </div>
+                    <p class="text-sm text-gray-500 mt-2 text-center">Simulated likelihood of text being fake vs. real.</p>
+                </div>
+                <div id="rewritten-text-section" class="bg-gray-100 p-4 rounded-lg text-gray-700 mt-6 hidden">
+                    <h3 class="font-bold text-lg mb-2">Rewritten Text (for Neutrality):</h3>
+                    <textarea id="rewritten-text" rows="6" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline resize-y" readonly></textarea>
+                </div>
+                <div id="generated-query-section" class="bg-gray-100 p-4 rounded-lg text-gray-700 mt-6 hidden">
+                    <h3 class="font-bold text-lg mb-2">Generated Fact-Check Query:</h3>
+                    <textarea id="generated-query-text" rows="3" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline resize-y" readonly></textarea>
+                    <p class="text-sm text-gray-500 mt-2">Use this query on a search engine to fact-check the original text.</p>
+                </div>
+                <div id="highlighted-text-section" class="bg-gray-100 p-4 rounded-lg text-gray-700 mt-6 hidden">
+                    <h3 class="font-bold text-lg mb-2">Text with Suspicious Phrases Highlighted:</h3>
+                    <div id="highlighted-content" class="highlighted-text mb-4"></div>
+                    <h4 class="font-bold text-md mb-2">Reasons for Highlighting:</h4>
+                    <ul id="highlight-reasons-list" class="list-disc list-inside space-y-1 text-sm"></ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="google-news-analysis" class="mb-16 md:mb-24 scroll-mt-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold mb-3 text-gray-800">📰 Google News Analysis (Live) 📰</h2>
+                <p class="text-lg max-w-3xl mx-auto text-gray-600">Enter a keyword to fetch recent news snippets from Google News, then analyze its authenticity using our AI model. Try "vaccine", "climate change", or "elections".</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-lg p-6 md:p-8 max-w-3xl mx-auto">
+                <div class="mb-6">
+                    <label for="news-keyword-input" class="block text-gray-700 text-sm font-bold mb-2">Enter Keyword:</label>
+                    <input type="text" id="news-keyword-input" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="e.g., vaccine">
+                </div>
+                <div class="flex items-center justify-center mb-6 space-x-4">
+                    <button id="fetch-news-button" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center">
+                        Fetch News 🌐
+                        <span id="fetch-loading-spinner" class="loading-spinner hidden"></span>
+                    </button>
+                    <button id="analyze-fetched-news-button" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center" disabled>
+                        Analyze Fetched News ✨
+                        <span id="analyze-fetched-loading-spinner" class="loading-spinner hidden"></span>
+                    </button>
+                    <button id="summarize-news-button" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center" disabled>
+                        Summarize News 📝
+                        <span id="summarize-loading-spinner" class="loading-spinner hidden"></span>
+                    </button>
+                </div>
+                <div class="mb-6">
+                    <label for="fetched-news-text" class="block text-gray-700 text-sm font-bold mb-2">Fetched News Content:</label>
+                    <textarea id="fetched-news-text" rows="8" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline resize-y" readonly placeholder="News content will appear here..."></textarea>
+                </div>
+                <div id="fetched-analysis-result" class="bg-gray-100 p-4 rounded-lg text-gray-700 hidden">
+                    <h3 class="font-bold text-lg mb-2">Analysis Result:</h3>
+                    <p id="fetched-assessment-label" class="font-semibold text-lg mb-2"></p>
+                    <p id="fetched-explanation-text" class="text-base mb-4"></p>
+                    <div class="poll-chart-container">
+                        <canvas id="fetchedFakeRealPollChart"></canvas>
+                    </div>
+                    <p class="text-sm text-gray-500 mt-2 text-center">Simulated likelihood of text being fake vs. real.</p>
+                </div>
+                <div id="summarized-news-section" class="bg-gray-100 p-4 rounded-lg text-gray-700 mt-6 hidden">
+                    <h3 class="font-bold text-lg mb-2">Summarized News:</h3>
+                    <textarea id="summarized-news-text" rows="6" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline resize-y" readonly></textarea>
+                </div>
+            </div>
+        </section>
+
+        <section id="future" class="text-center scroll-mt-20">
+            <h2 class="text-3xl md:text-4xl font-bold mb-3 text-gray-800">The Next Frontier</h2>
+            <p class="text-lg max-w-3xl mx-auto text-gray-600 mb-8">The fight against fake news is a continuous "arms race." The future lies in creating smarter, more transparent, and more adaptable systems. Key trends include advanced multimodal models that analyze text, image, and video together, and Explainable AI (XAI) that reveals *why* a decision was made, building crucial trust in automated systems.</p>
+            <a href="#intro" class="bg-blue-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-600 transition-colors">Back to Top</a>
+        </section>
+
+    </main>
+
+    <script>
+        // Removed the import statement for google_search.js
+        // import { google_search } from '/tools/google_search.js';
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const chartCtx = document.getElementById('mlAccuracyChart').getContext('2d');
+            const mlAccuracyChart = new Chart(chartCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Support Vector Machine (SVM)', 'Random Forest', 'Gradient Boosting (GBC)', 'K-Nearest Neighbors (KNN)'],
+                    datasets: [{
+                        label: 'Model Accuracy (%)',
+                        data: [79.7, 78.59, 73.21, 66.77],
+                        backgroundColor: [
+                            'rgba(52, 152, 219, 0.7)',
+                            'rgba(46, 204, 113, 0.7)',
+                            'rgba(241, 196, 15, 0.7)',
+                            'rgba(230, 126, 34, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgba(52, 152, 219, 1)',
+                            'rgba(46, 204, 113, 1)',
+                            'rgba(241, 196, 15, 1)',
+                            'rgba(230, 126, 34, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'Accuracy (%)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Accuracy: ${context.raw}%`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            const tabs = document.querySelectorAll('.tab-button');
+            const contentSections = document.querySelectorAll('.content-section');
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+
+                    const target = tab.getAttribute('data-tab');
+                    contentSections.forEach(section => {
+                        if (section.id === target) {
+                            section.classList.add('active');
+                        } else {
+                            section.classList.remove('active');
+                        }
+                    });
+                });
+            });
+
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+            
+            const navLinks = document.querySelectorAll('header a[href^="#"]');
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href');
+                    const targetElement = document.querySelector(targetId);
+                    if (targetElement) {
+                        targetElement.scrollIntoView({ behavior: 'smooth' });
+                        if (mobileMenu.classList.contains('hidden') === false) {
+                            mobileMenu.classList.add('hidden');
+                        }
+                    }
+                });
+            });
+
+            const allNavLinks = document.querySelectorAll('.nav-link');
+            const sections = document.querySelectorAll('section');
+
+            const options = {
+                root: null,
+                threshold: 0.3,
+                rootMargin: "-100px 0px -100px 0px"
+            };
+
+            const observer = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const id = entry.target.getAttribute('id');
+                        allNavLinks.forEach(link => {
+                            link.classList.remove('active');
+                            if (link.getAttribute('href') === `#${id}`) {
+                                link.classList.add('active');
+                            }
+                        });
+                    }
+                });
+            }, options);
+
+            sections.forEach(section => {
+                observer.observe(section);
+            });
+
+            // Common function to initialize a poll chart
+            function createPollChart(canvasId) {
+                const ctx = document.getElementById(canvasId).getContext('2d');
+                return new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: [''],
+                        datasets: [{
+                            label: 'Fake',
+                            data: [50],
+                            backgroundColor: 'rgba(231, 76, 60, 0.8)',
+                            borderColor: 'rgba(231, 76, 60, 1)',
+                            borderWidth: 1,
+                            borderRadius: 5,
+                        },
+                        {
+                            label: 'Real',
+                            data: [50],
+                            backgroundColor: 'rgba(46, 204, 113, 0.8)',
+                            borderColor: 'rgba(46, 204, 113, 1)',
+                            borderWidth: 1,
+                            borderRadius: 5,
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                stacked: true,
+                                beginAtZero: true,
+                                max: 100,
+                                display: false,
+                                grid: { display: false }
+                            },
+                            y: {
+                                stacked: true,
+                                display: false,
+                                grid: { display: false }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'bottom',
+                                labels: { boxWidth: 12, padding: 15 }
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                                callbacks: {
+                                    label: function(context) {
+                                        return `${context.dataset.label}: ${context.raw}%`;
+                                    }
+                                }
+                            }
+                        },
+                        animation: { duration: 1000 }
+                    }
+                });
+            }
+
+            const fakeRealPollChart = createPollChart('fakeRealPollChart');
+            const fetchedFakeRealPollChart = createPollChart('fetchedFakeRealPollChart');
+
+
+            // Function to call Gemini API and update analysis results
+            async function analyzeTextWithGemini(inputText, assessmentP, explanationP, pollChart, loadingSpinnerElem, analyzeButtonElem, rewriteButtonElem = null, rewrittenTextSectionElem = null, generateQueryButtonElem = null, generatedQuerySectionElem = null, highlightButtonElem = null, highlightedTextSectionElem = null) {
+                if (!inputText) {
+                    assessmentP.textContent = "Please enter some text to analyze.";
+                    explanationP.textContent = "";
+                    loadingSpinnerElem.classList.add('hidden');
+                    analyzeButtonElem.disabled = false;
+                    if (rewriteButtonElem) rewriteButtonElem.disabled = true;
+                    if (rewrittenTextSectionElem) rewrittenTextSectionElem.classList.add('hidden');
+                    if (generateQueryButtonElem) generateQueryButtonElem.disabled = true;
+                    if (generatedQuerySectionElem) generatedQuerySectionElem.classList.add('hidden');
+                    if (highlightButtonElem) highlightButtonElem.disabled = true;
+                    if (highlightedTextSectionElem) highlightedTextSectionElem.classList.add('hidden');
+                    return;
+                }
+
+                loadingSpinnerElem.classList.remove('hidden');
+                analyzeButtonElem.disabled = true;
+                if (rewriteButtonElem) rewriteButtonElem.disabled = true;
+                if (rewrittenTextSectionElem) rewrittenTextSectionElem.classList.add('hidden');
+                if (generateQueryButtonElem) generateQueryButtonElem.disabled = true;
+                if (generatedQuerySectionElem) generatedQuerySectionElem.classList.add('hidden');
+                if (highlightButtonElem) highlightButtonElem.disabled = true;
+                if (highlightedTextSectionElem) highlightedTextSectionElem.classList.add('hidden');
+                assessmentP.textContent = '';
+                explanationP.textContent = '';
+
+                let chatHistory = [];
+                const prompt = `Analyze the following text for characteristics commonly found in fake news. Provide a JSON object with two fields: "classification" (e.g., "fake", "real", "misleading", "biased") and "explanation" (a concise reason for your assessment, focusing on stylistic elements, lack of sourcing, emotional language, or sensationalism).
+                Text: "${inputText}"`;
+                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+
+                const payload = {
+                    contents: chatHistory,
+                    generationConfig: {
+                        responseMimeType: "application/json",
+                        responseSchema: {
+                            type: "OBJECT",
+                            properties: {
+                                "classification": { "type": "STRING" },
+                                "explanation": { "type": "STRING" }
+                            },
+                            "propertyOrdering": ["classification", "explanation"]
+                        }
+                    }
+                };
+                const apiKey = "AIzaSyCLXOhL8aO9tAgsdhQmFa8w36u34XXfs50";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const result = await response.json();
+
+                    if (result.candidates && result.candidates.length > 0 &&
+                        result.candidates[0].content && result.candidates[0].content.parts &&
+                        result.candidates[0].content.parts.length > 0) {
+                        const jsonString = result.candidates[0].content.parts[0].text;
+                        const parsedJson = JSON.parse(jsonString);
+
+                        assessmentP.textContent = `Assessment: ${parsedJson.classification.charAt(0).toUpperCase() + parsedJson.classification.slice(1)}`;
+                        explanationP.textContent = `Reason: ${parsedJson.explanation}`;
+
+                        let fakePercentage, realPercentage;
+                        switch (parsedJson.classification.toLowerCase()) {
+                            case 'fake':
+                                fakePercentage = 85;
+                                realPercentage = 15;
+                                break;
+                            case 'biased':
+                                fakePercentage = 65;
+                                realPercentage = 35;
+                                break;
+                            case 'real':
+                                fakePercentage = 20;
+                                realPercentage = 80;
+                                break;
+                            case 'misleading':
+                                fakePercentage = 60;
+                                realPercentage = 40;
+                                break;
+                            default:
+                                fakePercentage = 50;
+                                realPercentage = 50;
+                                break;
+                        }
+
+                        pollChart.data.datasets[0].data[0] = fakePercentage;
+                        pollChart.data.datasets[1].data[0] = realPercentage;
+                        pollChart.update();
+                        if (rewriteButtonElem) rewriteButtonElem.disabled = false;
+                        if (generateQueryButtonElem) generateQueryButtonElem.disabled = false;
+                        if (highlightButtonElem) highlightButtonElem.disabled = false;
+
+                    } else {
+                        assessmentP.textContent = "Could not get a valid analysis. Please try again.";
+                        explanationP.textContent = "";
+                        pollChart.data.datasets[0].data[0] = 50;
+                        pollChart.data.datasets[1].data[0] = 50;
+                        pollChart.update();
+                        if (rewriteButtonElem) rewriteButtonElem.disabled = true;
+                        if (generateQueryButtonElem) generateQueryButtonElem.disabled = true;
+                        if (highlightButtonElem) highlightButtonElem.disabled = true;
+                    }
+                } catch (error) {
+                    console.error('Error calling Gemini API or parsing response:', error);
+                    assessmentP.textContent = "An error occurred during analysis. Please try again later.";
+                    explanationP.textContent = "";
+                    pollChart.data.datasets[0].data[0] = 50;
+                    pollChart.data.datasets[1].data[0] = 50;
+                    pollChart.update();
+                    if (rewriteButtonElem) rewriteButtonElem.disabled = true;
+                    if (generateQueryButtonElem) generateQueryButtonElem.disabled = true;
+                    if (highlightButtonElem) highlightButtonElem.disabled = true;
+                } finally {
+                    loadingSpinnerElem.classList.add('hidden');
+                    analyzeButtonElem.disabled = false;
+                }
+            }
+
+
+            // AI Text Analysis Section Logic
+            const textInput = document.getElementById('text-input');
+            const analyzeButton = document.getElementById('analyze-button');
+            const analysisResultDiv = document.getElementById('analysis-result');
+            const assessmentLabelP = document.getElementById('assessment-label');
+            const explanationTextP = document.getElementById('explanation-text');
+            const loadingSpinner = document.getElementById('loading-spinner');
+            const rewriteButton = document.getElementById('rewrite-button');
+            const rewrittenTextSection = document.getElementById('rewritten-text-section');
+            const rewrittenTextarea = document.getElementById('rewritten-text');
+            const rewriteLoadingSpinner = document.getElementById('rewrite-loading-spinner');
+            const generateQueryButton = document.getElementById('generate-query-button');
+            const generatedQuerySection = document.getElementById('generated-query-section');
+            const generatedQueryTextarea = document.getElementById('generated-query-text');
+            const generateQueryLoadingSpinner = document.getElementById('generate-query-loading-spinner');
+            const highlightPhrasesButton = document.getElementById('highlight-phrases-button');
+            const highlightedTextSection = document.getElementById('highlighted-text-section');
+            const highlightedContentDiv = document.getElementById('highlighted-content');
+            const highlightReasonsList = document.getElementById('highlight-reasons-list');
+            const highlightLoadingSpinner = document.getElementById('highlight-loading-spinner');
+
+
+            analyzeButton.addEventListener('click', async () => {
+                analysisResultDiv.classList.add('hidden');
+                rewrittenTextSection.classList.add('hidden');
+                generatedQuerySection.classList.add('hidden');
+                highlightedTextSection.classList.add('hidden'); // Hide highlight section
+                await analyzeTextWithGemini(textInput.value.trim(), assessmentLabelP, explanationTextP, fakeRealPollChart, loadingSpinner, analyzeButton, rewriteButton, rewrittenTextSection, generateQueryButton, generatedQuerySection, highlightPhrasesButton, highlightedTextSection);
+                analysisResultDiv.classList.remove('hidden');
+            });
+
+            rewriteButton.addEventListener('click', async () => {
+                const originalText = textInput.value.trim();
+                if (!originalText) {
+                    rewrittenTextarea.value = "No text to rewrite. Please analyze some text first.";
+                    rewrittenTextSection.classList.remove('hidden');
+                    return;
+                }
+
+                rewriteLoadingSpinner.classList.remove('hidden');
+                rewriteButton.disabled = true;
+                rewrittenTextarea.value = '';
+                rewrittenTextSection.classList.add('hidden');
+
+                let chatHistory = [];
+                const prompt = `Rewrite the following text to be more neutral, objective, and remove any sensationalism, emotional language, or overt bias. Focus on presenting facts clearly and concisely without exaggeration.
+                Text: "${originalText}"`;
+                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+
+                const payload = { contents: chatHistory };
+                const apiKey = "AIzaSyCLXOhL8aO9tAgsdhQmFa8w36u34XXfs50";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const result = await response.json();
+
+                    if (result.candidates && result.candidates.length > 0 &&
+                        result.candidates[0].content && result.candidates[0].content.parts &&
+                        result.candidates[0].content.parts.length > 0) {
+                        const text = result.candidates[0].content.parts[0].text;
+                        rewrittenTextarea.value = text;
+                    } else {
+                        rewrittenTextarea.value = "Could not rewrite the text. Please try again.";
+                    }
+                } catch (error) {
+                    console.error('Error calling Gemini API for rewrite:', error);
+                    rewrittenTextarea.value = "An error occurred during rewriting. Please try again later.";
+                } finally {
+                    rewrittenTextSection.classList.remove('hidden');
+                    rewriteLoadingSpinner.classList.add('hidden');
+                    rewriteButton.disabled = false;
+                }
+            });
+
+            generateQueryButton.addEventListener('click', async () => {
+                const originalText = textInput.value.trim();
+                if (!originalText) {
+                    generatedQueryTextarea.value = "No text to generate a query for. Please analyze some text first.";
+                    generatedQuerySection.classList.remove('hidden');
+                    return;
+                }
+
+                generateQueryLoadingSpinner.classList.remove('hidden');
+                generateQueryButton.disabled = true;
+                generatedQueryTextarea.value = '';
+                generatedQuerySection.classList.add('hidden');
+
+                let chatHistory = [];
+                const prompt = `Based on the following text, generate a concise and neutral search query that could be used to fact-check the information. The query should be suitable for a search engine.
+                Text: "${originalText}"`;
+                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+
+                const payload = { contents: chatHistory };
+                const apiKey = "AIzaSyCLXOhL8aO9tAgsdhQmFa8w36u34XXfs50";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const result = await response.json();
+
+                    if (result.candidates && result.candidates.length > 0 &&
+                        result.candidates[0].content && result.candidates[0].content.parts &&
+                        result.candidates[0].content.parts.length > 0) {
+                        const text = result.candidates[0].content.parts[0].text;
+                        generatedQueryTextarea.value = text;
+                    } else {
+                        generatedQueryTextarea.value = "Could not generate a query. Please try again.";
+                    }
+                } catch (error) {
+                    console.error('Error calling Gemini API for query generation:', error);
+                    generatedQueryTextarea.value = "An error occurred during query generation. Please try again later.";
+                } finally {
+                    generatedQuerySection.classList.remove('hidden');
+                    generateQueryLoadingSpinner.classList.add('hidden');
+                    generateQueryButton.disabled = false;
+                }
+            });
+
+            highlightPhrasesButton.addEventListener('click', async () => {
+                const originalText = textInput.value.trim();
+                if (!originalText) {
+                    highlightedContentDiv.innerHTML = "No text to highlight phrases in. Please analyze some text first.";
+                    highlightReasonsList.innerHTML = '';
+                    highlightedTextSection.classList.remove('hidden');
+                    return;
+                }
+
+                highlightLoadingSpinner.classList.remove('hidden');
+                highlightPhrasesButton.disabled = true;
+                highlightedContentDiv.innerHTML = '';
+                highlightReasonsList.innerHTML = '';
+                highlightedTextSection.classList.add('hidden');
+
+                let chatHistory = [];
+                const prompt = `Identify up to 3 short phrases or single words (max 5 words per phrase) from the following text that contribute most to it being considered fake, misleading, or biased. For each identified phrase, provide a very concise explanation (1-2 sentences) of why it's suspicious (e.g., sensationalism, emotional appeal, lack of specificity, unverified claim). Return this as a JSON array of objects, where each object has 'phrase' and 'reason' keys.
+                Text: "${originalText}"`;
+                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+
+                const payload = {
+                    contents: chatHistory,
+                    generationConfig: {
+                        responseMimeType: "application/json",
+                        responseSchema: {
+                            type: "ARRAY",
+                            items: {
+                                type: "OBJECT",
+                                properties: {
+                                    "phrase": { "type": "STRING" },
+                                    "reason": { "type": "STRING" }
+                                },
+                                "propertyOrdering": ["phrase", "reason"]
+                            }
+                        }
+                    }
+                };
+                const apiKey = "AIzaSyCLXOhL8aO9tAgsdhQmFa8w36u34XXfs50";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const result = await response.json();
+
+                    if (result.candidates && result.candidates.length > 0 &&
+                        result.candidates[0].content && result.candidates[0].content.parts &&
+                        result.candidates[0].content.parts.length > 0) {
+                        const jsonString = result.candidates[0].content.parts[0].text;
+                        const identifiedPhrases = JSON.parse(jsonString);
+
+                        let highlightedHtml = originalText;
+                        const reasonsHtml = [];
+
+                        identifiedPhrases.forEach((item, index) => {
+                            const phrase = item.phrase;
+                            const reason = item.reason;
+                            const regex = new RegExp(`\\b${phrase}\\b`, 'gi'); // Use word boundary for exact phrase match
+                            highlightedHtml = highlightedHtml.replace(regex, `<span class="highlighted-phrase">${phrase}</span>`);
+                            reasonsHtml.push(`<li><strong>"${phrase}"</strong>: ${reason}</li>`);
+                        });
+
+                        highlightedContentDiv.innerHTML = highlightedHtml;
+                        highlightReasonsList.innerHTML = reasonsHtml.join('');
+
+                    } else {
+                        highlightedContentDiv.innerHTML = "Could not identify suspicious phrases. Please try again.";
+                        highlightReasonsList.innerHTML = '';
+                    }
+                } catch (error) {
+                    console.error('Error calling Gemini API for highlighting:', error);
+                    highlightedContentDiv.innerHTML = "An error occurred during phrase highlighting. Please try again later.";
+                    highlightReasonsList.innerHTML = '';
+                } finally {
+                    highlightedTextSection.classList.remove('hidden');
+                    highlightLoadingSpinner.classList.add('hidden');
+                    highlightPhrasesButton.disabled = false;
+                }
+            });
+
+
+            // Google News Analysis Section Logic
+            const newsKeywordInput = document.getElementById('news-keyword-input');
+            const fetchNewsButton = document.getElementById('fetch-news-button');
+            const fetchedNewsTextarea = document.getElementById('fetched-news-text');
+            const analyzeFetchedNewsButton = document.getElementById('analyze-fetched-news-button');
+            const fetchedAnalysisResultDiv = document.getElementById('fetched-analysis-result');
+            const fetchedAssessmentLabelP = document.getElementById('fetched-assessment-label');
+            const fetchedExplanationTextP = document.getElementById('fetched-explanation-text');
+            const fetchLoadingSpinner = document.getElementById('fetch-loading-spinner');
+            const analyzeFetchedLoadingSpinner = document.getElementById('analyze-fetched-loading-spinner');
+            const summarizeNewsButton = document.getElementById('summarize-news-button');
+            const summarizedNewsSection = document.getElementById('summarized-news-section');
+            const summarizedNewsTextarea = document.getElementById('summarized-news-text');
+            const summarizeLoadingSpinner = document.getElementById('summarize-loading-spinner');
+
+
+            fetchNewsButton.addEventListener('click', async () => {
+                const keyword = newsKeywordInput.value.trim();
+                if (!keyword) {
+                    fetchedNewsTextarea.value = "Please enter a keyword to fetch news.";
+                    analyzeFetchedNewsButton.disabled = true;
+                    summarizeNewsButton.disabled = true;
+                    return;
+                }
+
+                fetchLoadingSpinner.classList.remove('hidden');
+                fetchNewsButton.disabled = true;
+                analyzeFetchedNewsButton.disabled = true;
+                summarizeNewsButton.disabled = true;
+                fetchedAnalysisResultDiv.classList.add('hidden');
+                summarizedNewsSection.classList.add('hidden');
+                fetchedNewsTextarea.value = '';
+
+                // Use Google News RSS feed via rss2json.com (no API key required for demo/educational use)
+                const rssUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(keyword)}&hl=en-US&gl=US&ceid=US:en`;
+                const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`;
+
+                try {
+                    const response = await fetch(apiUrl);
+                    const data = await response.json();
+                    if (data.items && data.items.length > 0) {
+                        // Get a random index
+                        const randomIndex = Math.floor(Math.random() * data.items.length);
+                        const item = data.items[randomIndex];
+                        let fullContent = '';
+
+                        if (item.title) {
+                            fullContent += `Title: ${item.title}\n\n`;
+                        }
+                        if (item.description) {
+                            fullContent += `Content: ${item.description.replace(/<[^>]+>/g, '')}\n\n`;
+                        }
+                        if (item.content) {
+                            fullContent += `Full Content: ${item.content.replace(/<[^>]+>/g, '')}\n\n`;
+                        }
+                        if (item.link) {
+                            fullContent += `Source: ${item.link}\n\n`;
+                        }
+                        if (item.pubDate) {
+                            fullContent += `Published: ${item.pubDate}`;
+                        }
+
+                        fetchedNewsTextarea.value = fullContent;
+                        analyzeFetchedNewsButton.disabled = false;
+                        summarizeNewsButton.disabled = false;
+                    } else {
+                        fetchedNewsTextarea.value = `No news found for "${keyword}". Try a different keyword.`;
+                        analyzeFetchedNewsButton.disabled = true;
+                        summarizeNewsButton.disabled = true;
+                    }
+                } catch (error) {
+                    console.error('Error fetching news from Google News RSS:', error);
+                    fetchedNewsTextarea.value = "An error occurred while fetching news. Please try again later.";
+                    analyzeFetchedNewsButton.disabled = true;
+                    summarizeNewsButton.disabled = true;
+                } finally {
+                    fetchLoadingSpinner.classList.add('hidden');
+                    fetchNewsButton.disabled = false;
+                }
+            });
+
+            analyzeFetchedNewsButton.addEventListener('click', async () => {
+                fetchedAnalysisResultDiv.classList.add('hidden');
+                summarizedNewsSection.classList.add('hidden');
+                await analyzeTextWithGemini(fetchedNewsTextarea.value.trim(), fetchedAssessmentLabelP, fetchedExplanationTextP, fetchedFakeRealPollChart, analyzeFetchedLoadingSpinner, analyzeFetchedNewsButton);
+                fetchedAnalysisResultDiv.classList.remove('hidden');
+            });
+
+            summarizeNewsButton.addEventListener('click', async () => {
+                const newsContent = fetchedNewsTextarea.value.trim();
+                if (!newsContent) {
+                    summarizedNewsTextarea.value = "No news content to summarize. Please fetch news first.";
+                    summarizedNewsSection.classList.remove('hidden');
+                    return;
+                }
+
+                summarizeLoadingSpinner.classList.remove('hidden');
+                summarizeNewsButton.disabled = true;
+                summarizedNewsTextarea.value = '';
+                summarizedNewsSection.classList.add('hidden');
+
+                let chatHistory = [];
+                const prompt = `Summarize the following news article concisely, focusing on the main points and key information.
+                Article: "${newsContent}"`;
+                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+
+                const payload = { contents: chatHistory };
+                const apiKey = "AIzaSyCLXOhL8aO9tAgsdhQmFa8w36u34XXfs50";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const result = await response.json();
+
+                    if (result.candidates && result.candidates.length > 0 &&
+                        result.candidates[0].content && result.candidates[0].content.parts &&
+                        result.candidates[0].content.parts.length > 0) {
+                        const text = result.candidates[0].content.parts[0].text;
+                        summarizedNewsTextarea.value = text;
+                    } else {
+                        summarizedNewsTextarea.value = "Could not summarize the news. Please try again.";
+                    }
+                } catch (error) {
+                    console.error('Error calling Gemini API for summarization:', error);
+                    summarizedNewsTextarea.value = "An error occurred during summarization. Please try again later.";
+                } finally {
+                    summarizedNewsSection.classList.remove('hidden');
+                    summarizeLoadingSpinner.classList.add('hidden');
+                    summarizeNewsButton.disabled = false;
+                }
+            });
+        });
+    </script>
+</body>
+</html>

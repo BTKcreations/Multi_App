@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Format Document Extractor with AI</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- PDF.js library from Mozilla -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
+    <!-- Mammoth.js for .docx files -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+    <!-- SheetJS (xlsx) for Excel files -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        /* Custom font */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Style for the file input drop zone */
+        .drop-zone-active {
+            border-color: #2563eb; /* blue-600 */
+            background-color: #eff6ff; /* blue-50 */
+        }
+        /* Simple animation for the Gemini loader */
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .gemini-loader {
+            animation: spin 1s linear infinite;
+        }
+        /* Style for clickable links in the output */
+        #gemini-output a {
+            color: #2563eb; /* blue-600 */
+            text-decoration: underline;
+        }
+        #gemini-output a:hover {
+            color: #1d4ed8; /* blue-700 */
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen py-12">
+
+    <div class="bg-white rounded-lg shadow-xl p-8 w-full max-w-4xl mx-4">
+        
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-800">Document Extractor with Gemini AI</h1>
+            <p class="text-gray-500 mt-2">Upload a PDF, Word, or Excel file to extract its text and use AI to analyze it.</p>
+        </div>
+
+        <!-- File Upload Section -->
+        <div id="upload-container">
+            <input type="file" id="file-input" class="hidden" accept=".pdf,.docx,.xlsx">
+            <label for="file-input" id="drop-zone" class="flex justify-center w-full h-48 px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md cursor-pointer hover:border-blue-500 transition-colors duration-300">
+                <div class="space-y-2 text-center flex flex-col justify-center items-center">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                        <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                     <div class="flex text-sm text-gray-600">
+                        <p class="pl-1">or drag and drop</p>
+                    </div>
+                    <p class="text-xs text-gray-500">Supported: PDF, DOCX, XLSX</p>
+                </div>
+            </label>
+        </div>
+
+        <!-- Status and Loader Section -->
+        <div id="status-container" class="mt-6 text-center hidden">
+             <div id="loader" class="flex items-center justify-center space-x-2">
+                <div class="w-4 h-4 rounded-full animate-pulse bg-blue-600"></div>
+                <div class="w-4 h-4 rounded-full animate-pulse bg-blue-600" style="animation-delay: .2s;"></div>
+                <div class="w-4 h-4 rounded-full animate-pulse bg-blue-600" style="animation-delay: .4s;"></div>
+            </div>
+            <p id="status-text" class="text-gray-600 font-medium mt-2"></p>
+        </div>
+        
+        <!-- Extracted Text Display Section -->
+        <div id="result-container" class="mt-8 hidden">
+             <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold text-gray-700">Extracted Content</h2>
+                <button id="reset-button" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">Upload Another</button>
+            </div>
+            <div id="text-container" class="w-full h-96 p-4 border border-gray-200 rounded-md bg-gray-50 overflow-y-auto">
+                <pre id="extracted-text" class="whitespace-pre-wrap text-gray-800"></pre>
+            </div>
+            
+            <!-- Gemini AI Features Section -->
+            <div id="gemini-actions" class="mt-6">
+                <h3 class="text-lg font-semibold text-gray-700 mb-3">✨ AI-Powered Actions</h3>
+                <div class="flex flex-wrap gap-4">
+                    <button id="summarize-btn" class="px-5 py-2.5 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition">Summarize Text</button>
+                    <button id="key-points-btn" class="px-5 py-2.5 bg-green-600 text-white rounded-md hover:bg-green-700 transition">Extract Key Points</button>
+                </div>
+            </div>
+
+            <!-- Gemini AI Result Section -->
+            <div id="gemini-result-container" class="mt-6 hidden">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 id="gemini-result-title" class="text-lg font-semibold text-gray-700">AI Analysis</h3>
+                    <button id="close-gemini-result-btn" class="text-gray-500 hover:text-gray-800 text-2xl leading-none">&times;</button>
+                </div>
+                <div id="gemini-loader" class="hidden items-center justify-center py-8">
+                    <div class="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full gemini-loader"></div>
+                    <p class="ml-4 text-gray-600">Gemini is thinking...</p>
+                </div>
+                <div id="gemini-output-container" class="w-full p-4 border border-gray-200 rounded-md bg-gray-50">
+                    <pre id="gemini-output" class="whitespace-pre-wrap text-gray-800"></pre>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+        // Set the workerSrc for PDF.js. This is required for it to work correctly.
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js';
+
+        // --- DOM Element References ---
+        const fileInput = document.getElementById('file-input');
+        const dropZone = document.getElementById('drop-zone');
+        const uploadContainer = document.getElementById('upload-container');
+        const statusContainer = document.getElementById('status-container');
+        const statusText = document.getElementById('status-text');
+        const loader = document.getElementById('loader');
+        const resultContainer = document.getElementById('result-container');
+        const textContainer = document.getElementById('extracted-text');
+        const resetButton = document.getElementById('reset-button');
+        
+        // Gemini AI elements
+        const summarizeBtn = document.getElementById('summarize-btn');
+        const keyPointsBtn = document.getElementById('key-points-btn');
+        const geminiResultContainer = document.getElementById('gemini-result-container');
+        const geminiResultTitle = document.getElementById('gemini-result-title');
+        const geminiLoader = document.getElementById('gemini-loader');
+        const geminiOutput = document.getElementById('gemini-output');
+        const closeGeminiResultBtn = document.getElementById('close-gemini-result-btn');
+
+        // --- Event Listeners ---
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) handleFile(file);
+        });
+
+        resetButton.addEventListener('click', resetUI);
+        
+        closeGeminiResultBtn.addEventListener('click', () => {
+            geminiResultContainer.classList.add('hidden');
+        });
+
+        summarizeBtn.addEventListener('click', () => {
+            const text = textContainer.textContent;
+            if (text) {
+                const prompt = "Please provide a concise summary of the following document text:\n\n" + text;
+                runGeminiAction("Summary", prompt);
+            }
+        });
+
+        keyPointsBtn.addEventListener('click', () => {
+            const text = textContainer.textContent;
+            if (text) {
+                const prompt = "Please extract the key points from the following document text as a bulleted list:\n\n" + text;
+                runGeminiAction("Key Points", prompt);
+            }
+        });
+
+        // --- Drag and Drop ---
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+            document.body.addEventListener(eventName, preventDefaults, false);
+        });
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.add('drop-zone-active'), false);
+        });
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.remove('drop-zone-active'), false);
+        });
+        dropZone.addEventListener('drop', (e) => {
+            const files = e.dataTransfer.files;
+            if (files.length > 0) handleFile(files[0]);
+        }, false);
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        // --- Core Functions ---
+
+        /**
+         * Resets the entire UI to its initial state.
+         */
+        function resetUI() {
+            fileInput.value = '';
+            uploadContainer.classList.remove('hidden');
+            resultContainer.classList.add('hidden');
+            statusContainer.classList.add('hidden');
+            geminiResultContainer.classList.add('hidden');
+            textContainer.textContent = '';
+            geminiOutput.innerHTML = '';
+        }
+
+        /**
+         * Handles the uploaded file by dispatching to the correct parser based on file type.
+         * @param {File} file The uploaded file.
+         */
+        function handleFile(file) {
+            const fileType = file.type;
+            const fileName = file.name;
+            let extractor;
+
+            if (fileType === 'application/pdf' || fileName.endsWith('.pdf')) {
+                extractor = extractTextFromPdf;
+            } else if (fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || fileName.endsWith('.docx')) {
+                extractor = extractTextFromDocx;
+            } else if (fileType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || fileName.endsWith('.xlsx')) {
+                extractor = extractTextFromXlsx;
+            } else {
+                alert('Unsupported file type. Please upload a PDF, DOCX, or XLSX file.');
+                return;
+            }
+            
+            uploadContainer.classList.add('hidden');
+            statusContainer.classList.remove('hidden');
+            statusText.textContent = `Processing "${fileName}"...`;
+            loader.classList.remove('hidden');
+            
+            extractor(file);
+        }
+
+        /**
+         * Displays the extracted text and shows the result containers.
+         * @param {string} text The extracted text content.
+         */
+        function showResults(text) {
+            textContainer.textContent = text.trim();
+            resultContainer.classList.remove('hidden');
+            statusContainer.classList.add('hidden');
+        }
+
+        /**
+         * Handles errors during file processing.
+         * @param {Error} error The error object.
+         */
+        function handleError(error) {
+            console.error('Error processing file:', error);
+            statusText.textContent = 'Could not read the file. It might be corrupted or protected.';
+            loader.classList.add('hidden');
+            setTimeout(resetUI, 4000);
+        }
+
+        /**
+         * Extracts text from a PDF file.
+         * @param {File} file The PDF file.
+         */
+        function extractTextFromPdf(file) {
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const typedarray = new Uint8Array(e.target.result);
+                try {
+                    const pdf = await pdfjsLib.getDocument({ data: typedarray }).promise;
+                    let fullText = '';
+                    for (let i = 1; i <= pdf.numPages; i++) {
+                        statusText.textContent = `Extracting text from page ${i} of ${pdf.numPages}...`;
+                        const page = await pdf.getPage(i);
+                        const textContent = await page.getTextContent();
+                        fullText += textContent.items.map(item => item.str).join(' ') + '\n\n';
+                    }
+                    showResults(fullText);
+                } catch (error) {
+                    handleError(error);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        /**
+         * Extracts text from a DOCX file.
+         * @param {File} file The DOCX file.
+         */
+        function extractTextFromDocx(file) {
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const arrayBuffer = e.target.result;
+                    const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
+                    showResults(result.value);
+                } catch (error) {
+                    handleError(error);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        /**
+         * Extracts text from an XLSX file.
+         * @param {File} file The XLSX file.
+         */
+        function extractTextFromXlsx(file) {
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    let fullText = '';
+                    workbook.SheetNames.forEach(sheetName => {
+                        fullText += `--- Sheet: ${sheetName} ---\n\n`;
+                        const worksheet = workbook.Sheets[sheetName];
+                        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                        jsonData.forEach(row => {
+                            fullText += row.join('\t') + '\n';
+                        });
+                        fullText += '\n';
+                    });
+                    showResults(fullText);
+                } catch (error) {
+                    handleError(error);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+        
+        /**
+         * Finds URLs in a string and converts them to clickable HTML anchor tags.
+         * @param {string} text The input text.
+         * @returns {string} Text with HTML links.
+         */
+        function linkify(text) {
+            const urlRegex = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])|(\bwww\.[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
+            return text.replace(urlRegex, function(url) {
+                let href = url;
+                if (!href.match(/^[a-zA-Z]+:\/\//)) {
+                    href = 'https://' + href;
+                }
+                return `<a href="${href}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+            });
+        }
+
+        /**
+         * Prepares and executes the call to the Gemini API.
+         * @param {string} title The title for the result card (e.g., "Summary").
+         * @param {string} prompt The full prompt to send to the Gemini API.
+         */
+        async function runGeminiAction(title, prompt) {
+            geminiResultTitle.textContent = `✨ AI ${title}`;
+            geminiResultContainer.classList.remove('hidden');
+            geminiLoader.style.display = 'flex';
+            geminiOutput.innerHTML = '';
+            
+            try {
+                const resultText = await callGemini(prompt);
+                geminiOutput.innerHTML = linkify(resultText);
+            } catch (error) {
+                console.error("Gemini API Error:", error);
+                geminiOutput.textContent = "Sorry, there was an error communicating with the AI. Please try again.";
+            } finally {
+                geminiLoader.style.display = 'none';
+            }
+        }
+
+        /**
+         * Calls the Gemini API with a given prompt and handles retries.
+         * @param {string} prompt The prompt to send.
+         * @returns {Promise<string>} The generated text from the API.
+         */
+        async function callGemini(prompt) {
+            const apiKey = "AIzaSyD_hF3zYDCo4UoGn-LPdqa0nL9lbG3v4nA"; // This will be handled by the environment
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+            
+            const payload = {
+                contents: [{
+                    role: "user",
+                    parts: [{ text: prompt }]
+                }]
+            };
+
+            let response;
+            let retries = 3;
+            let delay = 1000;
+
+            for (let i = 0; i < retries; i++) {
+                try {
+                    response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (response.ok) {
+                        const result = await response.json();
+                        if (result.candidates && result.candidates.length > 0 &&
+                            result.candidates[0].content && result.candidates[0].content.parts &&
+                            result.candidates[0].content.parts.length > 0) {
+                            return result.candidates[0].content.parts[0].text;
+                        } else {
+                           throw new Error("Invalid response structure from Gemini API");
+                        }
+                    } else if (response.status === 429 || response.status >= 500) {
+                        if (i < retries - 1) {
+                            await new Promise(resolve => setTimeout(resolve, delay));
+                            delay *= 2;
+                        } else {
+                            throw new Error(`API request failed with status ${response.status}`);
+                        }
+                    } else {
+                        throw new Error(`API request failed with status ${response.status}`);
+                    }
+                } catch (error) {
+                    if (i < retries - 1) {
+                         await new Promise(resolve => setTimeout(resolve, delay));
+                         delay *= 2;
+                    } else {
+                        throw error;
+                    }
+                }
+            }
+             throw new Error("API request failed after multiple retries.");
+        }
+    </script>
+
+</body>
+</html>
