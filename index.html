@@ -1,253 +1,321 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="system">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Application Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="manifest" href="manifest.json">
     <style>
-        /* --- General Layout & Theme --- */
-        :root {
-            --primary-bg: #1e1e2f;
-            --secondary-bg: #27293d;
-            --card-bg: #3b3d55;
-            --text-color: #dcdce0;
-            --accent-color: #03a9f4;
-            --border-color: #4a4c6a;
+        /* Custom scrollbar for a cleaner look */
+        ::-webkit-scrollbar {
+            width: 8px;
         }
-
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4a5568;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #718096;
+        }
+        /* Using Inter as the default font */
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            margin: 0;
-            background-color: var(--primary-bg);
-            color: var(--text-color);
-            transition: background-color 0.3s;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        
+        /* Custom transition for sidebar width and main content margin */
+        #sidebar, main {
+            transition: all 0.3s ease-in-out;
         }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            /* padding: 20px; */
+        /* Styling for collapsed sidebar state */
+        .sidebar-collapsed #sidebar {
+            width: 5rem; /* 80px */
+        }
+        .sidebar-collapsed main {
+            margin-left: 5rem; /* 80px */
         }
 
-        /* --- Canvas Layout --- */
-        .canvas-container {
-            display: flex;
-            height: 100vh;
+        /* Hide text and adjust padding when collapsed */
+        .sidebar-collapsed .sidebar-text {
+            opacity: 0;
+            width: 0;
+            visibility: hidden;
         }
-
-        .canvas-sidebar {
-            background-color: var(--secondary-bg);
-            padding: 20px;
-            width: 250px;
-            display: flex;
-            flex-direction: column;
-            border-right: 1px solid var(--border-color);
-        }
-
-        .canvas-logo {
-            display: flex;
+        .sidebar-collapsed .nav-link {
             justify-content: center;
-            margin-bottom: 20px;
         }
-
-        .canvas-logo img {
-            max-width: 100%;
-            height: auto;
+        .sidebar-collapsed .nav-link-icon {
+            margin-right: 0;
         }
-
-        .canvas-nav {
-            flex-grow: 1;
-        }
-
-        .canvas-nav-link {
-            color: var(--text-color);
-            text-decoration: none;
-            padding: 10px;
-            display: block;
-            border-radius: 5px;
-            transition: background-color 0.2s;
-        }
-
-        .canvas-nav-link:hover {
-            background-color: var(--accent-color);
-        }
-
-        .canvas-main {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .canvas-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 10px 20px;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .canvas-header h1 {
-            margin: 0;
-            font-size: 24px;
-            color: var(--accent-color);
-        }
-
-        #back-button {
-            background-color: var(--accent-color);
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 5px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            display: none; /* Hidden by default */
-        }
-
-        #back-button:hover {
-            background-color: #0288d1;
-        }
-
-        /* --- Dashboard & App Viewer --- */
-        #dashboard-view {
-            display: flex;
-            flex-direction: column;
-            flex-grow: 1;
-            padding: 20px;
-            overflow-y: auto;
-        }
-
-        .canvas-welcome {
-            text-align: center;
-            color: var(--text-color);
-        }
-
-        .canvas-welcome h2 {
-            margin: 0 0 10px 0;
-        }
-
-        .canvas-welcome p {
-            margin: 0;
-            opacity: 0.8;
-        }
-
-        #app-viewer-view {
-            display: none; /* Hidden by default */
-            width: 100%;
-            height: calc(100vh - 72px); 
-            /* Full height minus header/padding */
-            padding: 20px;
-            box-sizing: border-box;
-        }
-
-        #app-iframe {
-            width: 100%;
-            height: 100%;
-            border: 1px solid var(--border-color);
-            border-radius: 5px;
-            background-color: white; /* Show a background while app loads */
+        .sidebar-collapsed #sidebar-toggle-button svg {
+            transform: rotate(180deg);
         }
 
     </style>
+    <script>
+        // This script is placed in the head to prevent Flash of Unstyled Content (FOUC)
+        // It immediately applies the theme and sidebar state based on localStorage.
+        const getTheme = () => {
+            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                return 'dark';
+            }
+            return 'light';
+        };
+
+        if (getTheme() === 'dark') {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+
+        // Apply sidebar collapsed state from localStorage
+        if (localStorage.getItem('sidebarCollapsed') === 'true') {
+            document.body.classList.add('sidebar-collapsed');
+        }
+
+    </script>
 </head>
-<body>
-        <div class="canvas-container">
-            <aside class="canvas-sidebar">
-                <div class="canvas-logo">
-                    <img src="icon-192.svg" alt="Logo" width="48" height="48">
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 transition-colors duration-300">
+
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <aside id="sidebar" class="fixed inset-y-0 left-0 z-30 w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transform -translate-x-full md:translate-x-0 flex flex-col">
+            <div class="flex items-center justify-center p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0 h-16">
+                <img src="https://placehold.co/48x48/03a9f4/ffffff?text=AD" alt="Logo" class="rounded-lg h-10 w-10 flex-shrink-0">
+                <h2 class="ml-3 text-xl font-semibold text-gray-700 dark:text-gray-200 sidebar-text whitespace-nowrap overflow-hidden transition-opacity duration-200">AppDash</h2>
+            </div>
+            <nav id="canvas-nav" class="p-4 space-y-2 flex-grow overflow-y-auto">
+                <!-- App links will be rendered here by JavaScript -->
+            </nav>
+            <!-- Sidebar Toggle Button for Desktop -->
+            <div class="p-4 border-t border-gray-200 dark:border-gray-700 hidden md:block flex-shrink-0">
+                <button id="sidebar-toggle-button" class="w-full flex items-center justify-center p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700">
+                     <svg class="w-6 h-6 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main content -->
+        <main class="flex-1 flex flex-col overflow-hidden md:ml-64">
+            <!-- Header -->
+            <header class="flex items-center justify-between p-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm flex-shrink-0 h-16">
+                <div class="flex items-center">
+                     <!-- Hamburger Menu for Mobile -->
+                    <button id="menu-button" class="md:hidden mr-4 p-2 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                    </button>
+                    <!-- Back Button -->
+                    <button id="back-button" class="hidden items-center px-4 py-2 bg-blue-500 text-white rounded-lg shadow hover:bg-blue-600 transition-colors">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                        Back
+                    </button>
+                    <h1 id="canvas-title" class="text-2xl font-bold text-gray-800 dark:text-white ml-4">Dashboard</h1>
                 </div>
-                <nav id="canvas-nav">
-                    <!-- App links will be rendered here -->
-                </nav>
-            </aside>
-            <main class="canvas-main">
-                <header class="canvas-header">
-                    <h1 id="canvas-title">Dashboard</h1>
-                    <button id="back-button" onclick="showDashboard()">← Back</button>
-                </header>
-                <section id="dashboard-view" class="canvas-dashboard">
-                    <div class="canvas-welcome">
-                        <h2>Welcome to Multi App Dashboard</h2>
-                        <p>Select an app from the sidebar to get started.</p>
+
+                <!-- Theme Switcher -->
+                <div class="relative">
+                    <button id="theme-toggle-button" class="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 dark:focus:ring-offset-gray-800 focus:ring-blue-500">
+                        <svg id="theme-icon-light" class="w-6 h-6 hidden"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" /></svg>
+                        <svg id="theme-icon-dark" class="w-6 h-6 hidden"><path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" /></svg>
+                        <svg id="theme-icon-system" class="w-6 h-6 hidden"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-1.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25A2.25 2.25 0 015.25 3h13.5A2.25 2.25 0 0121 5.25z" /></svg>
+                    </button>
+                    <div id="theme-menu" class="absolute right-0 mt-2 w-32 bg-white dark:bg-gray-700 rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5 hidden">
+                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600" data-theme="light">Light</a>
+                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600" data-theme="dark">Dark</a>
+                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600" data-theme="system">System</a>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Views Container -->
+            <div class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+                <!-- Dashboard View -->
+                <section id="dashboard-view">
+                    <div class="text-center p-8 bg-white dark:bg-gray-800 rounded-xl shadow-md">
+                        <h2 class="text-4xl font-bold text-blue-500 mb-2">Welcome!</h2>
+                        <p class="text-lg text-gray-600 dark:text-gray-400">Select an application from the sidebar to get started.</p>
                     </div>
                 </section>
-                <section id="app-viewer-view" class="canvas-app-viewer">
-                    <iframe id="app-iframe" name="app-frame"></iframe>
+
+                <!-- App Viewer View -->
+                <section id="app-viewer-view" class="hidden h-full">
+                    <iframe id="app-iframe" name="app-frame" class="w-full h-full border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-900"></iframe>
                 </section>
-            </main>
-        </div>
+            </div>
+        </main>
+    </div>
 
     <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', function() {
-                navigator.serviceWorker.register('service-worker.js');
-            });
-        }
-
-        const applicationFiles = [
-            "Fake News Detection System.html",
-            "PDF Extraction.html",
-            // "Math Problem Solver.html",
-            // "Math_Gallery.html",
-            // "Math Gallery Camera.html",
-            // "Math.html",
-            "Math_Problem_Solver.html",
-            "Advanced_Equation_Grapher.html"
-        ];
-
-        const dashboardView = document.getElementById('dashboard-view');
-        const appView = document.getElementById('app-viewer-view');
-        const appIframe = document.getElementById('app-iframe');
-        const backButton = document.getElementById('back-button');
-        const headerTitle = document.getElementById('canvas-title');
-        const nav = document.getElementById('canvas-nav');
-
-        function renderSidebar() {
-            nav.innerHTML = '';
-            applicationFiles.forEach(filename => {
-                const appName = filename.split('.')[0]
-                    .replace(/[-_]/g, ' ')
-                    .replace(/\b\w/g, l => l.toUpperCase());
-                const link = document.createElement('a');
-                link.className = 'canvas-nav-link';
-                link.textContent = appName;
-                link.href = '#';
-                link.setAttribute('data-app-file', filename);
-                link.onclick = (e) => {
-                    e.preventDefault();
-                    loadApp(filename);
-                };
-                nav.appendChild(link);
-            });
-        }
-
-        function loadApp(filename) {
-            appIframe.src = filename;
-            showAppViewer(filename);
-        }
-
-        function showAppViewer(filename) {
-            const appName = filename.split('.')[0].replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-            headerTitle.textContent = appName;
-            dashboardView.style.display = 'none';
-            appView.style.display = 'block';
-            backButton.style.display = 'inline-block';
-        }
-
-        function showDashboard() {
-            headerTitle.textContent = "Dashboard";
-            appView.style.display = 'none';
-            backButton.style.display = 'none';
-            dashboardView.style.display = 'block';
-            appIframe.src = 'about:blank';
-        }
-
         document.addEventListener('DOMContentLoaded', () => {
+            // --- App Data ---
+            const applicationFiles = [
+                { name: "Fake News Detection", file: "Fake News Detection System.html", icon: "🔍" },
+                { name: "PDF Extractor", file: "PDF Extraction.html", icon: "📄" },
+                { name: "Math Problem Solver", file: "Math_Problem_Solver.html", icon: "🧮" },
+                { name: "Equation Grapher", file: "Advanced_Equation_Grapher.html", icon: "📈" },
+            ];
+
+            // --- Element References ---
+            const dashboardView = document.getElementById('dashboard-view');
+            const appView = document.getElementById('app-viewer-view');
+            const appIframe = document.getElementById('app-iframe');
+            const backButton = document.getElementById('back-button');
+            const headerTitle = document.getElementById('canvas-title');
+            const nav = document.getElementById('canvas-nav');
+            const menuButton = document.getElementById('menu-button');
+            const sidebar = document.getElementById('sidebar');
+            const sidebarToggleButton = document.getElementById('sidebar-toggle-button');
+
+            // --- App Navigation ---
+            function renderSidebar() {
+                nav.innerHTML = '';
+                applicationFiles.forEach(app => {
+                    const link = document.createElement('a');
+                    link.className = 'nav-link flex items-center px-4 py-2 text-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white transition-colors overflow-hidden';
+                    link.href = '#';
+                    link.innerHTML = `
+                        <span class="nav-link-icon mr-3 flex-shrink-0">${app.icon}</span> 
+                        <span class="sidebar-text whitespace-nowrap transition-opacity duration-200">${app.name}</span>`;
+                    link.onclick = (e) => {
+                        e.preventDefault();
+                        loadApp(app);
+                        // Hide sidebar on mobile after clicking a link
+                        if (window.innerWidth < 768) {
+                           sidebar.classList.add('-translate-x-full');
+                        }
+                    };
+                    nav.appendChild(link);
+                });
+            }
+
+            function loadApp(app) {
+                appIframe.src = app.file;
+                showAppViewer(app.name);
+            }
+
+            function showAppViewer(appName) {
+                headerTitle.textContent = appName;
+                dashboardView.style.display = 'none';
+                appView.classList.remove('hidden');
+                backButton.classList.remove('hidden');
+                backButton.classList.add('flex');
+            }
+
+            function showDashboard() {
+                headerTitle.textContent = "Dashboard";
+                appView.classList.add('hidden');
+                backButton.classList.add('hidden');
+                backButton.classList.remove('flex');
+                dashboardView.style.display = 'block';
+                appIframe.src = 'about:blank';
+            }
+
+            backButton.addEventListener('click', showDashboard);
+
+            // --- Sidebar Toggle Logic ---
+            // Mobile Sidebar Toggle
+            menuButton.addEventListener('click', () => {
+                sidebar.classList.toggle('-translate-x-full');
+            });
+            
+            // Desktop Sidebar Toggle
+            sidebarToggleButton.addEventListener('click', () => {
+                document.body.classList.toggle('sidebar-collapsed');
+                // Save the state to localStorage
+                if (document.body.classList.contains('sidebar-collapsed')) {
+                    localStorage.setItem('sidebarCollapsed', 'true');
+                } else {
+                    localStorage.setItem('sidebarCollapsed', 'false');
+                }
+            });
+            
+            // Close mobile sidebar if clicking outside of it
+            document.addEventListener('click', (e) => {
+                if (window.innerWidth < 768 && !sidebar.contains(e.target) && !menuButton.contains(e.target)) {
+                    sidebar.classList.add('-translate-x-full');
+                }
+            });
+
+
+            // --- Theme Switcher Logic ---
+            const themeToggleButton = document.getElementById('theme-toggle-button');
+            const themeMenu = document.getElementById('theme-menu');
+            const themeIcons = {
+                light: document.getElementById('theme-icon-light'),
+                dark: document.getElementById('theme-icon-dark'),
+                system: document.getElementById('theme-icon-system')
+            };
+            
+            Object.values(themeIcons).forEach(icon => {
+                icon.setAttribute('stroke', 'currentColor');
+                icon.setAttribute('fill', 'none');
+                icon.setAttribute('stroke-width', '1.5');
+            });
+
+            const updateThemeIcon = (theme) => {
+                Object.values(themeIcons).forEach(icon => icon.classList.add('hidden'));
+                const effectiveTheme = (theme === 'system') 
+                    ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') 
+                    : theme;
+
+                if (theme === 'system') themeIcons.system.classList.remove('hidden');
+                else if (theme === 'dark') themeIcons.dark.classList.remove('hidden');
+                else themeIcons.light.classList.remove('hidden');
+            };
+
+            const applyTheme = (theme) => {
+                if (theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+                updateThemeIcon(theme);
+            };
+
+            themeToggleButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                themeMenu.classList.toggle('hidden');
+            });
+            
+            document.addEventListener('click', () => themeMenu.classList.add('hidden'));
+
+
+            themeMenu.addEventListener('click', (e) => {
+                e.preventDefault();
+                const theme = e.target.dataset.theme;
+                if (theme) {
+                    localStorage.theme = theme;
+                    applyTheme(theme);
+                }
+            });
+
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+                if (localStorage.theme === 'system' || !('theme' in localStorage)) {
+                    applyTheme('system');
+                }
+            });
+
+
+            // --- Initial Load ---
             renderSidebar();
             showDashboard();
+            applyTheme(localStorage.theme || 'system');
+
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('service-worker.js').catch(err => {
+                        console.error('Service Worker registration failed:', err);
+                    });
+                });
+            }
         });
     </script>
 </body>
-
 </html>
