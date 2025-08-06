@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Equation Grapher</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Include the math.js library for advanced expression parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.1/math.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .custom-shadow {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-4xl bg-white rounded-2xl custom-shadow overflow-hidden p-6 md:p-8 space-y-6">
+        
+        <header class="text-center">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-800">Advanced Equation Grapher</h1>
+            <p class="text-gray-500 mt-2">Enter an equation like <code class="bg-gray-200 p-1 rounded-md">y = x^2</code> or <code class="bg-gray-200 p-1 rounded-md">y = sin(x)</code>.</p>
+        </header>
+
+        <!-- Input Form -->
+        <div class="flex flex-col sm:flex-row items-center gap-4">
+            <input type="text" id="equationInput" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" placeholder="e.g., y = x^2" value="y = x^2">
+            <button id="plotButton" class="w-full sm:w-auto bg-indigo-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105">
+                Plot Graph
+            </button>
+        </div>
+        <div id="error-message" class="text-red-500 text-center font-medium hidden">Invalid equation. Please use 'y = [expression]' format.</div>
+
+
+        <!-- Main Content Area -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- Graph Canvas -->
+            <div class="lg:col-span-2 bg-gray-50 border rounded-lg p-4 overflow-hidden">
+                <canvas id="graphCanvas"></canvas>
+            </div>
+
+            <!-- Coordinates Table -->
+            <div class="lg:col-span-1 bg-gray-50 border rounded-lg p-4">
+                <h2 class="text-xl font-semibold mb-3 text-gray-700 text-center">Coordinates</h2>
+                <div id="coordinates-container" class="h-96 overflow-y-auto">
+                    <table class="w-full text-center">
+                        <thead class="sticky top-0 bg-gray-200">
+                            <tr>
+                                <th class="py-2 px-4 font-semibold">x</th>
+                                <th class="py-2 px-4 font-semibold">y</th>
+                            </tr>
+                        </thead>
+                        <tbody id="coordinatesTable">
+                            <!-- Coordinate data will be inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const equationInput = document.getElementById('equationInput');
+        const plotButton = document.getElementById('plotButton');
+        const canvas = document.getElementById('graphCanvas');
+        const ctx = canvas.getContext('2d');
+        const coordinatesTable = document.getElementById('coordinatesTable');
+        const errorMessage = document.getElementById('error-message');
+
+        let scale = 20; // Pixels per unit
+        let originX, originY;
+
+        // --- Core Functions ---
+
+        /**
+         * Parses and compiles an equation string using math.js.
+         * @param {string} eq - The equation string, e.g., "y = x^2".
+         * @returns {object|null} A compiled expression object from math.js or null on failure.
+         */
+        function parseAndCompileEquation(eq) {
+            try {
+                // Isolate the expression part of the equation
+                const expressionStr = eq.substring(eq.indexOf('=') + 1).trim();
+                if (!expressionStr) return null;
+                
+                // Compile the expression
+                const node = math.parse(expressionStr);
+                return node.compile();
+            } catch (err) {
+                console.error("Parsing Error:", err);
+                return null;
+            }
+        }
+
+        /**
+         * Sets up the canvas dimensions and coordinate system.
+         */
+        function setupCanvas() {
+            const container = canvas.parentElement;
+            // Ensure a square canvas for a 1:1 aspect ratio
+            const size = Math.min(container.clientWidth, window.innerHeight * 0.6);
+            canvas.width = size;
+            canvas.height = size;
+            originX = canvas.width / 2;
+            originY = canvas.height / 2;
+        }
+
+        /**
+         * Draws the grid lines, axes, and labels on the canvas.
+         */
+        function drawGrid() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.font = `${scale / 2}px Inter`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            // Draw grid lines
+            ctx.strokeStyle = '#e0e0e0';
+            ctx.lineWidth = 1;
+            for (let i = 1; originX + i * scale < canvas.width; i++) { // Vertical right
+                ctx.beginPath();
+                ctx.moveTo(originX + i * scale, 0);
+                ctx.lineTo(originX + i * scale, canvas.height);
+                ctx.stroke();
+                ctx.fillStyle = '#9e9e9e';
+                ctx.fillText(i, originX + i * scale, originY + scale * 0.75);
+            }
+            for (let i = 1; originX - i * scale > 0; i++) { // Vertical left
+                ctx.beginPath();
+                ctx.moveTo(originX - i * scale, 0);
+                ctx.lineTo(originX - i * scale, canvas.height);
+                ctx.stroke();
+                ctx.fillStyle = '#9e9e9e';
+                ctx.fillText(-i, originX - i * scale, originY + scale * 0.75);
+            }
+            for (let i = 1; originY + i * scale < canvas.height; i++) { // Horizontal down
+                ctx.beginPath();
+                ctx.moveTo(0, originY + i * scale);
+                ctx.lineTo(canvas.width, originY + i * scale);
+                ctx.stroke();
+                ctx.fillStyle = '#9e9e9e';
+                ctx.fillText(-i, originX - scale * 0.75, originY + i * scale);
+            }
+            for (let i = 1; originY - i * scale > 0; i++) { // Horizontal up
+                ctx.beginPath();
+                ctx.moveTo(0, originY - i * scale);
+                ctx.lineTo(canvas.width, originY - i * scale);
+                ctx.stroke();
+                ctx.fillStyle = '#9e9e9e';
+                ctx.fillText(i, originX - scale * 0.75, originY - i * scale);
+            }
+
+            // Draw axes
+            ctx.strokeStyle = '#616161';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, originY);
+            ctx.lineTo(canvas.width, originY);
+            ctx.stroke(); // X-axis
+            ctx.beginPath();
+            ctx.moveTo(originX, 0);
+            ctx.lineTo(originX, canvas.height);
+            ctx.stroke(); // Y-axis
+        }
+
+        /**
+         * Plots the curve on the canvas from a compiled expression.
+         * @param {object} compiledExpr - The compiled expression from math.js.
+         */
+        function plotCurve(compiledExpr) {
+            ctx.strokeStyle = '#4f46e5';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+
+            let firstPoint = true;
+
+            // Iterate through each pixel column to draw a smooth curve
+            for (let px = 0; px < canvas.width; px++) {
+                const x = (px - originX) / scale;
+                try {
+                    const y = compiledExpr.evaluate({ x: x });
+                    
+                    // Check for real, finite numbers to avoid gaps from complex numbers or infinities
+                    if (Number.isFinite(y)) {
+                        const canvasY = originY - y * scale;
+                        
+                        // Move to the first point, then draw lines to subsequent points
+                        if (firstPoint) {
+                            ctx.moveTo(px, canvasY);
+                            firstPoint = false;
+                        } else {
+                            ctx.lineTo(px, canvasY);
+                        }
+                    } else {
+                        // If we hit a non-finite number (like in 1/x at x=0), start a new path segment
+                        firstPoint = true;
+                    }
+                } catch (e) {
+                    firstPoint = true; // Error in evaluation, start a new path
+                }
+            }
+            ctx.stroke();
+        }
+
+        /**
+         * Generates coordinate points and populates the table.
+         * @param {object} compiledExpr - The compiled expression from math.js.
+         */
+        function populateCoordinates(compiledExpr) {
+            coordinatesTable.innerHTML = ''; // Clear previous data
+            let html = '';
+            for (let x = -10; x <= 10; x++) {
+                try {
+                    const y = compiledExpr.evaluate({ x: x });
+                    const yDisplay = Number.isFinite(y) ? y.toFixed(3) : 'undefined';
+                    html += `
+                        <tr class="border-b border-gray-200 hover:bg-gray-100">
+                            <td class="py-2 px-4">${x}</td>
+                            <td class="py-2 px-4">${yDisplay}</td>
+                        </tr>
+                    `;
+                } catch (e) {
+                     html += `
+                        <tr class="border-b border-gray-200 hover:bg-gray-100">
+                            <td class="py-2 px-4">${x}</td>
+                            <td class="py-2 px-4">Error</td>
+                        </tr>
+                    `;
+                }
+            }
+            coordinatesTable.innerHTML = html;
+        }
+
+        /**
+         * Main function to handle plotting.
+         */
+        function handlePlot() {
+            const equation = equationInput.value;
+            const compiledExpr = parseAndCompileEquation(equation);
+
+            if (compiledExpr) {
+                errorMessage.classList.add('hidden');
+                drawGrid();
+                plotCurve(compiledExpr);
+                populateCoordinates(compiledExpr);
+            } else {
+                errorMessage.classList.remove('hidden');
+                drawGrid(); // Clear canvas but show grid
+                coordinatesTable.innerHTML = ''; // Clear table
+            }
+        }
+        
+        // --- Event Listeners ---
+        plotButton.addEventListener('click', handlePlot);
+        equationInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                handlePlot();
+            }
+        });
+
+        // Debounced resize handler for performance
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                setupCanvas();
+                handlePlot();
+            }, 100);
+        });
+        
+        // Initial Plot
+        window.onload = () => {
+            setupCanvas();
+            handlePlot();
+        };
+
+    </script>
+</body>
+</html>
