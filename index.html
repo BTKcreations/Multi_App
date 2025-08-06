@@ -30,19 +30,66 @@
             /* padding: 20px; */
         }
 
-        /* --- Header & Back Button --- */
-        header {
+        /* --- Canvas Layout --- */
+        .canvas-container {
+            display: flex;
+            height: 100vh;
+        }
+
+        .canvas-sidebar {
+            background-color: var(--secondary-bg);
+            padding: 20px;
+            width: 250px;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--border-color);
+        }
+
+        .canvas-logo {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .canvas-logo img {
+            max-width: 100%;
+            height: auto;
+        }
+
+        .canvas-nav {
+            flex-grow: 1;
+        }
+
+        .canvas-nav-link {
+            color: var(--text-color);
+            text-decoration: none;
+            padding: 10px;
+            display: block;
+            border-radius: 5px;
+            transition: background-color 0.2s;
+        }
+
+        .canvas-nav-link:hover {
+            background-color: var(--accent-color);
+        }
+
+        .canvas-main {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .canvas-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
+            padding: 10px 20px;
             border-bottom: 1px solid var(--border-color);
-            padding-bottom: 5px;
-            padding-top: 5px;
-            margin-bottom: 10px;
         }
 
-        header h3 {
+        .canvas-header h1 {
             margin: 0;
+            font-size: 24px;
             color: var(--accent-color);
         }
 
@@ -50,7 +97,7 @@
             background-color: var(--accent-color);
             color: white;
             border: none;
-            padding: 5px 10px;
+            padding: 8px 15px;
             border-radius: 5px;
             font-size: 16px;
             cursor: pointer;
@@ -62,45 +109,36 @@
             background-color: #0288d1;
         }
 
-        /* --- Dashboard Card Grid --- */
+        /* --- Dashboard & App Viewer --- */
         #dashboard-view {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 25px;
-        }
-
-        .card {
-            background-color: var(--card-bg);
-            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
             padding: 20px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-            cursor: pointer;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            border-left: 4px solid var(--accent-color);
+            overflow-y: auto;
         }
 
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(3, 169, 244, 0.3);
-        }
-
-        .card h2 {
-            margin-top: 0;
-            color: #fff;
-        }
-
-        .card p {
+        .canvas-welcome {
+            text-align: center;
             color: var(--text-color);
+        }
+
+        .canvas-welcome h2 {
+            margin: 0 0 10px 0;
+        }
+
+        .canvas-welcome p {
+            margin: 0;
             opacity: 0.8;
         }
 
-        /* --- App Viewer --- */
         #app-viewer-view {
             display: none; /* Hidden by default */
             width: 100%;
-            /* height: 100vh;  */
             height: calc(100vh - 72px); 
             /* Full height minus header/padding */
+            padding: 20px;
+            box-sizing: border-box;
         }
 
         #app-iframe {
@@ -114,20 +152,31 @@
     </style>
 </head>
 <body>
-
-    <div class="container">
-        <header>
-            <h3 id="header-title">Dashboard</h3>
-            <button id="back-button" onclick="showDashboard()">←</button>
-        </header>
-
-        <div id="dashboard-view">
-            </div>
-
-        <div id="app-viewer-view">
-            <iframe id="app-iframe" name="app-frame"></iframe>
+        <div class="canvas-container">
+            <aside class="canvas-sidebar">
+                <div class="canvas-logo">
+                    <img src="icon-192.svg" alt="Logo" width="48" height="48">
+                </div>
+                <nav id="canvas-nav">
+                    <!-- App links will be rendered here -->
+                </nav>
+            </aside>
+            <main class="canvas-main">
+                <header class="canvas-header">
+                    <h1 id="canvas-title">Dashboard</h1>
+                    <button id="back-button" onclick="showDashboard()">← Back</button>
+                </header>
+                <section id="dashboard-view" class="canvas-dashboard">
+                    <div class="canvas-welcome">
+                        <h2>Welcome to Multi App Dashboard</h2>
+                        <p>Select an app from the sidebar to get started.</p>
+                    </div>
+                </section>
+                <section id="app-viewer-view" class="canvas-app-viewer">
+                    <iframe id="app-iframe" name="app-frame"></iframe>
+                </section>
+            </main>
         </div>
-    </div>
 
     <script>
         if ('serviceWorker' in navigator) {
@@ -136,16 +185,6 @@
             });
         }
 
-        /************************************************************************
-         * CONFIGURATION
-         * Because a browser cannot automatically read a folder's contents,
-         * you must list your application HTML files here manually.
-         *
-         * TO ADD A NEW APP:
-         * 1. Create your new file (e.g., "app3.html").
-         * 2. Add its name to this list. For example:
-         * const applicationFiles = ["app1.html", "app2.html", "app3.html"];
-         ************************************************************************/
         const applicationFiles = [
             "Fake News Detection System.html",
             "PDF Extraction.html",
@@ -155,94 +194,59 @@
             // "Math.html",
             "Math_Problem_Solver.html",
             "Advanced_Equation_Grapher.html"
-            // Add "app3.html", "my-new-app.html", etc. here
         ];
 
-
-        // --- Get references to the HTML elements we need to control ---
         const dashboardView = document.getElementById('dashboard-view');
         const appView = document.getElementById('app-viewer-view');
         const appIframe = document.getElementById('app-iframe');
         const backButton = document.getElementById('back-button');
-        const headerTitle = document.getElementById('header-title');
+        const headerTitle = document.getElementById('canvas-title');
+        const nav = document.getElementById('canvas-nav');
 
-
-        // --- Core Functions ---
-
-        /**
-         * Generates the cards on the dashboard based on the applicationFiles list.
-         */
-        function renderDashboard() {
-            // Clear any existing cards
-            dashboardView.innerHTML = '';
-
+        function renderSidebar() {
+            nav.innerHTML = '';
             applicationFiles.forEach(filename => {
-                const card = document.createElement('div');
-                card.className = 'card';
-                card.setAttribute('data-app-file', filename); // Store filename in the element
-
-                // Create a nice title from the filename
                 const appName = filename.split('.')[0]
-                                        .replace(/[-_]/g, ' ') // replace hyphens/underscores with spaces
-                                        .replace(/\b\w/g, l => l.toUpperCase()); // Capitalize each word
-
-                card.innerHTML = `
-                    <h2>${appName}</h2>
-                    <p>Click to launch this application.</p>
-                `;
-                dashboardView.appendChild(card);
+                    .replace(/[-_]/g, ' ')
+                    .replace(/\b\w/g, l => l.toUpperCase());
+                const link = document.createElement('a');
+                link.className = 'canvas-nav-link';
+                link.textContent = appName;
+                link.href = '#';
+                link.setAttribute('data-app-file', filename);
+                link.onclick = (e) => {
+                    e.preventDefault();
+                    loadApp(filename);
+                };
+                nav.appendChild(link);
             });
         }
 
-        /**
-         * Loads a specific application into the iframe and shows it.
-         * @param {string} filename - The HTML file to load (e.g., "app1.html").
-         */
         function loadApp(filename) {
-            appIframe.src = filename; // Load the file into the iframe
+            appIframe.src = filename;
             showAppViewer(filename);
         }
 
-        /**
-         * Hides the dashboard and shows the app viewer.
-         */
         function showAppViewer(filename) {
-            const appName = filename.split('.')[0].replace(/\b\w/g, l => l.toUpperCase());
+            const appName = filename.split('.')[0].replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
             headerTitle.textContent = appName;
             dashboardView.style.display = 'none';
             appView.style.display = 'block';
-            backButton.style.display = 'block';
+            backButton.style.display = 'inline-block';
         }
 
-        /**
-         * Hides the app viewer and shows the dashboard.
-         */
         function showDashboard() {
             headerTitle.textContent = "Dashboard";
             appView.style.display = 'none';
             backButton.style.display = 'none';
-            dashboardView.style.display = 'grid'; // Use grid to restore layout
-            appIframe.src = 'about:blank'; // Clear the iframe to free up memory
+            dashboardView.style.display = 'block';
+            appIframe.src = 'about:blank';
         }
 
-
-        // --- Event Listeners ---
-
-        // Listen for clicks on the dashboard. This is more efficient than adding a listener to every card.
-        dashboardView.addEventListener('click', (event) => {
-            const card = event.target.closest('.card'); // Find the card that was clicked
-            if (card) {
-                const filename = card.getAttribute('data-app-file');
-                loadApp(filename);
-            }
-        });
-
-        // This runs when the whole page has loaded.
         document.addEventListener('DOMContentLoaded', () => {
-            renderDashboard();
+            renderSidebar();
             showDashboard();
         });
-
     </script>
 </body>
 
