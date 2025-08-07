@@ -98,21 +98,28 @@
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 transition-colors duration-300">
 
     <div class="flex h-screen overflow-hidden">
-        <aside id="sidebar" class="fixed inset-y-0 left-0 z-30 w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transform -translate-x-full md:translate-x-0 flex flex-col">
-            <div class="flex items-center justify-center p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0 h-16">
-                <img src="https://placehold.co/48x48/03a9f4/ffffff?text=AD" alt="Logo" class="rounded-lg h-10 w-10 flex-shrink-0">
-                <h2 class="ml-3 text-xl font-semibold text-gray-700 dark:text-gray-200 sidebar-text whitespace-nowrap overflow-hidden transition-opacity duration-200">
+        <aside id="sidebar"
+            class="fixed inset-y-0 left-0 z-30 w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transform -translate-x-full md:translate-x-0 flex flex-col">
+            <div
+                class="flex items-center justify-center p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0 h-16">
+                <img src="https://placehold.co/48x48/03a9f4/ffffff?text=AD" alt="Logo"
+                    class="rounded-lg h-10 w-10 flex-shrink-0">
+                <h2
+                    class="ml-3 text-xl font-semibold text-gray-700 dark:text-gray-200 sidebar-text whitespace-nowrap overflow-hidden transition-opacity duration-200">
                     AppDash</h2>
             </div>
             <div class="p-4 flex-shrink-0">
-                <input id="app-search-input" type="text" placeholder="Search apps..." class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                <input id="app-search-input" type="text" placeholder="Search apps..."
+                    class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
             </div>
 
             <nav id="canvas-nav" class="flex-grow overflow-y-auto space-y-1">
-                </nav>
+            </nav>
             <div class="p-4 border-t border-gray-200 dark:border-gray-700 hidden md:block flex-shrink-0">
-                <button id="sidebar-toggle-button" class="w-full flex items-center justify-center p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700">
-                    <svg class="w-6 h-6 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <button id="sidebar-toggle-button"
+                    class="w-full flex items-center justify-center p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <svg class="w-6 h-6 transition-transform duration-300" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7">
                         </path>
                     </svg>
@@ -121,16 +128,23 @@
         </aside>
 
         <main class="flex-1 flex flex-col overflow-hidden md:ml-64">
-            <header class="flex items-center justify-between p-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm flex-shrink-0 h-16">
+            <header
+                class="flex items-center justify-between p-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm flex-shrink-0 h-16">
                 <div class="flex items-center">
-                    <button id="menu-button" class="md:hidden mr-4 p-2 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
+                    <button id="menu-button"
+                        class="md:hidden mr-4 p-2 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 6h16M4 12h16m-7 6h7"></path>
                         </svg>
                     </button>
-                    <button id="back-button" class="hidden items-center px-4 py-2 bg-blue-500 text-white rounded-lg shadow hover:bg-blue-600 transition-colors">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                    <button id="back-button"
+                        class="hidden items-center px-4 py-2 bg-blue-500 text-white rounded-lg shadow hover:bg-blue-600 transition-colors">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                         </svg>
                         Back
                     </button>
@@ -148,12 +162,14 @@
                             <button id="user-menu-button" class="flex items-center space-x-2">
                                 <img id="user-avatar" class="w-8 h-8 rounded-full" src="" alt="User Avatar">
                             </button>
-                            <div id="user-dropdown" class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-700 rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5 hidden">
+                            <div id="user-dropdown"
+                                class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-700 rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5 hidden">
                                 <div class="px-4 py-2 border-b border-gray-200 dark:border-gray-600">
                                     <p class="text-sm text-gray-700 dark:text-gray-200" id="user-name"></p>
                                     <p class="text-xs text-gray-500 dark:text-gray-400 truncate" id="user-email"></p>
                                 </div>
-                                <a href="#" id="signout-button" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600">Sign
+                                <a href="#" id="signout-button"
+                                    class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600">Sign
                                     Out</a>
                             </div>
                         </div>
@@ -172,7 +188,8 @@
                 </section>
 
                 <section id="app-viewer-view" class="hidden h-full">
-                    <iframe id="app-iframe" name="app-frame" class="w-full h-full border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-900"></iframe>
+                    <iframe id="app-iframe" name="app-frame"
+                        class="w-full h-full border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-900"></iframe>
                 </section>
             </div>
         </main>
@@ -180,16 +197,16 @@
     <script>
         // --- Google Sign-In Initialization ---
         // This is called when the Google library finishes loading.
-        window.onload = function() {
+        window.onload = function () {
             google.accounts.id.initialize({
                 client_id: '952892249789-e2h3j0k5ffdgv2hdnuebsfv3m7ul9mr2.apps.googleusercontent.com', // Your Client ID
                 callback: handleCredentialResponse
             });
             google.accounts.id.renderButton(
                 document.getElementById("g_id_signin"), {
-                    theme: "outline",
-                    size: "large"
-                }
+                theme: "outline",
+                size: "large"
+            }
             );
             google.accounts.id.prompt();
         };
@@ -343,7 +360,7 @@
             }
 
             // Handles successful Google login
-            window.handleCredentialResponse = function(response) {
+            window.handleCredentialResponse = function (response) {
                 const credential = jwt_decode(response.credential);
                 currentUser = {
                     id: credential.sub,
@@ -379,11 +396,82 @@
 
             // Navigation: Loads an app into the iframe
             function loadApp(app) {
-                appIframe.src = app.file;
-                showAppViewer(app.name);
-                logUserActivity('Viewed App', {
-                    appName: app.name
-                });
+                const showComingSoon = (appName) => {
+                    const comingSoonHTML = `
+            <html>
+            <head>
+                <style>
+                    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+                    @keyframes slideIn { from { transform: translateY(-30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+                    body {
+                        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        height: 100vh;
+                        margin: 0;
+                        background: linear-gradient(45deg, #6a11cb 0%, #2575fc 100%);
+                        color: white;
+                        text-align: center;
+                        overflow: hidden;
+                    }
+                    .container {
+                        animation: fadeIn 1.5s ease-out;
+                    }
+                    h1 {
+                        font-size: 4.5em;
+                        font-weight: bold;
+                        text-shadow: 2px 2px 8px rgba(0,0,0,0.3);
+                        animation: slideIn 1s ease-out forwards;
+                    }
+                    p {
+                        font-size: 1.5em;
+                        animation: slideIn 1s ease-out 0.5s forwards;
+                        opacity: 0; /* Start hidden for staggered animation */
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <h1>Coming Soon</h1>
+                    <p>Our team is working hard on this!</p>
+                </div>
+            </body>
+            </html>`;
+                    appIframe.srcdoc = comingSoonHTML;
+                    showAppViewer(appName || 'Coming Soon');
+                    logUserActivity('Viewed Coming Soon', {
+                        appName: appName
+                    });
+                };
+
+                if (!app || !app.file) {
+                    showComingSoon(app ? app.name : 'Unknown App');
+                    return;
+                }
+
+                // Use a HEAD request for efficiency, as we only need to check for existence.
+                fetch(app.file, {
+                    method: 'HEAD'
+                })
+                    .then(response => {
+                        if (response.ok) {
+                            // File exists, load it.
+                            appIframe.src = app.file;
+                            showAppViewer(app.name);
+                            logUserActivity('Viewed App', {
+                                appName: app.name
+                            });
+                        } else {
+                            // File does not exist (e.g., 404 error).
+                            showComingSoon(app.name);
+                        }
+                    })
+                    .catch(error => {
+                        // Network error or other issue.
+                        console.error('Error checking file existence:', error);
+                        showComingSoon(app.name);
+                    });
             }
 
             // Navigation: Shows the iframe view
