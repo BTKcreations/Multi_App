@@ -11,153 +11,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="manifest" href="manifest.json">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // ... all your existing element references ...
-            const userArea = document.getElementById('user-area');
-            const userMenu = document.getElementById('user-menu');
-            const userMenuButton = document.getElementById('user-menu-button');
-            const userDropdown = document.getElementById('user-dropdown');
-            const signoutButton = document.getElementById('signout-button');
-            const googleSignInButton = document.getElementById('g_id_signin');
-
-            let currentUser = null; // To store logged-in user info
-
-            // --- History Tracking Function ---
-            // We'll define this in the next section, but declare it here
-            function logUserActivity(action, details) {
-                if (!currentUser) return; // Only log if a user is signed in
-
-                const userId = currentUser.id;
-                let history = JSON.parse(localStorage.getItem('userHistory')) || {};
-                if (!history[userId]) {
-                    history[userId] = [];
-                }
-
-                history[userId].unshift({ // Add to the beginning of the array
-                    action: action,
-                    details: details,
-                    timestamp: new Date().toISOString()
-                });
-
-                // Optional: Limit history size
-                if (history[userId].length > 50) {
-                    history[userId].pop();
-                }
-
-                localStorage.setItem('userHistory', JSON.stringify(history));
-            }
-
-
-            // --- Google Sign-In Initialization ---
-            window.onload = function () {
-                google.accounts.id.initialize({
-                    client_id: '952892249789-e2h3j0k5ffdgv2hdnuebsfv3m7ul9mr2.apps.googleusercontent.com', // <-- PASTE YOUR CLIENT ID HERE
-                    callback: handleCredentialResponse
-                });
-                google.accounts.id.renderButton(
-                    document.getElementById("g_id_signin"),
-                    { theme: "outline", size: "large" }  // Customize the button
-                );
-                google.accounts.id.prompt(); // One-tap sign-in prompt
-            };
-
-            function handleCredentialResponse(response) {
-                // Decode the JWT token to get user profile
-                const credential = jwt_decode(response.credential);
-
-                currentUser = {
-                    id: credential.sub, // The unique Google ID for the user
-                    name: credential.name,
-                    email: credential.email,
-                    avatar: credential.picture
-                };
-
-                localStorage.setItem('loggedInUser', JSON.stringify(currentUser)); // Store user session
-                updateUIAfterLogin();
-                logUserActivity('Logged In', { browser: navigator.userAgent });
-            }
-
-            function updateUIAfterLogin() {
-                if (!currentUser) return;
-
-                // Hide Google's button and show user menu
-                googleSignInButton.style.display = 'none';
-                userMenu.classList.remove('hidden');
-
-                // Populate user info
-                document.getElementById('user-name').textContent = currentUser.name;
-                document.getElementById('user-email').textContent = currentUser.email;
-                document.getElementById('user-avatar').src = currentUser.avatar;
-            }
-
-            // --- Sign-Out Logic ---
-            signoutButton.addEventListener('click', (e) => {
-                e.preventDefault();
-                logUserActivity('Logged Out', {});
-
-                currentUser = null;
-                localStorage.removeItem('loggedInUser');
-                google.accounts.id.disableAutoSelect(); // Prevent auto re-login
-
-                // Reset UI
-                googleSignInButton.style.display = 'block';
-                userMenu.classList.add('hidden');
-                userDropdown.classList.add('hidden'); // Hide dropdown
-                showDashboard(); // Go back to dashboard on sign out
-            });
-
-            // --- User Menu Dropdown Toggle ---
-            userMenuButton.addEventListener('click', () => {
-                userDropdown.classList.toggle('hidden');
-            });
-
-            // --- Check for existing session on page load ---
-            function checkSession() {
-                const storedUser = localStorage.getItem('loggedInUser');
-                if (storedUser) {
-                    currentUser = JSON.parse(storedUser);
-                    updateUIAfterLogin();
-                }
-            }
-
-            // You'll also need a JWT decoding function. A small, simple one is enough.
-            function jwt_decode(token) {
-                try {
-                    return JSON.parse(atob(token.split('.')[1]));
-                } catch (e) {
-                    return null;
-                }
-            }
-
-            // --- Modify Existing Functions to Log Activity ---
-            // Old function: function loadApp(app) { ... }
-            function loadApp(app) {
-                appIframe.src = app.file;
-                showAppViewer(app.name);
-                logUserActivity('Viewed App', { appName: app.name }); // <-- Add this line
-            }
-
-            // Old function: function showDashboard() { ... }
-            function showDashboard() {
-                headerTitle.textContent = "Dashboard";
-                appView.classList.add('hidden');
-                backButton.classList.add('hidden');
-                backButton.classList.remove('flex');
-                dashboardView.style.display = 'block';
-                appIframe.src = 'about:blank';
-                logUserActivity('Viewed Dashboard', {}); // <-- Add this line
-            }
-
-            // --- Initial Load ---
-            renderSidebar();
-            showDashboard(); // This will now log the initial dashboard view
-            applyTheme(localStorage.theme || 'system');
-            checkSession(); // Check if user is already logged in
-
-            // Your service worker registration...
-        });
-    </script>
 
     <style>
         /* Custom scrollbar for a cleaner look */
@@ -326,7 +179,7 @@
                         </div>
                     </div>
                 </div>
-
+                
             </header>
 
             <!-- Views Container -->
@@ -348,173 +201,223 @@
             </div>
         </main>
     </div>
+    <!-- Google Sign-In Button -->
+<script>
+    // --- Google Sign-In Initialization ---
+    // This is called when the Google library finishes loading.
+    window.onload = function () {
+        google.accounts.id.initialize({
+            client_id: '952892249789-e2h3j0k5ffdgv2hdnuebsfv3m7ul9mr2.apps.googleusercontent.com', // Your Client ID
+            callback: handleCredentialResponse
+        });
+        google.accounts.id.renderButton(
+            document.getElementById("g_id_signin"),
+            { theme: "outline", size: "large" }
+        );
+        google.accounts.id.prompt();
+    };
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // --- App Data ---
-            const applicationFiles = [
-                { name: "Fake News Detection", file: "Fake News Detection System.html", icon: "🔍" },
-                { name: "PDF Extractor", file: "PDF Extraction.html", icon: "📄" },
-                { name: "Math Problem Solver", file: "Math_Problem_Solver.html", icon: "🧮" },
-                { name: "Equation Grapher", file: "Advanced_Equation_Grapher.html", icon: "📈" },
-            ];
+    // This runs after the main HTML document is ready.
+    document.addEventListener('DOMContentLoaded', () => {
+        
+        // --- 1. APP DATA ---
+        const applicationFiles = [
+            { name: "Fake News Detection", file: "Fake News Detection System.html", icon: "🔍" },
+            { name: "PDF Extractor", file: "PDF Extraction.html", icon: "📄" },
+            { name: "Math Problem Solver", file: "Math_Problem_Solver.html", icon: "🧮" },
+            { name: "Equation Grapher", file: "Advanced_Equation_Grapher.html", icon: "📈" },
+        ];
 
-            // --- Element References ---
-            const dashboardView = document.getElementById('dashboard-view');
-            const appView = document.getElementById('app-viewer-view');
-            const appIframe = document.getElementById('app-iframe');
-            const backButton = document.getElementById('back-button');
-            const headerTitle = document.getElementById('canvas-title');
-            const nav = document.getElementById('canvas-nav');
-            const menuButton = document.getElementById('menu-button');
-            const sidebar = document.getElementById('sidebar');
-            const sidebarToggleButton = document.getElementById('sidebar-toggle-button');
+        // --- 2. ELEMENT REFERENCES ---
+        // Views and Core App
+        const dashboardView = document.getElementById('dashboard-view');
+        const appView = document.getElementById('app-viewer-view');
+        const appIframe = document.getElementById('app-iframe');
+        const backButton = document.getElementById('back-button');
+        const headerTitle = document.getElementById('canvas-title');
+        const nav = document.getElementById('canvas-nav');
+        // Sidebar
+        const sidebar = document.getElementById('sidebar');
+        const menuButton = document.getElementById('menu-button');
+        const sidebarToggleButton = document.getElementById('sidebar-toggle-button');
+        // User Authentication & Menu
+        const userArea = document.getElementById('user-area');
+        const userMenu = document.getElementById('user-menu');
+        const userMenuButton = document.getElementById('user-menu-button');
+        const userDropdown = document.getElementById('user-dropdown');
+        const signoutButton = document.getElementById('signout-button');
+        const googleSignInButton = document.getElementById('g_id_signin');
+        // Theme
+        // Note: Theme elements are missing from your HTML, so these will be null.
+        // I've kept the logic but you may need to add the HTML for it again.
+        const themeToggleButton = document.getElementById('theme-toggle-button');
+        const themeMenu = document.getElementById('theme-menu');
+        const themeIcons = {
+            light: document.getElementById('theme-icon-light'),
+            dark: document.getElementById('theme-icon-dark'),
+            system: document.getElementById('theme-icon-system')
+        };
+        
+        // --- 3. STATE VARIABLES ---
+        let currentUser = null;
 
-            // --- App Navigation ---
-            function renderSidebar() {
-                nav.innerHTML = '';
-                applicationFiles.forEach(app => {
-                    const link = document.createElement('a');
-                    link.className = 'nav-link flex items-center px-4 py-2 text-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white transition-colors overflow-hidden';
-                    link.href = '#';
-                    link.innerHTML = `
-                        <span class="nav-link-icon mr-3 flex-shrink-0">${app.icon}</span> 
-                        <span class="sidebar-text whitespace-nowrap transition-opacity duration-200">${app.name}</span>`;
-                    link.onclick = (e) => {
-                        e.preventDefault();
-                        loadApp(app);
-                        // Hide sidebar on mobile after clicking a link
-                        if (window.innerWidth < 768) {
-                            sidebar.classList.add('-translate-x-full');
-                        }
-                    };
-                    nav.appendChild(link);
-                });
+        // --- 4. FUNCTIONS ---
+
+        // Utility to decode Google's token
+        function jwt_decode(token) {
+            try {
+                return JSON.parse(atob(token.split('.')[1]));
+            } catch (e) {
+                return null;
             }
+        }
 
-            function loadApp(app) {
-                appIframe.src = app.file;
-                showAppViewer(app.name);
+        // Logs user actions to localStorage
+        function logUserActivity(action, details) {
+            if (!currentUser) return;
+            const userId = currentUser.id;
+            let history = JSON.parse(localStorage.getItem('userHistory')) || {};
+            if (!history[userId]) {
+                history[userId] = [];
             }
-
-            function showAppViewer(appName) {
-                headerTitle.textContent = appName;
-                dashboardView.style.display = 'none';
-                appView.classList.remove('hidden');
-                backButton.classList.remove('hidden');
-                backButton.classList.add('flex');
-            }
-
-            function showDashboard() {
-                headerTitle.textContent = "Dashboard";
-                appView.classList.add('hidden');
-                backButton.classList.add('hidden');
-                backButton.classList.remove('flex');
-                dashboardView.style.display = 'block';
-                appIframe.src = 'about:blank';
-            }
-
-            backButton.addEventListener('click', showDashboard);
-
-            // --- Sidebar Toggle Logic ---
-            // Mobile Sidebar Toggle
-            menuButton.addEventListener('click', () => {
-                sidebar.classList.toggle('-translate-x-full');
+            history[userId].unshift({
+                action: action,
+                details: details || {},
+                timestamp: new Date().toISOString()
             });
+            if (history[userId].length > 50) history[userId].pop();
+            localStorage.setItem('userHistory', JSON.stringify(history));
+        }
 
-            // Desktop Sidebar Toggle
-            sidebarToggleButton.addEventListener('click', () => {
-                document.body.classList.toggle('sidebar-collapsed');
-                // Save the state to localStorage
-                if (document.body.classList.contains('sidebar-collapsed')) {
-                    localStorage.setItem('sidebarCollapsed', 'true');
-                } else {
-                    localStorage.setItem('sidebarCollapsed', 'false');
-                }
-            });
-
-            // Close mobile sidebar if clicking outside of it
-            document.addEventListener('click', (e) => {
-                if (window.innerWidth < 768 && !sidebar.contains(e.target) && !menuButton.contains(e.target)) {
-                    sidebar.classList.add('-translate-x-full');
-                }
-            });
-
-
-            // --- Theme Switcher Logic ---
-            const themeToggleButton = document.getElementById('theme-toggle-button');
-            const themeMenu = document.getElementById('theme-menu');
-            const themeIcons = {
-                light: document.getElementById('theme-icon-light'),
-                dark: document.getElementById('theme-icon-dark'),
-                system: document.getElementById('theme-icon-system')
+        // Handles successful Google login
+        window.handleCredentialResponse = function(response) {
+            const credential = jwt_decode(response.credential);
+            currentUser = {
+                id: credential.sub,
+                name: credential.name,
+                email: credential.email,
+                avatar: credential.picture
             };
+            localStorage.setItem('loggedInUser', JSON.stringify(currentUser));
+            updateUIAfterLogin();
+            logUserActivity('Logged In', { browser: navigator.userAgent });
+        }
 
-            Object.values(themeIcons).forEach(icon => {
-                icon.setAttribute('stroke', 'currentColor');
-                icon.setAttribute('fill', 'none');
-                icon.setAttribute('stroke-width', '1.5');
+        // Updates the UI to show the logged-in user
+        function updateUIAfterLogin() {
+            if (!currentUser) return;
+            googleSignInButton.style.display = 'none';
+            userMenu.classList.remove('hidden');
+            document.getElementById('user-name').textContent = currentUser.name;
+            document.getElementById('user-email').textContent = currentUser.email;
+            document.getElementById('user-avatar').src = currentUser.avatar;
+        }
+        
+        // Checks for a logged-in user on page load
+        function checkSession() {
+            const storedUser = localStorage.getItem('loggedInUser');
+            if (storedUser) {
+                currentUser = JSON.parse(storedUser);
+                updateUIAfterLogin();
+            }
+        }
+        
+        // Navigation: Loads an app into the iframe
+        function loadApp(app) {
+            appIframe.src = app.file;
+            showAppViewer(app.name);
+            logUserActivity('Viewed App', { appName: app.name });
+        }
+
+        // Navigation: Shows the iframe view
+        function showAppViewer(appName) {
+            headerTitle.textContent = appName;
+            dashboardView.style.display = 'none';
+            appView.classList.remove('hidden');
+            backButton.classList.remove('hidden');
+            backButton.classList.add('flex');
+        }
+
+        // Navigation: Shows the main dashboard
+        function showDashboard() {
+            headerTitle.textContent = "Dashboard";
+            appView.classList.add('hidden');
+            backButton.classList.add('hidden');
+            backButton.classList.remove('flex');
+            dashboardView.style.display = 'block';
+            appIframe.src = 'about:blank';
+            // Only log dashboard view if a user is logged in
+            if(currentUser) {
+                logUserActivity('Viewed Dashboard');
+            }
+        }
+
+        // Renders the app links in the sidebar
+        function renderSidebar() {
+            nav.innerHTML = '';
+            applicationFiles.forEach(app => {
+                const link = document.createElement('a');
+                link.className = 'nav-link flex items-center px-4 py-2 text-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white transition-colors overflow-hidden';
+                link.href = '#';
+                link.innerHTML = `
+                    <span class="nav-link-icon mr-3 flex-shrink-0">${app.icon}</span> 
+                    <span class="sidebar-text whitespace-nowrap transition-opacity duration-200">${app.name}</span>`;
+                link.onclick = (e) => {
+                    e.preventDefault();
+                    loadApp(app);
+                    if (window.innerWidth < 768) {
+                        sidebar.classList.add('-translate-x-full');
+                    }
+                };
+                nav.appendChild(link);
             });
+        }
+        
+        // --- 5. EVENT LISTENERS ---
 
-            const updateThemeIcon = (theme) => {
-                Object.values(themeIcons).forEach(icon => icon.classList.add('hidden'));
-                const effectiveTheme = (theme === 'system')
-                    ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
-                    : theme;
-
-                if (theme === 'system') themeIcons.system.classList.remove('hidden');
-                else if (theme === 'dark') themeIcons.dark.classList.remove('hidden');
-                else themeIcons.light.classList.remove('hidden');
-            };
-
-            const applyTheme = (theme) => {
-                if (theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                    document.documentElement.classList.add('dark');
-                } else {
-                    document.documentElement.classList.remove('dark');
-                }
-                updateThemeIcon(theme);
-            };
-
-            themeToggleButton.addEventListener('click', (e) => {
-                e.stopPropagation();
-                themeMenu.classList.toggle('hidden');
-            });
-
-            document.addEventListener('click', () => themeMenu.classList.add('hidden'));
-
-
-            themeMenu.addEventListener('click', (e) => {
-                e.preventDefault();
-                const theme = e.target.dataset.theme;
-                if (theme) {
-                    localStorage.theme = theme;
-                    applyTheme(theme);
-                }
-            });
-
-            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-                if (localStorage.theme === 'system' || !('theme' in localStorage)) {
-                    applyTheme('system');
-                }
-            });
-
-
-            // --- Initial Load ---
-            renderSidebar();
+        // Back button to return to dashboard
+        backButton.addEventListener('click', showDashboard);
+        
+        // Sign out button
+        signoutButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            logUserActivity('Logged Out');
+            currentUser = null;
+            localStorage.removeItem('loggedInUser');
+            google.accounts.id.disableAutoSelect();
+            googleSignInButton.style.display = 'block';
+            userMenu.classList.add('hidden');
+            userDropdown.classList.add('hidden');
             showDashboard();
-            applyTheme(localStorage.theme || 'system');
+        });
 
-            if ('serviceWorker' in navigator) {
-                window.addEventListener('load', () => {
-                    navigator.serviceWorker.register('service-worker.js').catch(err => {
-                        console.error('Service Worker registration failed:', err);
-                    });
-                });
+        // Toggle user dropdown menu
+        userMenuButton.addEventListener('click', () => userDropdown.classList.toggle('hidden'));
+
+        // Toggle mobile sidebar
+        menuButton.addEventListener('click', () => sidebar.classList.toggle('-translate-x-full'));
+
+        // Toggle desktop sidebar (collapsed/expanded)
+        sidebarToggleButton.addEventListener('click', () => {
+            document.body.classList.toggle('sidebar-collapsed');
+            localStorage.setItem('sidebarCollapsed', document.body.classList.contains('sidebar-collapsed'));
+        });
+
+        // Close mobile sidebar when clicking outside
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth < 768 && !sidebar.contains(e.target) && !menuButton.contains(e.target)) {
+                sidebar.classList.add('-translate-x-full');
             }
         });
-    </script>
 
+        // --- 6. INITIALIZATION CALLS ---
+        renderSidebar();
+        showDashboard();
+        checkSession(); // Check for logged-in user
+        // The theme script from the <head> already handles initial theme setup
+    });
+</script>
+    
 </body>
 
 </html>
