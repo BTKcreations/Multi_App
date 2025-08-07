@@ -11,6 +11,153 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="manifest" href="manifest.json">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // ... all your existing element references ...
+            const userArea = document.getElementById('user-area');
+            const userMenu = document.getElementById('user-menu');
+            const userMenuButton = document.getElementById('user-menu-button');
+            const userDropdown = document.getElementById('user-dropdown');
+            const signoutButton = document.getElementById('signout-button');
+            const googleSignInButton = document.getElementById('g_id_signin');
+
+            let currentUser = null; // To store logged-in user info
+
+            // --- History Tracking Function ---
+            // We'll define this in the next section, but declare it here
+            function logUserActivity(action, details) {
+                if (!currentUser) return; // Only log if a user is signed in
+
+                const userId = currentUser.id;
+                let history = JSON.parse(localStorage.getItem('userHistory')) || {};
+                if (!history[userId]) {
+                    history[userId] = [];
+                }
+
+                history[userId].unshift({ // Add to the beginning of the array
+                    action: action,
+                    details: details,
+                    timestamp: new Date().toISOString()
+                });
+
+                // Optional: Limit history size
+                if (history[userId].length > 50) {
+                    history[userId].pop();
+                }
+
+                localStorage.setItem('userHistory', JSON.stringify(history));
+            }
+
+
+            // --- Google Sign-In Initialization ---
+            window.onload = function () {
+                google.accounts.id.initialize({
+                    client_id: '952892249789-e2h3j0k5ffdgv2hdnuebsfv3m7ul9mr2.apps.googleusercontent.com', // <-- PASTE YOUR CLIENT ID HERE
+                    callback: handleCredentialResponse
+                });
+                google.accounts.id.renderButton(
+                    document.getElementById("g_id_signin"),
+                    { theme: "outline", size: "large" }  // Customize the button
+                );
+                google.accounts.id.prompt(); // One-tap sign-in prompt
+            };
+
+            function handleCredentialResponse(response) {
+                // Decode the JWT token to get user profile
+                const credential = jwt_decode(response.credential);
+
+                currentUser = {
+                    id: credential.sub, // The unique Google ID for the user
+                    name: credential.name,
+                    email: credential.email,
+                    avatar: credential.picture
+                };
+
+                localStorage.setItem('loggedInUser', JSON.stringify(currentUser)); // Store user session
+                updateUIAfterLogin();
+                logUserActivity('Logged In', { browser: navigator.userAgent });
+            }
+
+            function updateUIAfterLogin() {
+                if (!currentUser) return;
+
+                // Hide Google's button and show user menu
+                googleSignInButton.style.display = 'none';
+                userMenu.classList.remove('hidden');
+
+                // Populate user info
+                document.getElementById('user-name').textContent = currentUser.name;
+                document.getElementById('user-email').textContent = currentUser.email;
+                document.getElementById('user-avatar').src = currentUser.avatar;
+            }
+
+            // --- Sign-Out Logic ---
+            signoutButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                logUserActivity('Logged Out', {});
+
+                currentUser = null;
+                localStorage.removeItem('loggedInUser');
+                google.accounts.id.disableAutoSelect(); // Prevent auto re-login
+
+                // Reset UI
+                googleSignInButton.style.display = 'block';
+                userMenu.classList.add('hidden');
+                userDropdown.classList.add('hidden'); // Hide dropdown
+                showDashboard(); // Go back to dashboard on sign out
+            });
+
+            // --- User Menu Dropdown Toggle ---
+            userMenuButton.addEventListener('click', () => {
+                userDropdown.classList.toggle('hidden');
+            });
+
+            // --- Check for existing session on page load ---
+            function checkSession() {
+                const storedUser = localStorage.getItem('loggedInUser');
+                if (storedUser) {
+                    currentUser = JSON.parse(storedUser);
+                    updateUIAfterLogin();
+                }
+            }
+
+            // You'll also need a JWT decoding function. A small, simple one is enough.
+            function jwt_decode(token) {
+                try {
+                    return JSON.parse(atob(token.split('.')[1]));
+                } catch (e) {
+                    return null;
+                }
+            }
+
+            // --- Modify Existing Functions to Log Activity ---
+            // Old function: function loadApp(app) { ... }
+            function loadApp(app) {
+                appIframe.src = app.file;
+                showAppViewer(app.name);
+                logUserActivity('Viewed App', { appName: app.name }); // <-- Add this line
+            }
+
+            // Old function: function showDashboard() { ... }
+            function showDashboard() {
+                headerTitle.textContent = "Dashboard";
+                appView.classList.add('hidden');
+                backButton.classList.add('hidden');
+                backButton.classList.remove('flex');
+                dashboardView.style.display = 'block';
+                appIframe.src = 'about:blank';
+                logUserActivity('Viewed Dashboard', {}); // <-- Add this line
+            }
+
+            // --- Initial Load ---
+            renderSidebar();
+            showDashboard(); // This will now log the initial dashboard view
+            applyTheme(localStorage.theme || 'system');
+            checkSession(); // Check if user is already logged in
+
+            // Your service worker registration...
+        });
+    </script>
 
     <style>
         /* Custom scrollbar for a cleaner look */
@@ -367,153 +514,7 @@
             }
         });
     </script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // ... all your existing element references ...
-            const userArea = document.getElementById('user-area');
-            const userMenu = document.getElementById('user-menu');
-            const userMenuButton = document.getElementById('user-menu-button');
-            const userDropdown = document.getElementById('user-dropdown');
-            const signoutButton = document.getElementById('signout-button');
-            const googleSignInButton = document.getElementById('g_id_signin');
 
-            let currentUser = null; // To store logged-in user info
-
-            // --- History Tracking Function ---
-            // We'll define this in the next section, but declare it here
-            function logUserActivity(action, details) {
-                if (!currentUser) return; // Only log if a user is signed in
-
-                const userId = currentUser.id;
-                let history = JSON.parse(localStorage.getItem('userHistory')) || {};
-                if (!history[userId]) {
-                    history[userId] = [];
-                }
-
-                history[userId].unshift({ // Add to the beginning of the array
-                    action: action,
-                    details: details,
-                    timestamp: new Date().toISOString()
-                });
-
-                // Optional: Limit history size
-                if (history[userId].length > 50) {
-                    history[userId].pop();
-                }
-
-                localStorage.setItem('userHistory', JSON.stringify(history));
-            }
-
-
-            // --- Google Sign-In Initialization ---
-            window.onload = function () {
-                google.accounts.id.initialize({
-                    client_id: '952892249789-e2h3j0k5ffdgv2hdnuebsfv3m7ul9mr2.apps.googleusercontent.com', // <-- PASTE YOUR CLIENT ID HERE
-                    callback: handleCredentialResponse
-                });
-                google.accounts.id.renderButton(
-                    document.getElementById("g_id_signin"),
-                    { theme: "outline", size: "large" }  // Customize the button
-                );
-                google.accounts.id.prompt(); // One-tap sign-in prompt
-            };
-
-            function handleCredentialResponse(response) {
-                // Decode the JWT token to get user profile
-                const credential = jwt_decode(response.credential);
-
-                currentUser = {
-                    id: credential.sub, // The unique Google ID for the user
-                    name: credential.name,
-                    email: credential.email,
-                    avatar: credential.picture
-                };
-
-                localStorage.setItem('loggedInUser', JSON.stringify(currentUser)); // Store user session
-                updateUIAfterLogin();
-                logUserActivity('Logged In', { browser: navigator.userAgent });
-            }
-
-            function updateUIAfterLogin() {
-                if (!currentUser) return;
-
-                // Hide Google's button and show user menu
-                googleSignInButton.style.display = 'none';
-                userMenu.classList.remove('hidden');
-
-                // Populate user info
-                document.getElementById('user-name').textContent = currentUser.name;
-                document.getElementById('user-email').textContent = currentUser.email;
-                document.getElementById('user-avatar').src = currentUser.avatar;
-            }
-
-            // --- Sign-Out Logic ---
-            signoutButton.addEventListener('click', (e) => {
-                e.preventDefault();
-                logUserActivity('Logged Out', {});
-
-                currentUser = null;
-                localStorage.removeItem('loggedInUser');
-                google.accounts.id.disableAutoSelect(); // Prevent auto re-login
-
-                // Reset UI
-                googleSignInButton.style.display = 'block';
-                userMenu.classList.add('hidden');
-                userDropdown.classList.add('hidden'); // Hide dropdown
-                showDashboard(); // Go back to dashboard on sign out
-            });
-
-            // --- User Menu Dropdown Toggle ---
-            userMenuButton.addEventListener('click', () => {
-                userDropdown.classList.toggle('hidden');
-            });
-
-            // --- Check for existing session on page load ---
-            function checkSession() {
-                const storedUser = localStorage.getItem('loggedInUser');
-                if (storedUser) {
-                    currentUser = JSON.parse(storedUser);
-                    updateUIAfterLogin();
-                }
-            }
-
-            // You'll also need a JWT decoding function. A small, simple one is enough.
-            function jwt_decode(token) {
-                try {
-                    return JSON.parse(atob(token.split('.')[1]));
-                } catch (e) {
-                    return null;
-                }
-            }
-
-            // --- Modify Existing Functions to Log Activity ---
-            // Old function: function loadApp(app) { ... }
-            function loadApp(app) {
-                appIframe.src = app.file;
-                showAppViewer(app.name);
-                logUserActivity('Viewed App', { appName: app.name }); // <-- Add this line
-            }
-
-            // Old function: function showDashboard() { ... }
-            function showDashboard() {
-                headerTitle.textContent = "Dashboard";
-                appView.classList.add('hidden');
-                backButton.classList.add('hidden');
-                backButton.classList.remove('flex');
-                dashboardView.style.display = 'block';
-                appIframe.src = 'about:blank';
-                logUserActivity('Viewed Dashboard', {}); // <-- Add this line
-            }
-
-            // --- Initial Load ---
-            renderSidebar();
-            showDashboard(); // This will now log the initial dashboard view
-            applyTheme(localStorage.theme || 'system');
-            checkSession(); // Check if user is already logged in
-
-            // Your service worker registration...
-        });
-    </script>
 </body>
 
 </html>
