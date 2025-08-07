@@ -395,10 +395,35 @@
             }
 
             // Navigation: Loads an app into the iframe
-            function loadApp(app) {
-                const showComingSoon = (appName) => {
+            // Navigation: Loads an app into the iframe, with a check for existence
+            async function loadApp(app) {
+                // Immediately update the header and view
+                showAppViewer(app.name);
+                logUserActivity('Viewed App', {
+                    appName: app.name
+                });
+
+                // Clear the iframe first to show a clean state while checking
+                appIframe.srcdoc = '<p style="font-family: Inter, sans-serif; padding: 2rem;">Loading...</p>';
+
+                try {
+                    // Use a HEAD request to efficiently check if the file exists without downloading it
+                    const response = await fetch(app.file, { method: 'HEAD' });
+
+                    if (response.ok) {
+                        // The file exists, so load it into the iframe
+                        appIframe.src = app.file;
+                    } else {
+                        // The file does not exist (e.g., a 404 error)
+                        throw new Error('App not found');
+                    }
+                } catch (error) {
+                    // This block catches network errors or the "App not found" error thrown above
+                    console.warn(`Could not load app "${app.name}":`, error.message);
+
+                    // Display a "Coming Soon" message directly in the iframe
                     const comingSoonHTML = `
-            <html>
+                        <html>
             <head>
                 <style>
                     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -437,41 +462,11 @@
                     <p>Our team is working hard on this!</p>
                 </div>
             </body>
-            </html>`;
-                    // appIframe.srcdoc = comingSoonHTML;
-                    // showAppViewer(appName || 'Coming Soon');
-                    // logUserActivity('Viewed Coming Soon', {
-                        // appName: appName
-                    // });
-                };
-
-                if (!app || !app.file) {
-                    showComingSoon(app ? app.name : 'Unknown App');
-                    return;
+            </html>
+                    `;
+                    // The 'srcdoc' attribute is the safest way to inject HTML into an iframe
+                    appIframe.srcdoc = comingSoonHTML;
                 }
-
-                // Use a HEAD request for efficiency, as we only need to check for existence.
-                fetch(app.file, {
-                    method: 'HEAD'
-                })
-                    .then(response => {
-                        if (response.ok) {
-                            // File exists, load it.
-                            appIframe.src = app.file;
-                            showAppViewer(app.name);
-                            logUserActivity('Viewed App', {
-                                appName: app.name
-                            });
-                        } else {
-                            // File does not exist (e.g., 404 error).
-                            showComingSoon(app.name);
-                        }
-                    })
-                    .catch(error => {
-                        // Network error or other issue.
-                        console.error('Error checking file existence:', error);
-                        showComingSoon(app.name);
-                    });
             }
 
             // Navigation: Shows the iframe view
