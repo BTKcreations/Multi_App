@@ -44,6 +44,7 @@
                     <option value="ko-KR">Korean</option>
                     <option value="ru-RU">Russian</option>
                     <option value="hi-IN">Hindi</option>
+                    <option value="te-IN">Telugu</option>
                 </select>
             </div>
             <div>
@@ -57,7 +58,8 @@
                     <option value="ja">Japanese</option>
                     <option value="ko">Korean</option>
                     <option value="ru">Russian</option>
-                     <option value="hi">Hindi</option>
+                    <option value="hi">Hindi</option>
+                    <option value="te">Telugu</option>
                 </select>
             </div>
         </div>
@@ -88,8 +90,8 @@
             </div>
         </div>
          <!-- Message Box -->
-        <div id="message-box" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center">
-            <div class="bg-white dark:bg-gray-800 p-5 rounded-lg shadow-xl text-center">
+        <div id="message-box" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50">
+            <div class="bg-white dark:bg-gray-800 p-5 rounded-lg shadow-xl text-center max-w-sm mx-auto">
                 <h3 class="text-lg font-bold mb-4" id="message-title"></h3>
                 <p id="message-content"></p>
                 <button id="message-ok-btn" class="mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">OK</button>
@@ -210,35 +212,50 @@
             }
         });
 
-        // --- Placeholder Translation Function ---
-        // In a real application, you would replace this with a call to a translation API
-        // like Google Translate, DeepL, or Microsoft Translator.
-        function translateText(text) {
+        // --- Google Translate API Function ---
+        async function translateText(text) {
+            // Get the language codes from the select elements
+            const sourceLang = sourceLangSelect.value.split('-')[0];
             const targetLang = targetLangSelect.value;
             statusElem.textContent = "Translating...";
 
-            // This is a mock translation.
-            const mockTranslations = {
-                "es": "¡Hola Mundo!",
-                "fr": "Bonjour le monde!",
-                "de": "Hallo Welt!",
-                "en": "Hello World!",
-                "it": "Ciao mondo!",
-                "ja": "こんにちは世界！",
-                "ko": "안녕하세요 세계!",
-                "ru": "Привет, мир!",
-                "hi": "नमस्ते दुनिया!",
-            };
-
-            // Simulate network delay
-            setTimeout(() => {
-                const translated = `[${targetLang.toUpperCase()}] ${text}`; // Simple mock
-                const mockTranslation = mockTranslations[targetLang] || "Translation not available.";
-
-                // A more "realistic" mock based on the input text
-                translatedTextElem.textContent = `"${text}" in ${targetLang.toUpperCase()} is mocked as: "${mockTranslation}"`;
+            // Don't send empty strings for translation
+            if (!text.trim()) {
                 statusElem.textContent = "Listening...";
-            }, 500);
+                return;
+            }
+
+            try {
+                // Construct the Google Translate API URL
+                const apiUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
+
+                // Fetch the translation
+                const response = await fetch(apiUrl);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+
+                // The response is a nested array. The translated text is in the first part.
+                // We join the segments in case of longer translations.
+                const translated = data[0].map(item => item[0]).join('');
+
+                if (translated) {
+                    translatedTextElem.textContent = translated;
+                } else {
+                    translatedTextElem.textContent = "Translation failed to return a result.";
+                }
+
+            } catch (error) {
+                console.error('Translation API error:', error);
+                translatedTextElem.textContent = "Could not translate text.";
+                showMessage('Translation Error', 'Failed to fetch translation. Please check your internet connection and try again.');
+            } finally {
+                 // Set status back to listening if recognition is still active
+                if (!stopBtn.classList.contains('hidden')) {
+                    statusElem.textContent = "Listening... Speak into your microphone.";
+                }
+            }
         }
 
     </script>
