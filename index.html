@@ -92,33 +92,27 @@
         if (localStorage.getItem('sidebarCollapsed') === 'true') {
             document.body.classList.add('sidebar-collapsed');
         }
-
     </script>
 </head>
 
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 transition-colors duration-300">
 
     <div class="flex h-screen overflow-hidden">
-        <!-- Sidebar -->
-        <aside id="sidebar"
-            class="fixed inset-y-0 left-0 z-30 w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transform -translate-x-full md:translate-x-0 flex flex-col">
-            <div
-                class="flex items-center justify-center p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0 h-16">
-                <img src="https://placehold.co/48x48/03a9f4/ffffff?text=AD" alt="Logo"
-                    class="rounded-lg h-10 w-10 flex-shrink-0">
-                <h2
-                    class="ml-3 text-xl font-semibold text-gray-700 dark:text-gray-200 sidebar-text whitespace-nowrap overflow-hidden transition-opacity duration-200">
+        <aside id="sidebar" class="fixed inset-y-0 left-0 z-30 w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transform -translate-x-full md:translate-x-0 flex flex-col">
+            <div class="flex items-center justify-center p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0 h-16">
+                <img src="https://placehold.co/48x48/03a9f4/ffffff?text=AD" alt="Logo" class="rounded-lg h-10 w-10 flex-shrink-0">
+                <h2 class="ml-3 text-xl font-semibold text-gray-700 dark:text-gray-200 sidebar-text whitespace-nowrap overflow-hidden transition-opacity duration-200">
                     AppDash</h2>
             </div>
-            <nav id="canvas-nav" class="p-4 space-y-2 flex-grow overflow-y-auto">
-                <!-- App links will be rendered here by JavaScript -->
-            </nav>
-            <!-- Sidebar Toggle Button for Desktop -->
+            <div class="p-4 flex-shrink-0">
+                <input id="app-search-input" type="text" placeholder="Search apps..." class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+            </div>
+
+            <nav id="canvas-nav" class="flex-grow overflow-y-auto space-y-1">
+                </nav>
             <div class="p-4 border-t border-gray-200 dark:border-gray-700 hidden md:block flex-shrink-0">
-                <button id="sidebar-toggle-button"
-                    class="w-full flex items-center justify-center p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700">
-                    <svg class="w-6 h-6 transition-transform duration-300" fill="none" stroke="currentColor"
-                        viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <button id="sidebar-toggle-button" class="w-full flex items-center justify-center p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <svg class="w-6 h-6 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7">
                         </path>
                     </svg>
@@ -126,35 +120,23 @@
             </div>
         </aside>
 
-        <!-- Main content -->
         <main class="flex-1 flex flex-col overflow-hidden md:ml-64">
-            <!-- Header -->
-            <header
-                class="flex items-center justify-between p-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm flex-shrink-0 h-16">
+            <header class="flex items-center justify-between p-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm flex-shrink-0 h-16">
                 <div class="flex items-center">
-                    <!-- Hamburger Menu for Mobile -->
-                    <button id="menu-button"
-                        class="md:hidden mr-4 p-2 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M4 6h16M4 12h16m-7 6h7"></path>
+                    <button id="menu-button" class="md:hidden mr-4 p-2 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
                         </svg>
                     </button>
-                    <!-- Back Button -->
-                    <button id="back-button"
-                        class="hidden items-center px-4 py-2 bg-blue-500 text-white rounded-lg shadow hover:bg-blue-600 transition-colors">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                    <button id="back-button" class="hidden items-center px-4 py-2 bg-blue-500 text-white rounded-lg shadow hover:bg-blue-600 transition-colors">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                         </svg>
                         Back
                     </button>
                     <h1 id="canvas-title" class="text-2xl font-bold text-gray-800 dark:text-white ml-4">Dashboard</h1>
                 </div>
 
-                <!-- Theme Switcher -->
                 <div class="flex items-center space-x-4">
                     <div class="relative">
                     </div>
@@ -166,25 +148,21 @@
                             <button id="user-menu-button" class="flex items-center space-x-2">
                                 <img id="user-avatar" class="w-8 h-8 rounded-full" src="" alt="User Avatar">
                             </button>
-                            <div id="user-dropdown"
-                                class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-700 rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5 hidden">
+                            <div id="user-dropdown" class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-700 rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5 hidden">
                                 <div class="px-4 py-2 border-b border-gray-200 dark:border-gray-600">
                                     <p class="text-sm text-gray-700 dark:text-gray-200" id="user-name"></p>
                                     <p class="text-xs text-gray-500 dark:text-gray-400 truncate" id="user-email"></p>
                                 </div>
-                                <a href="#" id="signout-button"
-                                    class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600">Sign
+                                <a href="#" id="signout-button" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600">Sign
                                     Out</a>
                             </div>
                         </div>
                     </div>
                 </div>
-                
+
             </header>
 
-            <!-- Views Container -->
             <div class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
-                <!-- Dashboard View -->
                 <section id="dashboard-view">
                     <div class="text-center p-8 bg-white dark:bg-gray-800 rounded-xl shadow-md">
                         <h2 class="text-4xl font-bold text-blue-500 mb-2">Welcome!</h2>
@@ -193,242 +171,341 @@
                     </div>
                 </section>
 
-                <!-- App Viewer View -->
                 <section id="app-viewer-view" class="hidden h-full">
-                    <iframe id="app-iframe" name="app-frame"
-                        class="w-full h-full border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-900"></iframe>
+                    <iframe id="app-iframe" name="app-frame" class="w-full h-full border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-900"></iframe>
                 </section>
             </div>
         </main>
     </div>
-    <!-- Google Sign-In Button -->
-<script>
-    // --- Google Sign-In Initialization ---
-    // This is called when the Google library finishes loading.
-    window.onload = function () {
-        google.accounts.id.initialize({
-            client_id: '952892249789-e2h3j0k5ffdgv2hdnuebsfv3m7ul9mr2.apps.googleusercontent.com', // Your Client ID
-            callback: handleCredentialResponse
-        });
-        google.accounts.id.renderButton(
-            document.getElementById("g_id_signin"),
-            { theme: "outline", size: "large" }
-        );
-        google.accounts.id.prompt();
-    };
-
-    // This runs after the main HTML document is ready.
-    document.addEventListener('DOMContentLoaded', () => {
-        
-        // --- 1. APP DATA ---
-        const applicationFiles = [
-            { name: "Fake News Detection", file: "Fake News Detection System.html", icon: "🔍" },
-            { name: "PDF Extractor", file: "PDF Extraction.html", icon: "📄" },
-            { name: "Math Problem Solver", file: "Math_Problem_Solver.html", icon: "🧮" },
-            { name: "Equation Grapher", file: "Advanced_Equation_Grapher.html", icon: "📈" },
-            { name: "Advanced Meeting Notes", file: "Advanced_Meeting_Notes_Formater.html", icon: "📝" },
-            { name: "Image to Text Converter", file: "Image_to_Text_Converter.html", icon: "🖼️" },
-            { name: "Text Summarizer", file: "Text_Summarizer.html", icon: "📚" },
-            { name: "Sentiment Analysis", file: "Sentiment_Analysis.html", icon: "💬" },
-            { name: "Language Translator", file: "Language_Translator.html", icon: "🌐" },
-            { name: "Code Formatter", file: "Code_Formatter.html", icon: "💻" },
-            { name: "Image Resizer", file: "Image_Resizer.html", icon: "📏" },
-            { name: "Text to Speech", file: "Text_to_Speech.html", icon: "🔊" },
-            { name: "Speech to Text", file: "Speech_to_Text.html", icon: "🎤" },
-            { name: "Weather App", file: "Weather_App.html", icon: "☀️" },
-            { name: "Currency Converter", file: "Currency_Converter.html", icon: "💱" }
-        ];
-
-        // --- 2. ELEMENT REFERENCES ---
-        // Views and Core App
-        const dashboardView = document.getElementById('dashboard-view');
-        const appView = document.getElementById('app-viewer-view');
-        const appIframe = document.getElementById('app-iframe');
-        const backButton = document.getElementById('back-button');
-        const headerTitle = document.getElementById('canvas-title');
-        const nav = document.getElementById('canvas-nav');
-        // Sidebar
-        const sidebar = document.getElementById('sidebar');
-        const menuButton = document.getElementById('menu-button');
-        const sidebarToggleButton = document.getElementById('sidebar-toggle-button');
-        // User Authentication & Menu
-        const userArea = document.getElementById('user-area');
-        const userMenu = document.getElementById('user-menu');
-        const userMenuButton = document.getElementById('user-menu-button');
-        const userDropdown = document.getElementById('user-dropdown');
-        const signoutButton = document.getElementById('signout-button');
-        const googleSignInButton = document.getElementById('g_id_signin');
-        // Theme
-        // Note: Theme elements are missing from your HTML, so these will be null.
-        // I've kept the logic but you may need to add the HTML for it again.
-        const themeToggleButton = document.getElementById('theme-toggle-button');
-        const themeMenu = document.getElementById('theme-menu');
-        const themeIcons = {
-            light: document.getElementById('theme-icon-light'),
-            dark: document.getElementById('theme-icon-dark'),
-            system: document.getElementById('theme-icon-system')
+    <script>
+        // --- Google Sign-In Initialization ---
+        // This is called when the Google library finishes loading.
+        window.onload = function() {
+            google.accounts.id.initialize({
+                client_id: '952892249789-e2h3j0k5ffdgv2hdnuebsfv3m7ul9mr2.apps.googleusercontent.com', // Your Client ID
+                callback: handleCredentialResponse
+            });
+            google.accounts.id.renderButton(
+                document.getElementById("g_id_signin"), {
+                    theme: "outline",
+                    size: "large"
+                }
+            );
+            google.accounts.id.prompt();
         };
-        
-        // --- 3. STATE VARIABLES ---
-        let currentUser = null;
 
-        // --- 4. FUNCTIONS ---
+        // This runs after the main HTML document is ready.
+        document.addEventListener('DOMContentLoaded', () => {
 
-        // Utility to decode Google's token
-        function jwt_decode(token) {
-            try {
-                return JSON.parse(atob(token.split('.')[1]));
-            } catch (e) {
-                return null;
+            // --- 1. APP DATA ---
+            const applicationFiles = [{
+                name: "Fake News Detection",
+                file: "Fake News Detection System.html",
+                icon: "🔍",
+                category: "Content Tools",
+                keywords: "verify truth article analysis"
+            }, {
+                name: "PDF Extractor",
+                file: "PDF Extraction.html",
+                icon: "📄",
+                category: "Productivity",
+                keywords: "document read text data"
+            }, {
+                name: "Math Problem Solver",
+                file: "Math_Problem_Solver.html",
+                icon: "🧮",
+                category: "Utilities",
+                keywords: "calculate algebra calculus equation"
+            }, {
+                name: "Equation Grapher",
+                file: "Advanced_Equation_Grapher.html",
+                icon: "📈",
+                category: "Utilities",
+                keywords: "plot chart function math"
+            }, {
+                name: "Advanced Meeting Notes",
+                file: "Advanced_Meeting_Notes_Formater.html",
+                icon: "📝",
+                category: "Productivity",
+                keywords: "minutes summary format document"
+            }, {
+                name: "Image to Text Converter",
+                file: "Image_to_Text_Converter.html",
+                icon: "🖼️",
+                category: "Content Tools",
+                keywords: "ocr optical character recognition scan"
+            }, {
+                name: "Text Summarizer",
+                file: "Text_Summarizer.html",
+                icon: "📚",
+                category: "Content Tools",
+                keywords: "summary condense article tldr"
+            }, {
+                name: "Sentiment Analysis",
+                file: "Sentiment_Analysis.html",
+                icon: "💬",
+                category: "Content Tools",
+                keywords: "emotion opinion text nlp"
+            }, {
+                name: "Language Translator",
+                file: "Language_Translator.html",
+                icon: "🌐",
+                category: "Content Tools",
+                keywords: "translate dictionary language"
+            }, {
+                name: "Code Formatter",
+                file: "Code_Formatter.html",
+                icon: "💻",
+                category: "Developer Tools",
+                keywords: "beautify prettier lint programming"
+            }, {
+                name: "Image Resizer",
+                file: "Image_Resizer.html",
+                icon: "📏",
+                category: "Utilities",
+                keywords: "resize crop dimensions photo"
+            }, {
+                name: "Text to Speech",
+                file: "Text_to_Speech.html",
+                icon: "🔊",
+                category: "Content Tools",
+                keywords: "tts read aloud voice audio"
+            }, {
+                name: "Speech to Text",
+                file: "Speech_to_Text.html",
+                icon: "🎤",
+                category: "Content Tools",
+                keywords: "stt transcribe voice dictation"
+            }, {
+                name: "Weather App",
+                file: "Weather_App.html",
+                icon: "☀️",
+                category: "Utilities",
+                keywords: "forecast temperature climate"
+            }, {
+                name: "Currency Converter",
+                file: "Currency_Converter.html",
+                icon: "💱",
+                category: "Utilities",
+                keywords: "exchange rate money finance"
+            }];
+
+            // --- 2. ELEMENT REFERENCES ---
+            // Views and Core App
+            const dashboardView = document.getElementById('dashboard-view');
+            const appView = document.getElementById('app-viewer-view');
+            const appIframe = document.getElementById('app-iframe');
+            const backButton = document.getElementById('back-button');
+            const headerTitle = document.getElementById('canvas-title');
+            const nav = document.getElementById('canvas-nav');
+            // Sidebar
+            const sidebar = document.getElementById('sidebar');
+            const menuButton = document.getElementById('menu-button');
+            const sidebarToggleButton = document.getElementById('sidebar-toggle-button');
+            const appSearchInput = document.getElementById('app-search-input');
+            // User Authentication & Menu
+            const userArea = document.getElementById('user-area');
+            const userMenu = document.getElementById('user-menu');
+            const userMenuButton = document.getElementById('user-menu-button');
+            const userDropdown = document.getElementById('user-dropdown');
+            const signoutButton = document.getElementById('signout-button');
+            const googleSignInButton = document.getElementById('g_id_signin');
+
+            // --- 3. STATE VARIABLES ---
+            let currentUser = null;
+
+            // --- 4. FUNCTIONS ---
+
+            // Utility to decode Google's token
+            function jwt_decode(token) {
+                try {
+                    return JSON.parse(atob(token.split('.')[1]));
+                } catch (e) {
+                    return null;
+                }
             }
-        }
 
-        // Logs user actions to localStorage
-        function logUserActivity(action, details) {
-            if (!currentUser) return;
-            const userId = currentUser.id;
-            let history = JSON.parse(localStorage.getItem('userHistory')) || {};
-            if (!history[userId]) {
-                history[userId] = [];
+            // Logs user actions to localStorage
+            function logUserActivity(action, details) {
+                if (!currentUser) return;
+                const userId = currentUser.id;
+                let history = JSON.parse(localStorage.getItem('userHistory')) || {};
+                if (!history[userId]) {
+                    history[userId] = [];
+                }
+                history[userId].unshift({
+                    action: action,
+                    details: details || {},
+                    timestamp: new Date().toISOString()
+                });
+                if (history[userId].length > 50) history[userId].pop();
+                localStorage.setItem('userHistory', JSON.stringify(history));
             }
-            history[userId].unshift({
-                action: action,
-                details: details || {},
-                timestamp: new Date().toISOString()
-            });
-            if (history[userId].length > 50) history[userId].pop();
-            localStorage.setItem('userHistory', JSON.stringify(history));
-        }
 
-        // Handles successful Google login
-        window.handleCredentialResponse = function(response) {
-            const credential = jwt_decode(response.credential);
-            currentUser = {
-                id: credential.sub,
-                name: credential.name,
-                email: credential.email,
-                avatar: credential.picture
-            };
-            localStorage.setItem('loggedInUser', JSON.stringify(currentUser));
-            updateUIAfterLogin();
-            logUserActivity('Logged In', { browser: navigator.userAgent });
-        }
-
-        // Updates the UI to show the logged-in user
-        function updateUIAfterLogin() {
-            if (!currentUser) return;
-            googleSignInButton.style.display = 'none';
-            userMenu.classList.remove('hidden');
-            document.getElementById('user-name').textContent = currentUser.name;
-            document.getElementById('user-email').textContent = currentUser.email;
-            document.getElementById('user-avatar').src = currentUser.avatar;
-        }
-        
-        // Checks for a logged-in user on page load
-        function checkSession() {
-            const storedUser = localStorage.getItem('loggedInUser');
-            if (storedUser) {
-                currentUser = JSON.parse(storedUser);
-                updateUIAfterLogin();
-            }
-        }
-        
-        // Navigation: Loads an app into the iframe
-        function loadApp(app) {
-            appIframe.src = app.file;
-            showAppViewer(app.name);
-            logUserActivity('Viewed App', { appName: app.name });
-        }
-
-        // Navigation: Shows the iframe view
-        function showAppViewer(appName) {
-            headerTitle.textContent = appName;
-            dashboardView.style.display = 'none';
-            appView.classList.remove('hidden');
-            backButton.classList.remove('hidden');
-            backButton.classList.add('flex');
-        }
-
-        // Navigation: Shows the main dashboard
-        function showDashboard() {
-            headerTitle.textContent = "Dashboard";
-            appView.classList.add('hidden');
-            backButton.classList.add('hidden');
-            backButton.classList.remove('flex');
-            dashboardView.style.display = 'block';
-            appIframe.src = 'about:blank';
-            // Only log dashboard view if a user is logged in
-            if(currentUser) {
-                logUserActivity('Viewed Dashboard');
-            }
-        }
-
-        // Renders the app links in the sidebar
-        function renderSidebar() {
-            nav.innerHTML = '';
-            applicationFiles.forEach(app => {
-                const link = document.createElement('a');
-                link.className = 'nav-link flex items-center px-4 py-2 text-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white transition-colors overflow-hidden';
-                link.href = '#';
-                link.innerHTML = `
-                    <span class="nav-link-icon mr-3 flex-shrink-0">${app.icon}</span> 
-                    <span class="sidebar-text whitespace-nowrap transition-opacity duration-200">${app.name}</span>`;
-                link.onclick = (e) => {
-                    e.preventDefault();
-                    loadApp(app);
-                    if (window.innerWidth < 768) {
-                        sidebar.classList.add('-translate-x-full');
-                    }
+            // Handles successful Google login
+            window.handleCredentialResponse = function(response) {
+                const credential = jwt_decode(response.credential);
+                currentUser = {
+                    id: credential.sub,
+                    name: credential.name,
+                    email: credential.email,
+                    avatar: credential.picture
                 };
-                nav.appendChild(link);
-            });
-        }
-        
-        // --- 5. EVENT LISTENERS ---
-
-        // Back button to return to dashboard
-        backButton.addEventListener('click', showDashboard);
-        
-        // Sign out button
-        signoutButton.addEventListener('click', (e) => {
-            e.preventDefault();
-            logUserActivity('Logged Out');
-            currentUser = null;
-            localStorage.removeItem('loggedInUser');
-            google.accounts.id.disableAutoSelect();
-            googleSignInButton.style.display = 'block';
-            userMenu.classList.add('hidden');
-            userDropdown.classList.add('hidden');
-            showDashboard();
-        });
-
-        // Toggle user dropdown menu
-        userMenuButton.addEventListener('click', () => userDropdown.classList.toggle('hidden'));
-
-        // Toggle mobile sidebar
-        menuButton.addEventListener('click', () => sidebar.classList.toggle('-translate-x-full'));
-
-        // Toggle desktop sidebar (collapsed/expanded)
-        sidebarToggleButton.addEventListener('click', () => {
-            document.body.classList.toggle('sidebar-collapsed');
-            localStorage.setItem('sidebarCollapsed', document.body.classList.contains('sidebar-collapsed'));
-        });
-
-        // Close mobile sidebar when clicking outside
-        document.addEventListener('click', (e) => {
-            if (window.innerWidth < 768 && !sidebar.contains(e.target) && !menuButton.contains(e.target)) {
-                sidebar.classList.add('-translate-x-full');
+                localStorage.setItem('loggedInUser', JSON.stringify(currentUser));
+                updateUIAfterLogin();
+                logUserActivity('Logged In', {
+                    browser: navigator.userAgent
+                });
             }
-        });
 
-        // --- 6. INITIALIZATION CALLS ---
-        renderSidebar();
-        showDashboard();
-        checkSession(); // Check for logged-in user
-        // The theme script from the <head> already handles initial theme setup
-    });
-</script>
-    
+            // Updates the UI to show the logged-in user
+            function updateUIAfterLogin() {
+                if (!currentUser) return;
+                googleSignInButton.style.display = 'none';
+                userMenu.classList.remove('hidden');
+                document.getElementById('user-name').textContent = currentUser.name;
+                document.getElementById('user-email').textContent = currentUser.email;
+                document.getElementById('user-avatar').src = currentUser.avatar;
+            }
+
+            // Checks for a logged-in user on page load
+            function checkSession() {
+                const storedUser = localStorage.getItem('loggedInUser');
+                if (storedUser) {
+                    currentUser = JSON.parse(storedUser);
+                    updateUIAfterLogin();
+                }
+            }
+
+            // Navigation: Loads an app into the iframe
+            function loadApp(app) {
+                appIframe.src = app.file;
+                showAppViewer(app.name);
+                logUserActivity('Viewed App', {
+                    appName: app.name
+                });
+            }
+
+            // Navigation: Shows the iframe view
+            function showAppViewer(appName) {
+                headerTitle.textContent = appName;
+                dashboardView.style.display = 'none';
+                appView.classList.remove('hidden');
+                backButton.classList.remove('hidden');
+                backButton.classList.add('flex');
+            }
+
+            // Navigation: Shows the main dashboard
+            function showDashboard() {
+                headerTitle.textContent = "Dashboard";
+                appView.classList.add('hidden');
+                backButton.classList.add('hidden');
+                backButton.classList.remove('flex');
+                dashboardView.style.display = 'block';
+                appIframe.src = 'about:blank';
+                if (currentUser) {
+                    logUserActivity('Viewed Dashboard');
+                }
+            }
+
+            // Renders sidebar with categories and search filtering
+            function renderSidebar(searchTerm = '') {
+                nav.innerHTML = '';
+                const lowerCaseSearchTerm = searchTerm.toLowerCase().trim();
+
+                const filteredApps = applicationFiles.filter(app => {
+                    if (!lowerCaseSearchTerm) return true;
+                    const searchableText = `${app.name} ${app.category} ${app.keywords}`.toLowerCase();
+                    return searchableText.includes(lowerCaseSearchTerm);
+                });
+
+                const groupedApps = filteredApps.reduce((acc, app) => {
+                    const category = app.category || 'Uncategorized';
+                    if (!acc[category]) acc[category] = [];
+                    acc[category].push(app);
+                    return acc;
+                }, {});
+
+                const sortedCategories = Object.keys(groupedApps).sort();
+
+                if (sortedCategories.length === 0 && lowerCaseSearchTerm) {
+                    nav.innerHTML = `<p class="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">No apps found.</p>`;
+                    return;
+                }
+
+                sortedCategories.forEach(category => {
+                    const categoryHeader = document.createElement('div');
+                    categoryHeader.className = 'px-4 pt-4 pb-1 text-xs font-bold uppercase text-gray-400 dark:text-gray-500 sidebar-text whitespace-nowrap';
+                    categoryHeader.textContent = category;
+                    nav.appendChild(categoryHeader);
+
+                    groupedApps[category].forEach(app => {
+                        const link = document.createElement('a');
+                        link.className = 'nav-link flex items-center px-4 py-2 text-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white transition-colors overflow-hidden';
+                        link.href = '#';
+                        link.innerHTML = `
+                            <span class="nav-link-icon mr-3 flex-shrink-0">${app.icon}</span>
+                            <span class="sidebar-text whitespace-nowrap transition-opacity duration-200">${app.name}</span>`;
+                        link.onclick = (e) => {
+                            e.preventDefault();
+                            loadApp(app);
+                            if (window.innerWidth < 768) {
+                                sidebar.classList.add('-translate-x-full');
+                            }
+                        };
+                        nav.appendChild(link);
+                    });
+                });
+            }
+
+
+            // --- 5. EVENT LISTENERS ---
+
+            // Search input listener
+            appSearchInput.addEventListener('input', () => renderSidebar(appSearchInput.value));
+
+            // Back button to return to dashboard
+            backButton.addEventListener('click', showDashboard);
+
+            // Sign out button
+            signoutButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                logUserActivity('Logged Out');
+                currentUser = null;
+                localStorage.removeItem('loggedInUser');
+                google.accounts.id.disableAutoSelect();
+                googleSignInButton.style.display = 'block';
+                userMenu.classList.add('hidden');
+                userDropdown.classList.add('hidden');
+                showDashboard();
+            });
+
+            // Toggle user dropdown menu
+            userMenuButton.addEventListener('click', () => userDropdown.classList.toggle('hidden'));
+
+            // Toggle mobile sidebar
+            menuButton.addEventListener('click', () => sidebar.classList.toggle('-translate-x-full'));
+
+            // Toggle desktop sidebar (collapsed/expanded)
+            sidebarToggleButton.addEventListener('click', () => {
+                document.body.classList.toggle('sidebar-collapsed');
+                localStorage.setItem('sidebarCollapsed', document.body.classList.contains('sidebar-collapsed'));
+            });
+
+            // Close mobile sidebar when clicking outside
+            document.addEventListener('click', (e) => {
+                if (window.innerWidth < 768 && !sidebar.contains(e.target) && !menuButton.contains(e.target)) {
+                    sidebar.classList.add('-translate-x-full');
+                }
+            });
+
+            // --- 6. INITIALIZATION CALLS ---
+            renderSidebar();
+            showDashboard();
+            checkSession();
+        });
+    </script>
+
 </body>
 
 </html>
