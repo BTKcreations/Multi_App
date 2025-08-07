@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Resizer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom file upload button styling */
+        .custom-file-upload {
+            border: 2px dashed #cbd5e1;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+        .custom-file-upload:hover {
+            background-color: #f8fafc;
+            border-color: #6366f1;
+        }
+        /* Hide the default file input */
+        input[type="file"] {
+            display: none;
+        }
+
+        /* Keyframe animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes slideUpFadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Animation utility classes */
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        .animate-slide-up {
+            animation: slideUpFadeIn 0.5s ease-out forwards;
+        }
+        
+        /* Custom modal for alerts */
+        .modal-overlay {
+            transition: opacity 0.3s ease;
+        }
+        .modal-content {
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+    </style>
+</head>
+<!-- FIX: Removed 'overflow-hidden' to allow scrolling on smaller screens -->
+<body class="bg-slate-100 text-slate-800 flex items-center justify-center min-h-screen p-4">
+
+    <!-- Main Application Container -->
+    <div class="w-full max-w-4xl bg-white rounded-xl shadow-lg p-4 sm:p-6 md:p-8 animate-fade-in">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-900">Image Resizer</h1>
+            <p class="text-slate-500 mt-2">Upload an image, set your dimensions, and download.</p>
+        </div>
+
+        <!-- Main Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            
+            <!-- Left Column: Upload and Controls -->
+            <div class="flex flex-col space-y-6">
+                <!-- File Upload Area -->
+                <div>
+                    <label for="file-upload" id="file-upload-label" class="group custom-file-upload flex flex-col items-center justify-center p-6 rounded-lg cursor-pointer">
+                        <svg class="mx-auto h-12 w-12 text-slate-400 transition-transform duration-300 group-hover:scale-110" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                            <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        <span class="mt-2 block text-sm font-semibold text-slate-700">Click to upload an image</span>
+                        <span class="mt-1 block text-xs text-slate-500">PNG, JPG, GIF up to 10MB</span>
+                    </label>
+                    <input id="file-upload" name="file-upload" type="file" accept="image/*">
+                </div>
+
+                <!-- Resize Controls -->
+                <div id="controls" class="hidden space-y-4 bg-slate-50 p-4 rounded-lg border border-slate-200">
+                    <h3 class="font-semibold text-lg text-slate-800 border-b pb-2">Resize Options</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label for="width-input" class="block text-sm font-medium text-slate-700">Width (px)</label>
+                            <input type="number" id="width-input" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                        </div>
+                        <div>
+                            <label for="height-input" class="block text-sm font-medium text-slate-700">Height (px)</label>
+                            <input type="number" id="height-input" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                        </div>
+                    </div>
+                    <div class="flex items-center">
+                        <input id="aspect-ratio-checkbox" type="checkbox" checked class="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                        <label for="aspect-ratio-checkbox" class="ml-2 block text-sm text-slate-700">Maintain aspect ratio</label>
+                    </div>
+                    <button id="resize-btn" class="w-full bg-indigo-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 transform hover:scale-105">
+                        Resize Image
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right Column: Image Previews -->
+            <div class="flex flex-col space-y-6">
+                <!-- Original Image Preview -->
+                <div>
+                    <h3 class="font-semibold text-lg text-slate-800 mb-2">Original</h3>
+                    <div id="original-image-container" class="w-full aspect-video bg-slate-100 rounded-lg flex items-center justify-center border-2 border-dashed transition-all duration-300">
+                        <p class="text-slate-500">No image selected</p>
+                    </div>
+                </div>
+
+                <!-- Resized Image Preview -->
+                <div>
+                    <h3 class="font-semibold text-lg text-slate-800 mb-2">Resized</h3>
+                    <div id="resized-image-container" class="w-full aspect-video bg-slate-100 rounded-lg flex items-center justify-center border-2 border-dashed transition-all duration-300">
+                         <p class="text-slate-500">Waiting for resize</p>
+                    </div>
+                    <a id="download-btn" href="#" class="hidden w-full mt-4 bg-green-600 text-white text-center font-semibold py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 transform hover:scale-105">
+                        Download Resized Image
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Modal -->
+    <div id="modal" class="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 opacity-0 pointer-events-none">
+        <div id="modal-content" class="modal-content bg-white rounded-lg shadow-xl p-6 w-full max-w-sm text-center opacity-0 transform scale-95">
+            <p id="modal-message" class="text-slate-700 mb-4">This is a message.</p>
+            <button id="modal-close-btn" class="bg-indigo-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+                OK
+            </button>
+        </div>
+    </div>
+
+    <!-- Canvas for processing, hidden from view -->
+    <canvas id="canvas" class="hidden"></canvas>
+
+    <script>
+        // DOM element references
+        const fileInput = document.getElementById('file-upload');
+        const fileUploadLabel = document.getElementById('file-upload-label');
+        const controls = document.getElementById('controls');
+        const widthInput = document.getElementById('width-input');
+        const heightInput = document.getElementById('height-input');
+        const aspectRatioCheckbox = document.getElementById('aspect-ratio-checkbox');
+        const resizeBtn = document.getElementById('resize-btn');
+        const downloadBtn = document.getElementById('download-btn');
+        const originalImageContainer = document.getElementById('original-image-container');
+        const resizedImageContainer = document.getElementById('resized-image-container');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const modal = document.getElementById('modal');
+        const modalContent = document.getElementById('modal-content');
+        const modalMessage = document.getElementById('modal-message');
+        const modalCloseBtn = document.getElementById('modal-close-btn');
+
+        let originalImage = null;
+        let originalAspectRatio = 1;
+        let originalFilename = 'resized-image.png';
+
+        // --- Helper Functions ---
+
+        function triggerAnimation(element, animationClass) {
+            element.classList.remove(animationClass);
+            void element.offsetWidth;
+            element.classList.add(animationClass);
+        }
+
+        // --- Modal Functions ---
+        function showModal(message) {
+            modalMessage.textContent = message;
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modalContent.classList.remove('opacity-0', 'scale-95');
+        }
+
+        function hideModal() {
+            modal.classList.add('opacity-0');
+            modalContent.classList.add('opacity-0', 'scale-95');
+            setTimeout(() => {
+                 modal.classList.add('pointer-events-none');
+            }, 300); // Wait for transition to finish
+        }
+        
+        modalCloseBtn.addEventListener('click', hideModal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                hideModal();
+            }
+        });
+
+
+        // --- Event Listeners ---
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            if (!file.type.startsWith('image/')) {
+                showModal('Please select a valid image file (PNG, JPG, etc.).');
+                return;
+            }
+
+            originalFilename = file.name;
+            const reader = new FileReader();
+
+            reader.onload = (event) => {
+                originalImage = new Image();
+                originalImage.onload = () => {
+                    originalAspectRatio = originalImage.width / originalImage.height;
+                    widthInput.value = originalImage.width;
+                    heightInput.value = originalImage.height;
+
+                    originalImageContainer.innerHTML = '';
+                    const imgElement = document.createElement('img');
+                    imgElement.src = event.target.result;
+                    imgElement.className = 'max-w-full max-h-full object-contain rounded-md animate-fade-in';
+                    originalImageContainer.appendChild(imgElement);
+
+                    controls.classList.remove('hidden');
+                    triggerAnimation(controls, 'animate-slide-up');
+                    
+                    resizedImageContainer.innerHTML = '<p class="text-slate-500">Waiting for resize</p>';
+                    downloadBtn.classList.add('hidden');
+                    fileUploadLabel.querySelector('span.font-semibold').textContent = 'Change image';
+                };
+                originalImage.src = event.target.result;
+            };
+
+            reader.readAsDataURL(file);
+        });
+        
+        widthInput.addEventListener('input', () => {
+            if (aspectRatioCheckbox.checked && originalImage) {
+                const newHeight = Math.round(widthInput.value / originalAspectRatio);
+                heightInput.value = newHeight > 0 ? newHeight : '';
+            }
+        });
+
+        heightInput.addEventListener('input', () => {
+            if (aspectRatioCheckbox.checked && originalImage) {
+                const newWidth = Math.round(heightInput.value * originalAspectRatio);
+                widthInput.value = newWidth > 0 ? newWidth : '';
+            }
+        });
+
+        resizeBtn.addEventListener('click', () => {
+            if (!originalImage) {
+                showModal('Please upload an image first.');
+                return;
+            }
+
+            const width = parseInt(widthInput.value);
+            const height = parseInt(heightInput.value);
+
+            if (isNaN(width) || isNaN(height) || width <= 0 || height <= 0) {
+                showModal('Please enter valid width and height.');
+                return;
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            ctx.drawImage(originalImage, 0, 0, width, height);
+            const resizedImageDataUrl = canvas.toDataURL('image/png');
+
+            resizedImageContainer.innerHTML = '';
+            const resizedImgElement = document.createElement('img');
+            resizedImgElement.src = resizedImageDataUrl;
+            resizedImgElement.className = 'max-w-full max-h-full object-contain rounded-md animate-fade-in';
+            resizedImageContainer.appendChild(resizedImgElement);
+            
+            downloadBtn.href = resizedImageDataUrl;
+            downloadBtn.download = `resized-${originalFilename}`;
+            downloadBtn.classList.remove('hidden');
+            triggerAnimation(downloadBtn, 'animate-slide-up');
+        });
+
+    </script>
+</body>
+</html>
