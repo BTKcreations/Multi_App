@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" class="system">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,38 +10,47 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="manifest" href="manifest.json">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 
     <style>
         /* Custom scrollbar for a cleaner look */
         ::-webkit-scrollbar {
             width: 8px;
         }
+
         ::-webkit-scrollbar-track {
             background: transparent;
         }
+
         ::-webkit-scrollbar-thumb {
             background: #4a5568;
             border-radius: 4px;
         }
+
         ::-webkit-scrollbar-thumb:hover {
             background: #718096;
         }
+
         /* Using Inter as the default font */
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
-        
+
         /* Custom transition for sidebar width and main content margin */
-        #sidebar, main {
+        #sidebar,
+        main {
             transition: all 0.3s ease-in-out;
         }
 
         /* Styling for collapsed sidebar state */
         .sidebar-collapsed #sidebar {
-            width: 5rem; /* 80px */
+            width: 5rem;
+            /* 80px */
         }
+
         .sidebar-collapsed main {
-            margin-left: 5rem; /* 80px */
+            margin-left: 5rem;
+            /* 80px */
         }
 
         /* Hide text and adjust padding when collapsed */
@@ -49,16 +59,18 @@
             width: 0;
             visibility: hidden;
         }
+
         .sidebar-collapsed .nav-link {
             justify-content: center;
         }
+
         .sidebar-collapsed .nav-link-icon {
             margin-right: 0;
         }
+
         .sidebar-collapsed #sidebar-toggle-button svg {
             transform: rotate(180deg);
         }
-
     </style>
     <script>
         // This script is placed in the head to prevent Flash of Unstyled Content (FOUC)
@@ -83,22 +95,33 @@
 
     </script>
 </head>
+
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 transition-colors duration-300">
 
     <div class="flex h-screen overflow-hidden">
         <!-- Sidebar -->
-        <aside id="sidebar" class="fixed inset-y-0 left-0 z-30 w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transform -translate-x-full md:translate-x-0 flex flex-col">
-            <div class="flex items-center justify-center p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0 h-16">
-                <img src="https://placehold.co/48x48/03a9f4/ffffff?text=AD" alt="Logo" class="rounded-lg h-10 w-10 flex-shrink-0">
-                <h2 class="ml-3 text-xl font-semibold text-gray-700 dark:text-gray-200 sidebar-text whitespace-nowrap overflow-hidden transition-opacity duration-200">AppDash</h2>
+        <aside id="sidebar"
+            class="fixed inset-y-0 left-0 z-30 w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transform -translate-x-full md:translate-x-0 flex flex-col">
+            <div
+                class="flex items-center justify-center p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0 h-16">
+                <img src="https://placehold.co/48x48/03a9f4/ffffff?text=AD" alt="Logo"
+                    class="rounded-lg h-10 w-10 flex-shrink-0">
+                <h2
+                    class="ml-3 text-xl font-semibold text-gray-700 dark:text-gray-200 sidebar-text whitespace-nowrap overflow-hidden transition-opacity duration-200">
+                    AppDash</h2>
             </div>
             <nav id="canvas-nav" class="p-4 space-y-2 flex-grow overflow-y-auto">
                 <!-- App links will be rendered here by JavaScript -->
             </nav>
             <!-- Sidebar Toggle Button for Desktop -->
             <div class="p-4 border-t border-gray-200 dark:border-gray-700 hidden md:block flex-shrink-0">
-                <button id="sidebar-toggle-button" class="w-full flex items-center justify-center p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700">
-                     <svg class="w-6 h-6 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                <button id="sidebar-toggle-button"
+                    class="w-full flex items-center justify-center p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <svg class="w-6 h-6 transition-transform duration-300" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7">
+                        </path>
+                    </svg>
                 </button>
             </div>
         </aside>
@@ -106,33 +129,203 @@
         <!-- Main content -->
         <main class="flex-1 flex flex-col overflow-hidden md:ml-64">
             <!-- Header -->
-            <header class="flex items-center justify-between p-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm flex-shrink-0 h-16">
+            <header
+                class="flex items-center justify-between p-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm flex-shrink-0 h-16">
                 <div class="flex items-center">
-                     <!-- Hamburger Menu for Mobile -->
-                    <button id="menu-button" class="md:hidden mr-4 p-2 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                    <!-- Hamburger Menu for Mobile -->
+                    <button id="menu-button"
+                        class="md:hidden mr-4 p-2 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 6h16M4 12h16m-7 6h7"></path>
+                        </svg>
                     </button>
                     <!-- Back Button -->
-                    <button id="back-button" class="hidden items-center px-4 py-2 bg-blue-500 text-white rounded-lg shadow hover:bg-blue-600 transition-colors">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                    <button id="back-button"
+                        class="hidden items-center px-4 py-2 bg-blue-500 text-white rounded-lg shadow hover:bg-blue-600 transition-colors">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                        </svg>
                         Back
                     </button>
                     <h1 id="canvas-title" class="text-2xl font-bold text-gray-800 dark:text-white ml-4">Dashboard</h1>
                 </div>
 
                 <!-- Theme Switcher -->
-                <div class="relative">
-                    <button id="theme-toggle-button" class="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 dark:focus:ring-offset-gray-800 focus:ring-blue-500">
-                        <svg id="theme-icon-light" class="w-6 h-6 hidden"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" /></svg>
-                        <svg id="theme-icon-dark" class="w-6 h-6 hidden"><path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" /></svg>
-                        <svg id="theme-icon-system" class="w-6 h-6 hidden"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-1.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25A2.25 2.25 0 015.25 3h13.5A2.25 2.25 0 0121 5.25z" /></svg>
-                    </button>
-                    <div id="theme-menu" class="absolute right-0 mt-2 w-32 bg-white dark:bg-gray-700 rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5 hidden">
-                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600" data-theme="light">Light</a>
-                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600" data-theme="dark">Dark</a>
-                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600" data-theme="system">System</a>
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                    </div>
+
+                    <div id="user-area" class="relative">
+                        <div id="g_id_signin"></div>
+
+                        <div id="user-menu" class="hidden">
+                            <button id="user-menu-button" class="flex items-center space-x-2">
+                                <img id="user-avatar" class="w-8 h-8 rounded-full" src="" alt="User Avatar">
+                            </button>
+                            <div id="user-dropdown"
+                                class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-700 rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5 hidden">
+                                <div class="px-4 py-2 border-b border-gray-200 dark:border-gray-600">
+                                    <p class="text-sm text-gray-700 dark:text-gray-200" id="user-name"></p>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 truncate" id="user-email"></p>
+                                </div>
+                                <a href="#" id="signout-button"
+                                    class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600">Sign
+                                    Out</a>
+                            </div>
+                        </div>
                     </div>
                 </div>
+                <script>
+                    document.addEventListener('DOMContentLoaded', () => {
+                        // ... all your existing element references ...
+                        const userArea = document.getElementById('user-area');
+                        const userMenu = document.getElementById('user-menu');
+                        const userMenuButton = document.getElementById('user-menu-button');
+                        const userDropdown = document.getElementById('user-dropdown');
+                        const signoutButton = document.getElementById('signout-button');
+                        const googleSignInButton = document.getElementById('g_id_signin');
+
+                        let currentUser = null; // To store logged-in user info
+
+                        // --- History Tracking Function ---
+                        // We'll define this in the next section, but declare it here
+                        function logUserActivity(action, details) {
+                            if (!currentUser) return; // Only log if a user is signed in
+
+                            const userId = currentUser.id;
+                            let history = JSON.parse(localStorage.getItem('userHistory')) || {};
+                            if (!history[userId]) {
+                                history[userId] = [];
+                            }
+
+                            history[userId].unshift({ // Add to the beginning of the array
+                                action: action,
+                                details: details,
+                                timestamp: new Date().toISOString()
+                            });
+
+                            // Optional: Limit history size
+                            if (history[userId].length > 50) {
+                                history[userId].pop();
+                            }
+
+                            localStorage.setItem('userHistory', JSON.stringify(history));
+                        }
+
+
+                        // --- Google Sign-In Initialization ---
+                        window.onload = function () {
+                            google.accounts.id.initialize({
+                                client_id: '952892249789-e2h3j0k5ffdgv2hdnuebsfv3m7ul9mr2.apps.googleusercontent.com.apps.googleusercontent.com', // <-- PASTE YOUR CLIENT ID HERE
+                                callback: handleCredentialResponse
+                            });
+                            google.accounts.id.renderButton(
+                                document.getElementById("g_id_signin"),
+                                { theme: "outline", size: "large" }  // Customize the button
+                            );
+                            google.accounts.id.prompt(); // One-tap sign-in prompt
+                        };
+
+                        function handleCredentialResponse(response) {
+                            // Decode the JWT token to get user profile
+                            const credential = jwt_decode(response.credential);
+
+                            currentUser = {
+                                id: credential.sub, // The unique Google ID for the user
+                                name: credential.name,
+                                email: credential.email,
+                                avatar: credential.picture
+                            };
+
+                            localStorage.setItem('loggedInUser', JSON.stringify(currentUser)); // Store user session
+                            updateUIAfterLogin();
+                            logUserActivity('Logged In', { browser: navigator.userAgent });
+                        }
+
+                        function updateUIAfterLogin() {
+                            if (!currentUser) return;
+
+                            // Hide Google's button and show user menu
+                            googleSignInButton.style.display = 'none';
+                            userMenu.classList.remove('hidden');
+
+                            // Populate user info
+                            document.getElementById('user-name').textContent = currentUser.name;
+                            document.getElementById('user-email').textContent = currentUser.email;
+                            document.getElementById('user-avatar').src = currentUser.avatar;
+                        }
+
+                        // --- Sign-Out Logic ---
+                        signoutButton.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            logUserActivity('Logged Out', {});
+
+                            currentUser = null;
+                            localStorage.removeItem('loggedInUser');
+                            google.accounts.id.disableAutoSelect(); // Prevent auto re-login
+
+                            // Reset UI
+                            googleSignInButton.style.display = 'block';
+                            userMenu.classList.add('hidden');
+                            userDropdown.classList.add('hidden'); // Hide dropdown
+                            showDashboard(); // Go back to dashboard on sign out
+                        });
+
+                        // --- User Menu Dropdown Toggle ---
+                        userMenuButton.addEventListener('click', () => {
+                            userDropdown.classList.toggle('hidden');
+                        });
+
+                        // --- Check for existing session on page load ---
+                        function checkSession() {
+                            const storedUser = localStorage.getItem('loggedInUser');
+                            if (storedUser) {
+                                currentUser = JSON.parse(storedUser);
+                                updateUIAfterLogin();
+                            }
+                        }
+
+                        // You'll also need a JWT decoding function. A small, simple one is enough.
+                        function jwt_decode(token) {
+                            try {
+                                return JSON.parse(atob(token.split('.')[1]));
+                            } catch (e) {
+                                return null;
+                            }
+                        }
+
+                        // --- Modify Existing Functions to Log Activity ---
+                        // Old function: function loadApp(app) { ... }
+                        function loadApp(app) {
+                            appIframe.src = app.file;
+                            showAppViewer(app.name);
+                            logUserActivity('Viewed App', { appName: app.name }); // <-- Add this line
+                        }
+
+                        // Old function: function showDashboard() { ... }
+                        function showDashboard() {
+                            headerTitle.textContent = "Dashboard";
+                            appView.classList.add('hidden');
+                            backButton.classList.add('hidden');
+                            backButton.classList.remove('flex');
+                            dashboardView.style.display = 'block';
+                            appIframe.src = 'about:blank';
+                            logUserActivity('Viewed Dashboard', {}); // <-- Add this line
+                        }
+
+                        // --- Initial Load ---
+                        renderSidebar();
+                        showDashboard(); // This will now log the initial dashboard view
+                        applyTheme(localStorage.theme || 'system');
+                        checkSession(); // Check if user is already logged in
+
+                        // Your service worker registration...
+                    });
+                </script>
             </header>
 
             <!-- Views Container -->
@@ -141,13 +334,15 @@
                 <section id="dashboard-view">
                     <div class="text-center p-8 bg-white dark:bg-gray-800 rounded-xl shadow-md">
                         <h2 class="text-4xl font-bold text-blue-500 mb-2">Welcome!</h2>
-                        <p class="text-lg text-gray-600 dark:text-gray-400">Select an application from the sidebar to get started.</p>
+                        <p class="text-lg text-gray-600 dark:text-gray-400">Select an application from the sidebar to
+                            get started.</p>
                     </div>
                 </section>
 
                 <!-- App Viewer View -->
                 <section id="app-viewer-view" class="hidden h-full">
-                    <iframe id="app-iframe" name="app-frame" class="w-full h-full border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-900"></iframe>
+                    <iframe id="app-iframe" name="app-frame"
+                        class="w-full h-full border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-900"></iframe>
                 </section>
             </div>
         </main>
@@ -189,7 +384,7 @@
                         loadApp(app);
                         // Hide sidebar on mobile after clicking a link
                         if (window.innerWidth < 768) {
-                           sidebar.classList.add('-translate-x-full');
+                            sidebar.classList.add('-translate-x-full');
                         }
                     };
                     nav.appendChild(link);
@@ -225,7 +420,7 @@
             menuButton.addEventListener('click', () => {
                 sidebar.classList.toggle('-translate-x-full');
             });
-            
+
             // Desktop Sidebar Toggle
             sidebarToggleButton.addEventListener('click', () => {
                 document.body.classList.toggle('sidebar-collapsed');
@@ -236,7 +431,7 @@
                     localStorage.setItem('sidebarCollapsed', 'false');
                 }
             });
-            
+
             // Close mobile sidebar if clicking outside of it
             document.addEventListener('click', (e) => {
                 if (window.innerWidth < 768 && !sidebar.contains(e.target) && !menuButton.contains(e.target)) {
@@ -253,7 +448,7 @@
                 dark: document.getElementById('theme-icon-dark'),
                 system: document.getElementById('theme-icon-system')
             };
-            
+
             Object.values(themeIcons).forEach(icon => {
                 icon.setAttribute('stroke', 'currentColor');
                 icon.setAttribute('fill', 'none');
@@ -262,8 +457,8 @@
 
             const updateThemeIcon = (theme) => {
                 Object.values(themeIcons).forEach(icon => icon.classList.add('hidden'));
-                const effectiveTheme = (theme === 'system') 
-                    ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') 
+                const effectiveTheme = (theme === 'system')
+                    ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
                     : theme;
 
                 if (theme === 'system') themeIcons.system.classList.remove('hidden');
@@ -284,7 +479,7 @@
                 e.stopPropagation();
                 themeMenu.classList.toggle('hidden');
             });
-            
+
             document.addEventListener('click', () => themeMenu.classList.add('hidden'));
 
 
@@ -319,4 +514,5 @@
         });
     </script>
 </body>
+
 </html>
