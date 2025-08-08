@@ -49,65 +49,17 @@
                 category: "Productivity",
                 keywords: "minutes summary format document"
             }, {
-                name: "Image to Text Converter",
-                file: "Image_to_Text_Converter.html",
-                icon: "🖼️",
-                category: "Content Tools",
-                keywords: "ocr optical character recognition scan"
-            }, {
-                name: "Text Summarizer",
-                file: "Text_Summarizer.html",
-                icon: "📚",
-                category: "Content Tools",
-                keywords: "summary condense article tldr"
-            }, {
-                name: "Sentiment Analysis",
-                file: "Sentiment_Analysis.html",
-                icon: "💬",
-                category: "Content Tools",
-                keywords: "emotion opinion text nlp"
-            }, {
                 name: "Language Translator",
                 file: "Language_Translator.html",
                 icon: "🌐",
                 category: "Content Tools",
                 keywords: "translate dictionary language"
             }, {
-                name: "Code Formatter",
-                file: "Code_Formatter.html",
-                icon: "💻",
-                category: "Developer Tools",
-                keywords: "beautify prettier lint programming"
-            }, {
                 name: "Image Resizer",
                 file: "Image_Resizer.html",
                 icon: "📏",
                 category: "Utilities",
                 keywords: "resize crop dimensions photo"
-            }, {
-                name: "Text to Speech",
-                file: "Text_to_Speech.html",
-                icon: "🔊",
-                category: "Content Tools",
-                keywords: "tts read aloud voice audio"
-            }, {
-                name: "Speech to Text",
-                file: "Speech_to_Text.html",
-                icon: "🎤",
-                category: "Content Tools",
-                keywords: "stt transcribe voice dictation"
-            }, {
-                name: "Weather App",
-                file: "Weather_App.html",
-                icon: "☀️",
-                category: "Utilities",
-                keywords: "forecast temperature climate"
-            }, {
-                name: "Currency Converter",
-                file: "Currency_Converter.html",
-                icon: "💱",
-                category: "Utilities",
-                keywords: "exchange rate money finance"
             }];
 
             // --- 2. ELEMENT REFERENCES ---
