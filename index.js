@@ -276,3 +276,12 @@
             showDashboard();
             checkSession();
         });
+
+        function toggleFullScreen() {
+            const frame = document.getElementById('app-iframe');
+            if (frame.fullscreenElement) {
+                frame.exitFullscreen();
+            } else {
+                frame.requestFullscreen();
+            }
+        }
