@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clash of Castles</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --bg-dark: #1a202c;
+            --bg-medium: #2d3748;
+            --bg-light: #4a5568;
+            --text-light: #e2e8f0;
+            --accent-gold: #f6e05e;
+            --accent-pink: #ed64a6;
+            --accent-purple: #9f7aea;
+            --accent-green: #48bb78;
+            --accent-red: #f56565;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .font-bangers { font-family: 'Bangers', cursive; }
+        #game-area {
+            position: relative;
+            width: 804px;
+            height: 604px; /* Adjusted for bottom panel */
+            margin-bottom: 16px;
+        }
+        #game-container {
+            display: grid;
+            grid-template-columns: repeat(20, 40px);
+            grid-template-rows: repeat(15, 40px);
+            gap: 2px;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%232a823b"/><rect width="100" height="1" fill-opacity="0.1" fill="%23fff"/><rect height="100" width="1" fill-opacity="0.1" fill="%23fff"/></svg>');
+            border: 4px solid #000;
+            width: 100%;
+            height: 100%;
+        }
+        .grid-cell {
+            background-color: rgba(74, 85, 104, 0.2);
+            transition: background-color 0.2s;
+            position: relative;
+        }
+        .grid-cell.placement-valid:hover { background-color: rgba(72, 187, 120, 0.5); }
+        .grid-cell.placement-invalid { background-color: rgba(245, 101, 101, 0.5); cursor: not-allowed; }
+        
+        .building {
+            width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+            padding: 4px; user-select: none; border-radius: 4px; position: relative;
+            animation: pulse 5s infinite ease-in-out; cursor: pointer; background-size: cover;
+        }
+        .building svg { width: 100%; height: 100%; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.5)); }
+        .building-level {
+            position: absolute; bottom: -2px; right: 2px; font-size: 12px; font-weight: bold;
+            color: white; background-color: rgba(0,0,0,0.7); padding: 0 4px; border-radius: 4px;
+        }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.02); } }
+
+        #resource-bar {
+            width: 100%; max-width: 804px; display: flex; justify-content: center; gap: 1rem;
+            background-color: rgba(0,0,0,0.3); padding: 8px; border-radius: 8px; margin-bottom: 1rem;
+        }
+        .resource-display { display: flex; align-items: center; gap: 0.5rem; font-size: 1.1rem; font-weight: bold; }
+        .resource-display .icon { width: 2rem; height: 2rem; }
+        .resource-progress-bg { width: 100px; height: 12px; background: var(--bg-medium); border-radius: 6px; overflow: hidden; }
+        .resource-progress-fg { height: 100%; background: var(--accent-gold); border-radius: 6px; transition: width 0.3s; }
+        .resource-display .elixir .resource-progress-fg { background: var(--accent-pink); }
+
+        #control-panel {
+            width: 100%; max-width: 804px; height: 180px; background: var(--bg-medium);
+            border-radius: 12px; border: 2px solid #000; box-shadow: 0 -4px 15px rgba(0,0,0,0.5);
+            display: flex;
+        }
+        #control-tabs {
+            display: flex; flex-direction: column; background: var(--bg-dark);
+            border-top-left-radius: 10px; border-bottom-left-radius: 10px; padding: 8px;
+        }
+        .tab-btn {
+            width: 60px; height: 60px; background: var(--bg-light); border: none;
+            border-radius: 8px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .tab-btn:hover { background: #66738a; }
+        .tab-btn.active { background: var(--accent-gold); transform: scale(1.05); }
+        .tab-btn svg { width: 32px; height: 32px; }
+        
+        #control-content { flex: 1; padding: 16px; overflow-x: auto; display: flex; gap: 16px; }
+        .content-panel { display: none; width: 100%; align-items: center; gap: 16px; }
+        .content-panel.active { display: flex; }
+
+        .action-card {
+            background: var(--bg-light); border-radius: 8px; padding: 8px; text-align: center;
+            width: 110px; height: 130px; display: flex; flex-direction: column; justify-content: space-between;
+            border: 2px solid var(--bg-light); transition: all 0.2s; cursor: pointer; position: relative;
+        }
+        .action-card:hover { border-color: var(--accent-gold); transform: translateY(-4px); }
+        .action-card .icon { width: 50px; height: 50px; margin: 0 auto; }
+        .action-card .name { font-weight: bold; font-size: 0.9rem; }
+        .action-card .cost { font-size: 0.8rem; opacity: 0.8; }
+        .tooltip {
+            visibility: hidden; opacity: 0; position: absolute; bottom: 105%; left: 50%; transform: translateX(-50%);
+            background: var(--bg-dark); padding: 8px; border-radius: 6px; z-index: 10;
+            transition: opacity 0.2s; pointer-events: none; width: max-content;
+        }
+        .action-card:hover .tooltip { visibility: visible; opacity: 1; }
+
+        .modal { transition: opacity 0.3s ease-in-out; }
+        .modal-content {
+            background: var(--bg-medium); border: 2px solid var(--accent-gold);
+            border-radius: 12px; box-shadow: 0 5px 25px rgba(0,0,0,0.5);
+            padding: 1.5rem; max-width: 400px; text-align: center;
+        }
+        .modal-title { font-family: 'Bangers', cursive; font-size: 2.5rem; color: var(--accent-gold); margin-bottom: 1rem; }
+        .modal-body { text-align: left; margin-bottom: 1.5rem; }
+        .modal-btn {
+            background: var(--accent-gold); color: var(--bg-dark); font-weight: bold;
+            padding: 0.5rem 1.5rem; border-radius: 8px; transition: transform 0.2s;
+        }
+        .modal-btn:hover { transform: scale(1.05); }
+    </style>
+</head>
+<body>
+    <h1 class="font-bangers text-5xl text-yellow-400 tracking-wider mb-2" style="text-shadow: 2px 2px #000;">Clash of Castles</h1>
+    <div id="resource-bar"></div>
+
+    <div id="game-area">
+        <div id="game-container"></div>
+    </div>
+    
+    <div id="control-panel">
+        <div id="control-tabs"></div>
+        <div id="control-content"></div>
+    </div>
+
+    <div id="build-cursor" class="build-cursor" style="display: none;"></div>
+
+    <div id="main-modal" class="modal fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50 opacity-0 pointer-events-none">
+        <div class="modal-content">
+            <h2 id="modal-title" class="modal-title">Modal Title</h2>
+            <div id="modal-body" class="modal-body"></div>
+            <div id="modal-footer" class="flex justify-center gap-4"></div>
+        </div>
+    </div>
+
+<script>
+    const GRID_COLS = 20;
+    const GRID_ROWS = 15;
+    const TICK_RATE = 1000;
+
+    /* const ICONS = { SVG Icons... }; // Kept the same as previous version, truncated for brevity */
+    /* // --- ICONS (same as previous version, content omitted for brevity) --- */
+    const ICONS = {
+        'town-hall': `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><g fill="#fff"><path d="M50 10 L10 40 L20 40 L20 90 L80 90 L80 40 L90 40 Z M30 80 L30 50 L40 50 L40 80 Z M60 80 L60 50 L70 50 L70 80Z M45 30 L55 30 L55 45 L45 45Z"></path></g></svg>`,
+        'gold-mine': `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><g fill="#FFD700"><path d="M20 80 L50 20 L80 80 Z M30 80 L50 40 L70 80 Z"></path><rect x="10" y="80" width="80" height="10"></rect></g></svg>`,
+        'elixir-collector': `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><g fill="#FF69B4"><circle cx="50" cy="70" r="25"></circle><rect x="40" y="20" width="20" height="50"></rect><circle cx="50" cy="20" r="10"></circle></g></svg>`,
+        'barracks': `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><g fill="#fff" stroke="#000" stroke-width="2"><path d="M20 10 L80 10 L80 90 L20 90 Z"></path><path d="M30 20 L70 20 M30 30 L70 30 M30 40 L70 40 M40 50 L60 80 M60 50 L40 80"></path></g></svg>`,
+        'gold-storage': `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><g fill="#DAA520"><rect x="10" y="30" width="80" height="60" rx="5"></rect><rect x="5" y="20" width="90" height="20" rx="5"></rect><rect x="45" y="45" width="10" height="20"></rect></g></svg>`,
+        'elixir-storage': `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><g fill="#8A2BE2"><rect x="20" y="10" width="60" height="80" rx="30"></rect><rect x="10" y="20" width="80" height="10"></rect><rect x="10" y="70" width="80" height="10"></rect></g></svg>`,
+        'warrior': `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><g fill="#C0C0C0"><path d="M48 90 L52 90 L52 40 L60 30 L60 20 L40 20 L40 30 L48 40 Z"></path></g></svg>`,
+        'archer': `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><g fill="none" stroke="#fff" stroke-width="5"><path d="M50 10 C 80 30, 80 70, 50 90"></path><path d="M10 50 L70 50 L60 40 M70 50 L60 60"></path></g></svg>`,
+        'wizard': `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><g fill="#4682B4"><path d="M50 10 L20 90 L80 90 Z M40 40 L60 40 L50 60 Z"></path></g></svg>`,
+        'gold': `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="40" fill="var(--accent-gold)"/></svg>`,
+        'elixir': `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><path d="M50 10 L90 50 L50 90 L10 50 Z" fill="var(--accent-pink)"/></svg>`,
+        'troops': `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><g fill="#fff"><path d="M10 90 L50 10 L90 90 Z"></path></g></svg>`,
+        'build': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>`,
+        'train': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h-1V6h1a2 2 0 1 0-4 0V5a4 4 0 1 1 8 0v1h1a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V5a4 4 0 1 1 8 0v1h-1a2 2 0 1 0-4 0V8z"></path></svg>`,
+        'attack': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.53 14.53 8.47 21.59a2 2 0 0 1-2.83 0l-1.17-1.17a2 2 0 0 1 0-2.83l7.06-7.06a2 2 0 0 1 2.83 0l1.17 1.17a2 2 0 0 1 0 2.83z"></path><path d="m22 2-1.5 1.5"></path><path d="M16 8s-2 2-4 4-4 4-4 4"></path><path d="m2 22 1.5-1.5"></path></svg>`
+    };
+    
+    // --- SPECS (same as previous version, content omitted for brevity) ---
+    const TROOP_SPECS = {
+        'warrior': { name: 'Warrior', svg: ICONS.warrior, cost: { elixir: 50 }, attackPower: 1, requiredBarracksLevel: 1 },
+        'archer': { name: 'Archer', svg: ICONS.archer, cost: { elixir: 100 }, attackPower: 2, requiredBarracksLevel: 2 },
+        'wizard': { name: 'Wizard', svg: ICONS.wizard, cost: { elixir: 250 }, attackPower: 5, requiredBarracksLevel: 3 }
+    };
+
+    const BUILDING_SPECS = {
+        'town-hall': { name: 'Town Hall', svg: ICONS['town-hall'], levels: [{ cost: { gold: 0, elixir: 0 }, capacity: { gold: 1000, elixir: 1000 } }] },
+        'gold-mine': { name: 'Gold Mine', svg: ICONS['gold-mine'], levels: [
+            { cost: { gold: 100, elixir: 0 }, production: { type: 'gold', amount: 5 } },
+            { cost: { gold: 250, elixir: 0 }, production: { type: 'gold', amount: 12 } },
+            { cost: { gold: 600, elixir: 0 }, production: { type: 'gold', amount: 25 } }
+        ]},
+        'elixir-collector': { name: 'Elixir Collector', svg: ICONS['elixir-collector'], levels: [
+            { cost: { gold: 0, elixir: 150 }, production: { type: 'elixir', amount: 5 } },
+            { cost: { gold: 0, elixir: 350 }, production: { type: 'elixir', amount: 12 } },
+            { cost: { gold: 0, elixir: 800 }, production: { type: 'elixir', amount: 25 } }
+        ]},
+        'barracks': { name: 'Barracks', svg: ICONS.barracks, levels: [
+            { cost: { gold: 0, elixir: 200 }, unlocks: 'warrior' },
+            { cost: { gold: 500, elixir: 1000 }, unlocks: 'archer' },
+            { cost: { gold: 2000, elixir: 4000 }, unlocks: 'wizard' }
+        ]},
+        'gold-storage': { name: 'Gold Storage', svg: ICONS['gold-storage'], levels: [
+            { cost: { gold: 0, elixir: 100 }, capacity: { gold: 1000, elixir: 0 } },
+            { cost: { gold: 0, elixir: 250 }, capacity: { gold: 2500, elixir: 0 } },
+            { cost: { gold: 0, elixir: 1000 }, capacity: { gold: 10000, elixir: 0 } }
+        ]},
+        'elixir-storage': { name: 'Elixir Storage', svg: ICONS['elixir-storage'], levels: [
+            { cost: { gold: 100, elixir: 0 }, capacity: { gold: 0, elixir: 1000 } },
+            { cost: { gold: 250, elixir: 0 }, capacity: { gold: 0, elixir: 2500 } },
+            { cost: { gold: 1000, elixir: 0 }, capacity: { gold: 0, elixir: 10000 } }
+        ]}
+    };
+
+    /* let gameState = { ... }; // Kept the same as previous version */
+    let gameState = {
+        resources: { gold: 500, elixir: 500 },
+        resourceCaps: { gold: 0, elixir: 0 },
+        buildings: [],
+        troops: { warrior: 0, archer: 0, wizard: 0 },
+        buildMode: null,
+        selectedBuildingId: null,
+        activeTab: 'build'
+    };
+    
+    /* const DOMElements = { ... }; // Grouping DOM elements for clarity */
+    const DOMElements = {
+        resourceBar: document.getElementById('resource-bar'),
+        gameContainer: document.getElementById('game-container'),
+        controlTabs: document.getElementById('control-tabs'),
+        controlContent: document.getElementById('control-content'),
+        buildCursor: document.getElementById('build-cursor'),
+        modal: document.getElementById('main-modal'),
+        modalTitle: document.getElementById('modal-title'),
+        modalBody: document.getElementById('modal-body'),
+        modalFooter: document.getElementById('modal-footer'),
+    };
+
+    // --- Modal Logic ---
+    function showModal(title, body, footerButtons) {
+        DOMElements.modalTitle.innerHTML = title;
+        DOMElements.modalBody.innerHTML = body;
+        DOMElements.modalFooter.innerHTML = '';
+        footerButtons.forEach(btnInfo => {
+            const button = document.createElement('button');
+            button.textContent = btnInfo.text;
+            button.className = `modal-btn ${btnInfo.class || ''}`;
+            button.onclick = () => {
+                hideModal();
+                if (btnInfo.action) btnInfo.action();
+            };
+            DOMElements.modalFooter.appendChild(button);
+        });
+        DOMElements.modal.classList.remove('opacity-0', 'pointer-events-none');
+    }
+
+    function hideModal() {
+        DOMElements.modal.classList.add('opacity-0', 'pointer-events-none');
+    }
+
+    function showUpgradeModal(building) {
+        gameState.selectedBuildingId = building.id;
+        const spec = BUILDING_SPECS[building.type];
+        const currentLevel = building.level;
+        const currentLevelInfo = spec.levels[currentLevel - 1];
+        
+        const title = `<div class="inline-block w-8 h-8 align-middle">${spec.svg}</div> ${spec.name} (Level ${currentLevel})`;
+        let body = '';
+        if (currentLevelInfo.production) body += `<p>Current Production: ${currentLevelInfo.production.amount} ${currentLevelInfo.production.type}/sec</p>`;
+        if (currentLevelInfo.capacity) body += `<p>Current Capacity: ${currentLevelInfo.capacity.gold > 0 ? `${currentLevelInfo.capacity.gold} Gold` : `${currentLevelInfo.capacity.elixir} Elixir`}</p>`;
+        
+        const buttons = [{ text: 'Close' }];
+        if (currentLevel < spec.levels.length) {
+            const nextLevelInfo = spec.levels[currentLevel];
+            body += `<hr class="my-2 border-gray-600"><p class="font-bold text-lg">Next Level:</p>`;
+            if (nextLevelInfo.production) body += `<p>Production: ${nextLevelInfo.production.amount} ${nextLevelInfo.production.type}/sec</p>`;
+            if (nextLevelInfo.capacity) body += `<p>Capacity: ${nextLevelInfo.capacity.gold > 0 ? `${nextLevelInfo.capacity.gold} Gold` : `${nextLevelInfo.capacity.elixir} Elixir`}</p>`;
+            body += `<p>Upgrade Cost: <span class="font-bold text-yellow-300">${nextLevelInfo.cost.gold}G</span>, <span class="font-bold text-pink-400">${nextLevelInfo.cost.elixir}E</span></p>`;
+            buttons.unshift({ text: 'Upgrade', action: upgradeBuilding, class: 'bg-green-500' });
+        } else {
+            body += `<hr class="my-2 border-gray-600"><p class="text-green-400 font-bold">Max Level Reached!</p>`;
+        }
+        showModal(title, body, buttons);
+    }
+
+    // --- Render Functions ---
+    function calculateResourceCaps() {
+        gameState.resourceCaps = gameState.buildings.reduce((caps, b) => {
+            const levelInfo = BUILDING_SPECS[b.type].levels[b.level - 1];
+            if (levelInfo.capacity) {
+                caps.gold += levelInfo.capacity.gold || 0;
+                caps.elixir += levelInfo.capacity.elixir || 0;
+            }
+            return caps;
+        }, { gold: 0, elixir: 0 });
+    }
+
+    function renderAll() {
+        renderGrid();
+        renderUI();
+    }
+
+    function renderGrid() {
+        DOMElements.gameContainer.innerHTML = '';
+        for (let y = 0; y < GRID_ROWS; y++) {
+            for (let x = 0; x < GRID_COLS; x++) {
+                const cell = document.createElement('div');
+                cell.className = 'grid-cell';
+                const building = gameState.buildings.find(b => b.x === x && b.y === y);
+                if (building) {
+                    const spec = BUILDING_SPECS[building.type];
+                    cell.innerHTML = `<div class="building ${building.type}">${spec.svg}<span class="building-level">${building.level}</span></div>`;
+                    if (building.type !== 'town-hall') {
+                        cell.querySelector('.building').addEventListener('click', () => showUpgradeModal(building));
+                    }
+                } else {
+                    cell.addEventListener('click', () => placeBuilding(x, y));
+                }
+                DOMElements.gameContainer.appendChild(cell);
+            }
+        }
+    }
+
+    function renderUI() {
+        // Resource Bar
+        const { gold, elixir } = gameState.resources;
+        const { gold: goldCap, elixir: elixirCap } = gameState.resourceCaps;
+        DOMElements.resourceBar.innerHTML = `
+            <div class="resource-display gold">
+                <div class="icon">${ICONS.gold}</div>
+                <div>
+                    <span>${Math.floor(gold)} / ${goldCap}</span>
+                    <div class="resource-progress-bg"><div class="resource-progress-fg" style="width:${(gold/goldCap)*100}%"></div></div>
+                </div>
+            </div>
+            <div class="resource-display elixir">
+                <div class="icon">${ICONS.elixir}</div>
+                <div>
+                    <span>${Math.floor(elixir)} / ${elixirCap}</span>
+                    <div class="resource-progress-bg"><div class="resource-progress-fg" style="width:${(elixir/elixirCap)*100}%"></div></div>
+                </div>
+            </div>
+            <div class="resource-display">
+                <div class="icon">${ICONS.troops}</div>
+                <span>${Object.values(gameState.troops).reduce((a, b) => a + b, 0)}</span>
+            </div>
+        `;
+
+        // Control Panel
+        renderControlPanel();
+    }
+
+    function renderControlPanel() {
+        // Tabs
+        DOMElements.controlTabs.innerHTML = `
+            <button class="tab-btn ${gameState.activeTab === 'build' ? 'active' : ''}" data-tab="build" title="Build">${ICONS.build}</button>
+            <button class="tab-btn ${gameState.activeTab === 'train' ? 'active' : ''}" data-tab="train" title="Train">${ICONS.train}</button>
+        `;
+        // Content
+        let buildContent = '', trainContent = '';
+        
+        // Build Panel
+        Object.keys(BUILDING_SPECS).filter(b => b !== 'town-hall').forEach(type => {
+            const spec = BUILDING_SPECS[type];
+            const cost = spec.levels[0].cost;
+            buildContent += `
+                <div class="action-card" data-action="build" data-type="${type}">
+                    <div class="icon">${spec.svg}</div>
+                    <div class="name">${spec.name}</div>
+                    <div class="cost">${cost.gold > 0 ? `${cost.gold}G` : ''} ${cost.elixir > 0 ? `${cost.elixir}E` : ''}</div>
+                </div>
+            `;
+        });
+
+        // Train Panel
+        const barracks = gameState.buildings.find(b => b.type === 'barracks');
+        if (barracks) {
+            const maxLevel = Math.max(...gameState.buildings.filter(b => b.type === 'barracks').map(b => b.level));
+            Object.keys(TROOP_SPECS).forEach(type => {
+                const spec = TROOP_SPECS[type];
+                if (spec.requiredBarracksLevel <= maxLevel) {
+                    trainContent += `
+                        <div class="action-card" data-action="train" data-type="${type}">
+                            <div class="icon">${spec.svg}</div>
+                            <div class="name">${spec.name}</div>
+                            <div class="cost">${spec.cost.elixir}E</div>
+                        </div>
+                    `;
+                }
+            });
+        } else {
+            trainContent = `<p class="text-center w-full">Build Barracks to train troops.</p>`;
+        }
+        
+        // Attack Button
+        const totalTroops = Object.values(gameState.troops).reduce((a, b) => a + b, 0);
+        const attackBtnDisabled = totalTroops <= 0 ? 'disabled' : '';
+        trainContent += `
+            <div class="action-card" data-action="attack" style="background-color: ${totalTroops > 0 ? 'var(--accent-green)' : 'var(--bg-light)'};">
+                <div class="icon">${ICONS.attack}</div>
+                <div class="name">Attack!</div>
+                <div class="cost">${totalTroops} Troops</div>
+            </div>
+        `;
+
+        DOMElements.controlContent.innerHTML = `
+            <div class="content-panel ${gameState.activeTab === 'build' ? 'active' : ''}">${buildContent}</div>
+            <div class="content-panel ${gameState.activeTab === 'train' ? 'active' : ''}">${trainContent}</div>
+        `;
+    }
+
+    // --- Game Logic ---
+    function placeBuilding(x, y) {
+        if (!gameState.buildMode) return;
+        if (gameState.buildings.some(b => b.x === x && b.y === y)) return;
+
+        const spec = BUILDING_SPECS[gameState.buildMode];
+        const cost = spec.levels[0].cost;
+        if (gameState.resources.gold < cost.gold || gameState.resources.elixir < cost.elixir) {
+            showModal('Cannot Build', 'You do not have enough resources.', [{text: 'OK'}]);
+            return;
+        }
+
+        gameState.resources.gold -= cost.gold;
+        gameState.resources.elixir -= cost.elixir;
+        gameState.buildings.push({ id: Date.now(), type: gameState.buildMode, x, y, level: 1 });
+        
+        setBuildMode(null);
+        calculateResourceCaps();
+        renderAll();
+    }
+    
+    function upgradeBuilding() {
+        const building = gameState.buildings.find(b => b.id === gameState.selectedBuildingId);
+        if (!building) return;
+
+        const spec = BUILDING_SPECS[building.type];
+        const upgradeCost = spec.levels[building.level].cost;
+        if (gameState.resources.gold < upgradeCost.gold || gameState.resources.elixir < upgradeCost.elixir) {
+             showModal('Cannot Upgrade', 'You do not have enough resources.', [{text: 'OK'}]);
+            return;
+        }
+
+        gameState.resources.gold -= upgradeCost.gold;
+        gameState.resources.elixir -= upgradeCost.elixir;
+        building.level++;
+        
+        calculateResourceCaps();
+        renderAll();
+        showModal('Upgraded!', `${spec.name} is now Level ${building.level}!`, [{text: 'Great!'}]);
+    }
+    
+    function setBuildMode(type) {
+        gameState.buildMode = type;
+        DOMElements.buildCursor.style.display = type ? 'block' : 'none';
+        if (type) {
+            DOMElements.buildCursor.innerHTML = BUILDING_SPECS[type].svg;
+        }
+        // Update grid cell styles for placement feedback
+        document.querySelectorAll('.grid-cell').forEach(cell => {
+            cell.classList.remove('placement-valid', 'placement-invalid');
+            if (type) {
+                const isOccupied = gameState.buildings.some(b => b.x == cell.dataset.x && b.y == cell.dataset.y);
+                cell.classList.add(isOccupied ? 'placement-invalid' : 'placement-valid');
+            }
+        });
+    }
+
+    function startAttack() {
+        let totalAttackPower = Object.keys(gameState.troops).reduce((acc, troopType) => {
+            return acc + (gameState.troops[troopType] * TROOP_SPECS[troopType].attackPower);
+        }, 0);
+        
+        if (totalAttackPower <= 0) return;
+
+        const goldLoot = Math.floor(totalAttackPower * (Math.random() * 10 + 5));
+        const elixirLoot = Math.floor(totalAttackPower * (Math.random() * 5 + 2));
+
+        gameState.resources.gold = Math.min(gameState.resourceCaps.gold, gameState.resources.gold + goldLoot);
+        gameState.resources.elixir = Math.min(gameState.resourceCaps.elixir, gameState.resources.elixir + elixirLoot);
+        
+        Object.keys(gameState.troops).forEach(t => gameState.troops[t] = 0);
+        
+        showModal('Victory!', `Your army attacked and looted ${goldLoot}G and ${elixirLoot}E.`, [{text: 'Hooray!'}]);
+        renderUI();
+    }
+
+    function gameTick() {
+        gameState.buildings.forEach(building => {
+            const spec = BUILDING_SPECS[building.type];
+            const levelInfo = spec.levels[building.level - 1];
+            if (levelInfo.production) {
+                const resType = levelInfo.production.type;
+                const amount = levelInfo.production.amount;
+                gameState.resources[resType] = Math.min(gameState.resourceCaps[resType], gameState.resources[resType] + amount);
+            }
+        });
+        renderUI();
+    }
+
+    function init() {
+        gameState.buildings.push({ id: Date.now(), type: 'town-hall', x: 9, y: 7, level: 1 });
+        
+        calculateResourceCaps();
+        renderAll();
+
+        setInterval(gameTick, TICK_RATE);
+
+        // Event Listeners
+        DOMElements.controlTabs.addEventListener('click', e => {
+            const tabButton = e.target.closest('.tab-btn');
+            if (tabButton) {
+                gameState.activeTab = tabButton.dataset.tab;
+                renderControlPanel();
+            }
+        });
+
+        DOMElements.controlContent.addEventListener('click', e => {
+            const card = e.target.closest('.action-card');
+            if (!card) return;
+            const { action, type } = card.dataset;
+            
+            if (action === 'build') {
+                setBuildMode(type);
+            } else if (action === 'train') {
+                const spec = TROOP_SPECS[type];
+                if (gameState.resources.elixir >= spec.cost.elixir) {
+                    gameState.resources.elixir -= spec.cost.elixir;
+                    gameState.troops[type]++;
+                    renderUI();
+                } else {
+                    showModal('Cannot Train', `Not enough elixir to train a ${spec.name}.`, [{text: 'OK'}]);
+                }
+            } else if (action === 'attack') {
+                startAttack();
+            }
+        });
+
+        document.addEventListener('mousemove', e => {
+            if (gameState.buildMode) {
+                DOMElements.buildCursor.style.left = `${e.clientX - 20}px`;
+                DOMElements.buildCursor.style.top = `${e.clientY - 20}px`;
+            }
+        });
+
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape' && gameState.buildMode) {
+                setBuildMode(null);
+            }
+        });
+    }
+
+    window.onload = init;
+</script>
+</body>
+</html>
