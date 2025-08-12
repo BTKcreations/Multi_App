@@ -3,27 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Circle Bouncer Game</title>
+    <title>Circle Bouncer: Levels & Powers</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Poppins', sans-serif;
-            overflow: hidden; /* Prevents scrollbars from appearing */
+            overflow: hidden;
         }
         canvas {
-            background-color: #1a202c; /* dark gray */
+            background-color: #1a202c;
             display: block;
-            border-radius: 50%;
-            box-shadow: 0 0 25px rgba(0, 255, 255, 0.3), inset 0 0 15px rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 25px rgba(0, 255, 255, 0.3);
             border: 2px solid #4a5568;
         }
         .btn-glow {
             transition: all 0.3s ease;
-            box-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
         }
-        .btn-glow:hover {
+        .btn-glow:not(:disabled) {
+             box-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
+        }
+        .btn-glow:hover:not(:disabled) {
             box-shadow: 0 0 15px rgba(0, 255, 255, 0.8), 0 0 25px rgba(0, 255, 255, 0.5);
             transform: translateY(-2px);
         }
@@ -36,6 +37,20 @@
         .wallet-glow {
              text-shadow: 0 0 8px rgba(56, 189, 248, 0.7);
         }
+        .level-glow {
+            text-shadow: 0 0 8px rgba(167, 139, 250, 0.7);
+        }
+        .spinner {
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            width: 16px;
+            height: 16px;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body class="bg-gray-900 text-white flex flex-col items-center justify-center h-screen p-4">
@@ -47,16 +62,22 @@
     
     <!-- UI Controls -->
     <div class="w-full max-w-lg md:max-w-xl lg:max-w-2xl text-center">
-        <!-- Wallet Display -->
-        <div class="bg-gray-800/50 backdrop-blur-sm rounded-xl p-4 mb-4 border border-gray-700">
-            <h2 class="text-xl font-bold text-cyan-300 tracking-wider">WALLET</h2>
-            <p class="text-4xl font-mono font-bold wallet-glow" id="wallet">
-                $<span id="wallet-amount">0</span>
-            </p>
+        <!-- Stats Display -->
+        <div class="grid grid-cols-2 gap-4 mb-4">
+            <div class="bg-gray-800/50 backdrop-blur-sm rounded-xl p-3 border border-gray-700">
+                <h2 class="text-lg font-bold text-cyan-300 tracking-wider">WALLET</h2>
+                <p class="text-3xl font-mono font-bold wallet-glow" id="wallet">
+                    $<span id="wallet-amount">0</span>
+                </p>
+            </div>
+            <div class="bg-gray-800/50 backdrop-blur-sm rounded-xl p-3 border border-gray-700">
+                <h2 class="text-lg font-bold text-violet-300 tracking-wider">LEVEL <span id="level-display">1</span></h2>
+                <p class="text-sm font-semibold level-glow" id="level-goal">Goal: $100</p>
+            </div>
         </div>
 
         <!-- Action Buttons -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
             <button id="addBallBtn" class="btn-glow bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline w-full">
                 <div>Add Ball</div>
                 <div class="text-sm opacity-90" id="addBallCostText">Cost: $10</div>
@@ -65,10 +86,21 @@
                 <div>Improve Speed</div>
                 <div class="text-sm opacity-90" id="increaseSpeedCostText">Cost: $50</div>
             </button>
+            <button id="powerUpBtn" class="btn-glow bg-amber-600 hover:bg-amber-500 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline w-full">
+                <div>Power-up</div>
+                <div class="text-sm opacity-90" id="powerUpCostText">Cost: $75</div>
+            </button>
+        </div>
+         <!-- Gemini API Button -->
+        <div class="w-full">
+             <button id="getAdviceBtn" class="btn-glow bg-purple-700 hover:bg-purple-600 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline w-full flex items-center justify-center gap-2">
+                <span id="adviceBtnText">✨ Get Advice</span>
+                <div id="adviceSpinner" class="spinner hidden"></div>
+            </button>
         </div>
         
         <!-- Message Display -->
-        <div id="message-box" class="mt-4 h-6 text-yellow-400 font-semibold transition-opacity duration-500 opacity-0"></div>
+        <div id="message-box" class="mt-4 h-12 text-yellow-400 font-semibold transition-opacity duration-500 opacity-0 flex items-center justify-center text-center"></div>
     </div>
 
     <script>
@@ -77,10 +109,17 @@
         const ctx = canvas.getContext('2d');
         const gameContainer = document.getElementById('game-container');
         const walletAmountEl = document.getElementById('wallet-amount');
+        const levelDisplayEl = document.getElementById('level-display');
+        const levelGoalEl = document.getElementById('level-goal');
         const addBallBtn = document.getElementById('addBallBtn');
         const increaseSpeedBtn = document.getElementById('increaseSpeedBtn');
+        const powerUpBtn = document.getElementById('powerUpBtn');
         const addBallCostText = document.getElementById('addBallCostText');
         const increaseSpeedCostText = document.getElementById('increaseSpeedCostText');
+        const powerUpCostText = document.getElementById('powerUpCostText');
+        const getAdviceBtn = document.getElementById('getAdviceBtn');
+        const adviceBtnText = document.getElementById('adviceBtnText');
+        const adviceSpinner = document.getElementById('adviceSpinner');
         const messageBox = document.getElementById('message-box');
 
         // --- Game State ---
@@ -89,122 +128,175 @@
         let speedMultiplier = 1.0;
         let addBallCost = 10;
         let increaseSpeedCost = 50;
+        let powerUpCost = 75;
+        let level = 1;
+        let levelGoal = 100;
+        const shapes = ['circle', 'square', 'triangle'];
+        let currentShape = 'circle';
+        let nextPowerUp = 'none'; // 'none', 'money', 'ghost'
         
         // --- Sound Synthesis ---
-        // Create a synth for the bounce sound. Using Tone.js
-        const synth = new Tone.MembraneSynth({
-            octaves: 4,
-            pitchDecay: 0.01,
-            envelope: {
-                attack: 0.001,
-                decay: 0.2,
-                sustain: 0,
-            },
-        }).toDestination();
+        const synth = new Tone.MembraneSynth({ octaves: 4, pitchDecay: 0.01, envelope: { attack: 0.001, decay: 0.2, sustain: 0 } }).toDestination();
+        const levelUpSynth = new Tone.PolySynth(Tone.Synth).toDestination();
 
         // --- Game Setup ---
-        let mainCircle = { x: 0, y: 0, radius: 0 };
+        let container = { x: 0, y: 0, size: 0 };
 
         function resizeCanvas() {
             const size = Math.min(gameContainer.clientWidth, gameContainer.clientHeight);
             canvas.width = size;
             canvas.height = size;
-            mainCircle.x = canvas.width / 2;
-            mainCircle.y = canvas.height / 2;
-            mainCircle.radius = canvas.width / 2 - 10; // 10px padding
+            container.x = canvas.width / 2;
+            container.y = canvas.height / 2;
+            container.size = canvas.width; // Use full width for shapes
         }
 
         // --- Ball Class ---
         class Ball {
             constructor() {
                 this.radius = 8;
-                this.x = mainCircle.x;
-                this.y = mainCircle.y;
-                // Give it a random starting velocity
+                this.x = container.x;
+                this.y = container.y;
                 const angle = Math.random() * 2 * Math.PI;
                 const speed = (2 + Math.random()) * speedMultiplier;
                 this.dx = Math.cos(angle) * speed;
                 this.dy = Math.sin(angle) * speed;
-                this.color = `hsl(${Math.random() * 360}, 90%, 65%)`;
+                
+                this.power = nextPowerUp;
+                nextPowerUp = 'none'; // Reset after assigning
+                
+                this.color = this.getPowerUpColor();
+            }
+            
+            getPowerUpColor() {
+                switch(this.power) {
+                    case 'money': return '#FFD700'; // Gold
+                    case 'ghost': return '#E0E0E0'; // Light Gray
+                    default: return `hsl(${Math.random() * 360}, 90%, 65%)`;
+                }
             }
 
             draw() {
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
                 ctx.fillStyle = this.color;
+                if (this.power === 'ghost') {
+                    ctx.globalAlpha = 0.6;
+                }
                 ctx.fill();
+                ctx.globalAlpha = 1.0;
                 ctx.closePath();
             }
 
             update() {
                 this.x += this.dx;
                 this.y += this.dy;
+                this.handleCollision();
+            }
+            
+            handleCollision() {
+                let collided = false;
+                // --- Shape-based Collision ---
+                if (currentShape === 'circle') {
+                    const dist = Math.sqrt((this.x - container.x)**2 + (this.y - container.y)**2);
+                    if (dist + this.radius > container.size / 2) {
+                        collided = true;
+                        const nx = (this.x - container.x) / dist;
+                        const ny = (this.y - container.y) / dist;
+                        const dotProduct = this.dx * nx + this.dy * ny;
+                        this.dx -= 2 * dotProduct * nx;
+                        this.dy -= 2 * dotProduct * ny;
+                        const overlap = dist + this.radius - (container.size / 2);
+                        this.x -= overlap * nx;
+                        this.y -= overlap * ny;
+                    }
+                } else if (currentShape === 'square') {
+                    if (this.x - this.radius < 0) { collided = true; this.dx *= -1; this.x = this.radius; }
+                    if (this.x + this.radius > container.size) { collided = true; this.dx *= -1; this.x = container.size - this.radius; }
+                    if (this.y - this.radius < 0) { collided = true; this.dy *= -1; this.y = this.radius; }
+                    if (this.y + this.radius > container.size) { collided = true; this.dy *= -1; this.y = container.size - this.radius; }
+                } else if (currentShape === 'triangle') {
+                    // Simplified triangle collision for this example
+                    if (this.x - this.radius < 0 || this.x + this.radius > container.size || this.y + this.radius > container.size) {
+                        collided = true;
+                        if (this.x - this.radius < 0 || this.x + this.radius > container.size) this.dx *= -1;
+                        if (this.y + this.radius > container.size) this.dy *= -1;
+                        // A more accurate triangle collision would involve line-segment intersection checks
+                    }
+                }
 
-                // Collision detection with the main circle boundary
-                const dist = Math.sqrt((this.x - mainCircle.x)**2 + (this.y - mainCircle.y)**2);
-
-                if (dist + this.radius > mainCircle.radius) {
-                    // --- Handle Collision ---
-                    // Play sound
-                    try {
-                        Tone.start();
-                        synth.triggerAttackRelease("C2", "8n");
-                    } catch (e) {
-                        console.error("Audio context not ready.", e);
+                if (collided) {
+                    if (this.power === 'ghost' && Math.random() < 0.25) {
+                        // Ghost ball has a 25% chance to phase through
+                        return;
                     }
                     
-                    // Increase wallet
-                    wallet += Math.ceil(speedMultiplier); // Earn more for higher speed
-                    updateUI();
-
-                    // --- Reflection Physics ---
-                    // Normal vector at collision point
-                    const nx = (this.x - mainCircle.x) / dist;
-                    const ny = (this.y - mainCircle.y) / dist;
-
-                    // Dot product of velocity and normal
-                    const dotProduct = this.dx * nx + this.dy * ny;
-
-                    // Reflect velocity
-                    this.dx -= 2 * dotProduct * nx;
-                    this.dy -= 2 * dotProduct * ny;
+                    try { Tone.start(); synth.triggerAttackRelease("C2", "8n"); } catch (e) {}
                     
-                    // Move ball back inside to prevent it from getting stuck
-                    const overlap = dist + this.radius - mainCircle.radius;
-                    this.x -= overlap * nx;
-                    this.y -= overlap * ny;
+                    let earnings = Math.ceil(speedMultiplier);
+                    if (this.power === 'money') earnings *= 2; // Money ball earns double
+                    
+                    wallet += earnings;
+                    checkLevelUp();
+                    updateUI();
                 }
             }
             
             updateSpeed() {
                 const currentSpeed = Math.sqrt(this.dx**2 + this.dy**2);
-                const speedRatio = (currentSpeed / (speedMultiplier / 1.1)); // Get base speed
-                
+                const speedRatio = (currentSpeed / (speedMultiplier / 1.1));
                 const newBaseSpeed = speedRatio * speedMultiplier;
                 const angle = Math.atan2(this.dy, this.dx);
-                
                 this.dx = Math.cos(angle) * newBaseSpeed;
                 this.dy = Math.sin(angle) * newBaseSpeed;
             }
         }
 
-        // --- UI Functions ---
+        // --- UI & Game Logic ---
         function updateUI() {
             walletAmountEl.textContent = wallet;
+            levelDisplayEl.textContent = level;
+            levelGoalEl.textContent = `Goal: $${levelGoal}`;
             addBallCostText.textContent = `Cost: $${addBallCost}`;
             increaseSpeedCostText.textContent = `Cost: $${increaseSpeedCost}`;
+            powerUpCostText.textContent = `Cost: $${powerUpCost}`;
             
-            // Disable buttons if player can't afford
             addBallBtn.disabled = wallet < addBallCost;
             increaseSpeedBtn.disabled = wallet < increaseSpeedCost;
+            powerUpBtn.disabled = wallet < powerUpCost;
+
+            if (nextPowerUp !== 'none') {
+                powerUpBtn.classList.add('ring-2', 'ring-amber-400');
+                powerUpBtn.querySelector('div:first-child').textContent = `${nextPowerUp.charAt(0).toUpperCase() + nextPowerUp.slice(1)} Ball`;
+            } else {
+                powerUpBtn.classList.remove('ring-2', 'ring-amber-400');
+                powerUpBtn.querySelector('div:first-child').textContent = 'Power-up';
+            }
         }
 
-        function showMessage(msg) {
-            messageBox.textContent = msg;
+        function checkLevelUp() {
+            if (wallet >= levelGoal) {
+                level++;
+                levelGoal = Math.ceil(levelGoal * 2.5);
+                currentShape = shapes[(level - 1) % shapes.length];
+                
+                // Play level up sound
+                try {
+                    const now = Tone.now();
+                    levelUpSynth.triggerAttackRelease(["C4", "E4", "G4"], "8n", now);
+                } catch(e) {}
+
+                showMessage(`Level Up! Welcome to the ${currentShape.toUpperCase()}!`, 4000);
+                updateUI();
+            }
+        }
+
+        function showMessage(msg, duration = 3000) {
+            messageBox.innerHTML = msg;
             messageBox.classList.remove('opacity-0');
             setTimeout(() => {
                 messageBox.classList.add('opacity-0');
-            }, 2000);
+            }, duration);
         }
 
         // --- Event Handlers ---
@@ -212,10 +304,8 @@
             if (wallet >= addBallCost) {
                 wallet -= addBallCost;
                 balls.push(new Ball());
-                addBallCost = Math.ceil(addBallCost * 1.4); // Increase cost
+                addBallCost = Math.ceil(addBallCost * 1.4);
                 updateUI();
-            } else {
-                showMessage("Not enough money!");
             }
         });
 
@@ -224,29 +314,112 @@
                 wallet -= increaseSpeedCost;
                 speedMultiplier *= 1.1;
                 balls.forEach(ball => ball.updateSpeed());
-                increaseSpeedCost = Math.ceil(increaseSpeedCost * 1.8); // Increase cost
+                increaseSpeedCost = Math.ceil(increaseSpeedCost * 1.8);
                 updateUI();
-            } else {
-                showMessage("Not enough money!");
             }
         });
         
+        powerUpBtn.addEventListener('click', () => {
+            if (wallet >= powerUpCost) {
+                wallet -= powerUpCost;
+                // Cycle through power-ups
+                const availablePowerUps = ['money', 'ghost'];
+                const currentPowerUpIndex = availablePowerUps.indexOf(nextPowerUp);
+                nextPowerUp = availablePowerUps[(currentPowerUpIndex + 1) % availablePowerUps.length];
+                
+                powerUpCost = Math.ceil(powerUpCost * 1.5);
+                showMessage(`Next ball will be a <em>${nextPowerUp} ball</em>!`);
+                updateUI();
+            }
+        });
+        
+        getAdviceBtn.addEventListener('click', () => getAdvice());
         window.addEventListener('resize', resizeCanvas);
+        
+        // --- Gemini API Integration ---
+        async function getAdvice() {
+            adviceBtnText.textContent = 'Thinking...';
+            adviceSpinner.classList.remove('hidden');
+            getAdviceBtn.disabled = true;
+
+            const prompt = `You are a strategic advisor for an idle game. A player needs your advice.
+            Current Status:
+            - Level: ${level} (Current Shape: ${currentShape})
+            - Wallet: $${wallet}
+            - Goal for next level: $${levelGoal}
+            - Number of balls: ${balls.length}
+            - Speed multiplier: ${speedMultiplier.toFixed(2)}x
+            - Cost to add a ball: $${addBallCost}
+            - Cost to improve speed: $${increaseSpeedCost}
+            - Cost for next power-up: $${powerUpCost}
+            - Next power-up queued: ${nextPowerUp}
+
+            Based on this, what is the best strategy? Consider their level, wallet, and the high costs. Give a short, encouraging, and slightly quirky piece of advice in one sentence.`;
+            
+            try {
+                const advice = await callGemini(prompt);
+                showMessage(`<em>Advisor says:</em> "${advice}"`, 5000);
+            } catch (error) {
+                console.error("Error fetching advice:", error);
+                showMessage("The advisor is on a coffee break. Please try again later.");
+            } finally {
+                adviceBtnText.textContent = '✨ Get Advice';
+                adviceSpinner.classList.add('hidden');
+                getAdviceBtn.disabled = false;
+            }
+        }
+        
+        async function callGemini(prompt, retries = 3, delay = 1000) {
+            const apiKey = ""; // Handled by environment
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+            const payload = { contents: [{ role: "user", parts: [{ text: prompt }] }] };
+
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                    if (!response.ok) throw new Error(`API request failed with status ${response.status}`);
+                    const result = await response.json();
+                    if (result.candidates?.[0]?.content?.parts?.[0]?.text) {
+                        return result.candidates[0].content.parts[0].text;
+                    } else {
+                        throw new Error("Invalid response structure from API.");
+                    }
+                } catch (error) {
+                    if (i < retries - 1) {
+                        await new Promise(res => setTimeout(res, delay));
+                        delay *= 2;
+                    } else { throw error; }
+                }
+            }
+        }
 
         // --- Game Loop ---
+        function drawContainer() {
+            ctx.strokeStyle = '#4a5568';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            if (currentShape === 'circle') {
+                ctx.arc(container.x, container.y, container.size / 2 - 2, 0, Math.PI * 2);
+                canvas.style.borderRadius = '50%';
+            } else if (currentShape === 'square') {
+                ctx.rect(2, 2, container.size - 4, container.size - 4);
+                canvas.style.borderRadius = '16px';
+            } else if (currentShape === 'triangle') {
+                ctx.moveTo(container.size / 2, 2);
+                ctx.lineTo(container.size - 2, container.size - 2);
+                ctx.lineTo(2, container.size - 2);
+                ctx.closePath();
+                canvas.style.borderRadius = '16px';
+            }
+            ctx.stroke();
+        }
+
         function animate() {
-            // Clear canvas with a slight trail effect
             ctx.fillStyle = 'rgba(26, 32, 44, 0.25)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Draw outer circle boundary
-            ctx.beginPath();
-            ctx.arc(mainCircle.x, mainCircle.y, mainCircle.radius, 0, Math.PI * 2);
-            ctx.strokeStyle = '#4a5568';
-            ctx.lineWidth = 2;
-            ctx.stroke();
             
-            // Update and draw all balls
+            drawContainer();
+            
             balls.forEach(ball => {
                 ball.update();
                 ball.draw();
@@ -258,7 +431,7 @@
         // --- Initialization ---
         function init() {
             resizeCanvas();
-            balls.push(new Ball()); // Start with one ball
+            balls.push(new Ball());
             updateUI();
             animate();
         }
@@ -267,4 +440,3 @@
     </script>
 </body>
 </html>
-
