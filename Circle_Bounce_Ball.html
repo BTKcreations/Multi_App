@@ -360,6 +360,12 @@
                 try { levelUpSynth.triggerAttackRelease(["C4", "E4", "G4"], "8n", Tone.now()); } catch(e) {}
                 showMessage(`Level Up! Welcome to the ${currentShape.toUpperCase()}!`, 4000);
                 updateUI();
+wallet = 0, balls = [];
+speedMultiplier = 1.0;
+addBallCost = 1;
+        increaseSpeedCost = 2;
+powerUpCost = 3;
+frenzyCost = 4;
             }
         }
 
