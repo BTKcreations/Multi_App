@@ -72,6 +72,13 @@ document.addEventListener("DOMContentLoaded", () => {
       icon: "🏰",
       category: "Games",
       keywords: "clash of castles strategy game",
+    },
+    {
+      name: "Tap Dash",
+      file: "Tap_Dash.html",
+      icon: "🏰",
+      category: "Games",
+      keywords: "Jump from Obstacles Tap Dash Game",
     }];
 
   // --- 2. ELEMENT REFERENCES ---
