@@ -79,6 +79,13 @@ document.addEventListener("DOMContentLoaded", () => {
       icon: "🏰",
       category: "Games",
       keywords: "Jump from Obstacles Tap Dash Game",
+    },
+    {
+      name: "Circle Bounce Ball",
+      file: "Circle_Bounce_Ball.html",
+      icon: "🏰",
+      category: "Games",
+      keywords: "Ball Bounces in the circle get the score in virtual money",
     }];
 
   // --- 2. ELEMENT REFERENCES ---
