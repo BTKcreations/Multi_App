@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Circle Bouncer Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            overflow: hidden; /* Prevents scrollbars from appearing */
+        }
+        canvas {
+            background-color: #1a202c; /* dark gray */
+            display: block;
+            border-radius: 50%;
+            box-shadow: 0 0 25px rgba(0, 255, 255, 0.3), inset 0 0 15px rgba(255, 255, 255, 0.1);
+            border: 2px solid #4a5568;
+        }
+        .btn-glow {
+            transition: all 0.3s ease;
+            box-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
+        }
+        .btn-glow:hover {
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.8), 0 0 25px rgba(0, 255, 255, 0.5);
+            transform: translateY(-2px);
+        }
+        .btn-glow:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: translateY(0);
+            box-shadow: none;
+        }
+        .wallet-glow {
+             text-shadow: 0 0 8px rgba(56, 189, 248, 0.7);
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white flex flex-col items-center justify-center h-screen p-4">
+
+    <!-- Main Game Container -->
+    <div id="game-container" class="w-full max-w-lg md:max-w-xl lg:max-w-2xl aspect-square mb-4">
+        <canvas id="gameCanvas"></canvas>
+    </div>
+    
+    <!-- UI Controls -->
+    <div class="w-full max-w-lg md:max-w-xl lg:max-w-2xl text-center">
+        <!-- Wallet Display -->
+        <div class="bg-gray-800/50 backdrop-blur-sm rounded-xl p-4 mb-4 border border-gray-700">
+            <h2 class="text-xl font-bold text-cyan-300 tracking-wider">WALLET</h2>
+            <p class="text-4xl font-mono font-bold wallet-glow" id="wallet">
+                $<span id="wallet-amount">0</span>
+            </p>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <button id="addBallBtn" class="btn-glow bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline w-full">
+                <div>Add Ball</div>
+                <div class="text-sm opacity-90" id="addBallCostText">Cost: $10</div>
+            </button>
+            <button id="increaseSpeedBtn" class="btn-glow bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline w-full">
+                <div>Improve Speed</div>
+                <div class="text-sm opacity-90" id="increaseSpeedCostText">Cost: $50</div>
+            </button>
+        </div>
+        
+        <!-- Message Display -->
+        <div id="message-box" class="mt-4 h-6 text-yellow-400 font-semibold transition-opacity duration-500 opacity-0"></div>
+    </div>
+
+    <script>
+        // --- DOM Elements ---
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const gameContainer = document.getElementById('game-container');
+        const walletAmountEl = document.getElementById('wallet-amount');
+        const addBallBtn = document.getElementById('addBallBtn');
+        const increaseSpeedBtn = document.getElementById('increaseSpeedBtn');
+        const addBallCostText = document.getElementById('addBallCostText');
+        const increaseSpeedCostText = document.getElementById('increaseSpeedCostText');
+        const messageBox = document.getElementById('message-box');
+
+        // --- Game State ---
+        let wallet = 0;
+        let balls = [];
+        let speedMultiplier = 1.0;
+        let addBallCost = 10;
+        let increaseSpeedCost = 50;
+        
+        // --- Sound Synthesis ---
+        // Create a synth for the bounce sound. Using Tone.js
+        const synth = new Tone.MembraneSynth({
+            octaves: 4,
+            pitchDecay: 0.01,
+            envelope: {
+                attack: 0.001,
+                decay: 0.2,
+                sustain: 0,
+            },
+        }).toDestination();
+
+        // --- Game Setup ---
+        let mainCircle = { x: 0, y: 0, radius: 0 };
+
+        function resizeCanvas() {
+            const size = Math.min(gameContainer.clientWidth, gameContainer.clientHeight);
+            canvas.width = size;
+            canvas.height = size;
+            mainCircle.x = canvas.width / 2;
+            mainCircle.y = canvas.height / 2;
+            mainCircle.radius = canvas.width / 2 - 10; // 10px padding
+        }
+
+        // --- Ball Class ---
+        class Ball {
+            constructor() {
+                this.radius = 8;
+                this.x = mainCircle.x;
+                this.y = mainCircle.y;
+                // Give it a random starting velocity
+                const angle = Math.random() * 2 * Math.PI;
+                const speed = (2 + Math.random()) * speedMultiplier;
+                this.dx = Math.cos(angle) * speed;
+                this.dy = Math.sin(angle) * speed;
+                this.color = `hsl(${Math.random() * 360}, 90%, 65%)`;
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+                ctx.closePath();
+            }
+
+            update() {
+                this.x += this.dx;
+                this.y += this.dy;
+
+                // Collision detection with the main circle boundary
+                const dist = Math.sqrt((this.x - mainCircle.x)**2 + (this.y - mainCircle.y)**2);
+
+                if (dist + this.radius > mainCircle.radius) {
+                    // --- Handle Collision ---
+                    // Play sound
+                    try {
+                        Tone.start();
+                        synth.triggerAttackRelease("C2", "8n");
+                    } catch (e) {
+                        console.error("Audio context not ready.", e);
+                    }
+                    
+                    // Increase wallet
+                    wallet += Math.ceil(speedMultiplier); // Earn more for higher speed
+                    updateUI();
+
+                    // --- Reflection Physics ---
+                    // Normal vector at collision point
+                    const nx = (this.x - mainCircle.x) / dist;
+                    const ny = (this.y - mainCircle.y) / dist;
+
+                    // Dot product of velocity and normal
+                    const dotProduct = this.dx * nx + this.dy * ny;
+
+                    // Reflect velocity
+                    this.dx -= 2 * dotProduct * nx;
+                    this.dy -= 2 * dotProduct * ny;
+                    
+                    // Move ball back inside to prevent it from getting stuck
+                    const overlap = dist + this.radius - mainCircle.radius;
+                    this.x -= overlap * nx;
+                    this.y -= overlap * ny;
+                }
+            }
+            
+            updateSpeed() {
+                const currentSpeed = Math.sqrt(this.dx**2 + this.dy**2);
+                const speedRatio = (currentSpeed / (speedMultiplier / 1.1)); // Get base speed
+                
+                const newBaseSpeed = speedRatio * speedMultiplier;
+                const angle = Math.atan2(this.dy, this.dx);
+                
+                this.dx = Math.cos(angle) * newBaseSpeed;
+                this.dy = Math.sin(angle) * newBaseSpeed;
+            }
+        }
+
+        // --- UI Functions ---
+        function updateUI() {
+            walletAmountEl.textContent = wallet;
+            addBallCostText.textContent = `Cost: $${addBallCost}`;
+            increaseSpeedCostText.textContent = `Cost: $${increaseSpeedCost}`;
+            
+            // Disable buttons if player can't afford
+            addBallBtn.disabled = wallet < addBallCost;
+            increaseSpeedBtn.disabled = wallet < increaseSpeedCost;
+        }
+
+        function showMessage(msg) {
+            messageBox.textContent = msg;
+            messageBox.classList.remove('opacity-0');
+            setTimeout(() => {
+                messageBox.classList.add('opacity-0');
+            }, 2000);
+        }
+
+        // --- Event Handlers ---
+        addBallBtn.addEventListener('click', () => {
+            if (wallet >= addBallCost) {
+                wallet -= addBallCost;
+                balls.push(new Ball());
+                addBallCost = Math.ceil(addBallCost * 1.4); // Increase cost
+                updateUI();
+            } else {
+                showMessage("Not enough money!");
+            }
+        });
+
+        increaseSpeedBtn.addEventListener('click', () => {
+            if (wallet >= increaseSpeedCost) {
+                wallet -= increaseSpeedCost;
+                speedMultiplier *= 1.1;
+                balls.forEach(ball => ball.updateSpeed());
+                increaseSpeedCost = Math.ceil(increaseSpeedCost * 1.8); // Increase cost
+                updateUI();
+            } else {
+                showMessage("Not enough money!");
+            }
+        });
+        
+        window.addEventListener('resize', resizeCanvas);
+
+        // --- Game Loop ---
+        function animate() {
+            // Clear canvas with a slight trail effect
+            ctx.fillStyle = 'rgba(26, 32, 44, 0.25)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw outer circle boundary
+            ctx.beginPath();
+            ctx.arc(mainCircle.x, mainCircle.y, mainCircle.radius, 0, Math.PI * 2);
+            ctx.strokeStyle = '#4a5568';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // Update and draw all balls
+            balls.forEach(ball => {
+                ball.update();
+                ball.draw();
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        // --- Initialization ---
+        function init() {
+            resizeCanvas();
+            balls.push(new Ball()); // Start with one ball
+            updateUI();
+            animate();
+        }
+
+        init();
+    </script>
+</body>
+</html>
+
