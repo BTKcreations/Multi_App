@@ -179,9 +179,9 @@
         const messageBox = document.getElementById('message-box');
 
         // --- Game State ---
-        let wallet = 50, balls = [], speedMultiplier = 1.0, addBallCost = 5;
-        let increaseSpeedCost = 10, powerUpCost = 35, frenzyCost = 125;
-        let level = 1, levelGoal = 100;
+        let wallet = 0, balls = [], speedMultiplier = 1.0, addBallCost = 1;
+        let increaseSpeedCost = 2, powerUpCost = 3, frenzyCost = 4;
+        let level = 1, levelGoal = 50;
         const shapes = ['circle', 'square', 'triangle', 'hexagon'];
         let currentShape = 'circle';
         let nextPowerUp = 'none';
@@ -370,10 +370,10 @@
         }
 
         // --- Event Handlers ---
-        addBallBtn.addEventListener('click', () => { if (wallet >= addBallCost) { wallet -= addBallCost; balls.push(new Ball()); addBallCost = Math.ceil(addBallCost * 1.4); updateUI(); } });
-        increaseSpeedBtn.addEventListener('click', () => { if (wallet >= increaseSpeedCost) { wallet -= increaseSpeedCost; speedMultiplier *= 1.1; balls.forEach(b => b.updateSpeed()); increaseSpeedCost = Math.ceil(increaseSpeedCost * 1.8); updateUI(); } });
-        powerUpBtn.addEventListener('click', () => { if (wallet >= powerUpCost) { wallet -= powerUpCost; const p = ['money', 'ghost']; nextPowerUp = p[(p.indexOf(nextPowerUp) + 1) % p.length]; powerUpCost = Math.ceil(powerUpCost * 1.5); showMessage(`Next ball is a <em>${nextPowerUp} ball</em>!`); updateUI(); } });
-        frenzyBtn.addEventListener('click', () => { if (wallet >= frenzyCost && !isFrenzyActive) { wallet -= frenzyCost; isFrenzyActive = true; frenzyTimer = 10; try { frenzySynth.triggerAttackRelease("C5", "4n"); } catch(e){} showMessage("FRENZY MODE!", 2000); const interval = setInterval(() => { frenzyTimer--; if (frenzyTimer <= 0) { clearInterval(interval); isFrenzyActive = false; frenzyCost = Math.ceil(frenzyCost * 2); showMessage("Frenzy Over!", 2000); } updateUI(); }, 1000); updateUI(); } });
+        addBallBtn.addEventListener('click', () => { if (wallet >= addBallCost) { wallet -= addBallCost; balls.push(new Ball()); addBallCost = Math.ceil(addBallCost * 1.1); updateUI(); } });
+        increaseSpeedBtn.addEventListener('click', () => { if (wallet >= increaseSpeedCost) { wallet -= increaseSpeedCost; speedMultiplier *= 1.1; balls.forEach(b => b.updateSpeed()); increaseSpeedCost = Math.ceil(increaseSpeedCost * 1.2); updateUI(); } });
+        powerUpBtn.addEventListener('click', () => { if (wallet >= powerUpCost) { wallet -= powerUpCost; const p = ['money', 'ghost']; nextPowerUp = p[(p.indexOf(nextPowerUp) + 1) % p.length]; powerUpCost = Math.ceil(powerUpCost * 1.3); showMessage(`Next ball is a <em>${nextPowerUp} ball</em>!`); updateUI(); } });
+        frenzyBtn.addEventListener('click', () => { if (wallet >= frenzyCost && !isFrenzyActive) { wallet -= frenzyCost; isFrenzyActive = true; frenzyTimer = 10; try { frenzySynth.triggerAttackRelease("C5", "4n"); } catch(e){} showMessage("FRENZY MODE!", 2000); const interval = setInterval(() => { frenzyTimer--; if (frenzyTimer <= 0) { clearInterval(interval); isFrenzyActive = false; frenzyCost = Math.ceil(frenzyCost * 1.4); showMessage("Frenzy Over!", 2000); } updateUI(); }, 1000); updateUI(); } });
         getAdviceBtn.addEventListener('click', () => getAdvice());
         window.addEventListener('resize', resizeCanvas);
         
