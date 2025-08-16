@@ -86,6 +86,13 @@ document.addEventListener("DOMContentLoaded", () => {
       icon: "🏰",
       category: "Games",
       keywords: "Ball Bounces in the circle get the score in virtual money",
+    },
+    {
+      name: "AI Markdown Formatter",
+      file: "AI_Markdown_Formatter.html",
+      icon: "📝",
+      category: "Productivity",
+      keywords: "generate summarize format markdown",
     }];
 
   // --- 2. ELEMENT REFERENCES ---
