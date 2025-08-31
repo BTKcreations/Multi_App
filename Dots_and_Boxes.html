@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dots & Boxes - Modern Edition</title>
+    <title>Dots & Boxes - Multiplayer Edition</title>
     <style>
         * {
             margin: 0;
@@ -19,8 +19,8 @@
             position: relative;
         }
 
-        /* Start Screen Styles */
-        .start-screen {
+        /* Welcome Screen Styles */
+        .welcome-screen {
             position: fixed;
             top: 0;
             left: 0;
@@ -31,18 +31,18 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            z-index: 1000;
+            z-index: 2000;
             transition: all 0.5s ease;
             padding: 20px;
         }
 
-        .start-screen.hidden {
+        .welcome-screen.hidden {
             opacity: 0;
             transform: translateY(-100%);
             pointer-events: none;
         }
 
-        .start-container {
+        .welcome-container {
             background: rgba(255, 255, 255, 0.98);
             border-radius: 25px;
             padding: 40px;
@@ -65,15 +65,15 @@
             }
         }
 
-        .game-title {
+        .welcome-title {
             text-align: center;
-            font-size: clamp(2rem, 5vw, 3rem);
+            font-size: clamp(2.5rem, 5vw, 3.5rem);
             font-weight: bold;
             background: linear-gradient(45deg, #667eea, #764ba2, #f093fb);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
             animation: titleGlow 2s ease-in-out infinite alternate;
         }
 
@@ -82,24 +82,193 @@
             100% { filter: drop-shadow(0 0 15px rgba(118, 75, 162, 0.5)); }
         }
 
-        .game-subtitle {
+        .welcome-subtitle {
             text-align: center;
             color: #666;
             margin-bottom: 40px;
+            font-size: clamp(1rem, 2.5vw, 1.3rem);
+            font-weight: 500;
+        }
+
+        .mode-selection {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .mode-btn {
+            padding: 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .mode-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s;
+        }
+
+        .mode-btn:hover::before {
+            left: 100%;
+        }
+
+        .mode-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .mode-btn.online {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .mode-btn.bluetooth {
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+            color: white;
+        }
+
+        .mode-btn.offline {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+            color: white;
+        }
+
+        .mode-btn:disabled {
+            background: #6c757d !important;
+            cursor: not-allowed;
+            transform: none;
+            opacity: 0.6;
+        }
+
+        .mode-icon {
+            font-size: 1.5rem;
+        }
+
+        /* Start Screen Styles */
+        .start-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: all 0.5s ease;
+            padding: 20px;
+        }
+
+        .start-screen.active {
+            display: flex;
+            animation: screenSlide 0.5s ease;
+        }
+
+        @keyframes screenSlide {
+            from {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .start-container {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 25px;
+            padding: 40px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+            max-width: 500px;
+            width: 100%;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .back-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 50px;
+            height: 50px;
+            border: none;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .back-btn:hover {
+            transform: scale(1.1);
+            background: white;
+        }
+
+        .game-title {
+            text-align: center;
+            font-size: clamp(2rem, 4vw, 2.8rem);
+            font-weight: bold;
+            background: linear-gradient(45deg, #667eea, #764ba2, #f093fb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .game-subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
             font-size: clamp(1rem, 2.5vw, 1.2rem);
             font-weight: 500;
         }
 
-        .setup-section {
-            margin-bottom: 30px;
+        .connection-status {
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-weight: bold;
+            transition: all 0.3s ease;
         }
 
-        .section-title {
-            font-size: 1.3rem;
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 15px;
-            text-align: center;
+        .connection-status.connecting {
+            background: linear-gradient(45deg, #ffecd2, #fcb69f);
+            color: #8B4513;
+        }
+
+        .connection-status.connected {
+            background: linear-gradient(45deg, #d4edda, #c3e6cb);
+            color: #155724;
+        }
+
+        .connection-status.error {
+            background: linear-gradient(45deg, #f8d7da, #f5c6cb);
+            color: #721c24;
         }
 
         .player-setup {
@@ -144,6 +313,12 @@
             transform: scale(1.02);
         }
 
+        .player-input:disabled {
+            background: #f8f9fa;
+            color: #6c757d;
+            cursor: not-allowed;
+        }
+
         .game-settings {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -177,6 +352,103 @@
             border-color: #667eea;
             box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
             outline: none;
+        }
+
+        .setting-select:disabled {
+            background: #f8f9fa;
+            color: #6c757d;
+            cursor: not-allowed;
+            border-color: #dee2e6;
+        }
+
+        .online-options {
+            display: none;
+            margin-bottom: 30px;
+        }
+
+        .online-options.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .option-tabs {
+            display: flex;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .option-tab {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            background: #f8f9fa;
+            color: #6c757d;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .option-tab.active {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 20px;
+            border-radius: 10px;
+            background: #f8f9fa;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .share-link {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .link-input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-family: monospace;
+            background: white;
+        }
+
+        .copy-btn {
+            padding: 12px 20px;
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .copy-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+        }
+
+        .join-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-family: monospace;
+            margin-bottom: 15px;
         }
 
         .start-button {
@@ -214,6 +486,13 @@
         .start-button:hover {
             transform: translateY(-3px);
             box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .start-button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
 
         /* Game Screen Styles */
@@ -294,6 +573,31 @@
             text-align: center;
         }
 
+        .connection-indicator {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            border: 2px solid white;
+        }
+
+        .connection-indicator.connected {
+            background: #28a745;
+            animation: pulse 2s infinite;
+        }
+
+        .connection-indicator.disconnected {
+            background: #dc3545;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(40, 167, 69, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
+        }
+
         /* Canvas Container */
         .canvas-container {
             position: absolute;
@@ -329,6 +633,11 @@
             cursor: grab !important;
         }
 
+        .game-canvas.disabled {
+            cursor: not-allowed !important;
+            opacity: 0.7;
+        }
+
         /* Floating Controls */
         .floating-controls {
             position: fixed;
@@ -355,6 +664,7 @@
             align-items: center;
             justify-content: center;
             backdrop-filter: blur(10px);
+            position: relative;
         }
 
         .floating-btn:hover {
@@ -451,6 +761,11 @@
             animation: celebration 1.5s ease-in-out infinite alternate;
         }
 
+        .game-status.waiting {
+            background: linear-gradient(45deg, #ffecd2, #fcb69f);
+            animation: waiting 2s ease-in-out infinite;
+        }
+
         @keyframes celebration {
             0% { 
                 transform: translateX(-50%) scale(1); 
@@ -460,6 +775,11 @@
                 transform: translateX(-50%) scale(1.05); 
                 box-shadow: 0 15px 30px rgba(168, 237, 234, 0.5);
             }
+        }
+
+        @keyframes waiting {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
         }
 
         /* Menu Modal */
@@ -495,6 +815,7 @@
             max-width: 90%;
             box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
             animation: menuSlideUp 0.3s ease;
+            position: relative;
         }
 
         @keyframes menuSlideUp {
@@ -572,8 +893,54 @@
             color: #333;
         }
 
+        /* Toast Notifications */
+        .toast {
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            background: white;
+            color: #333;
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+            z-index: 2000;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            max-width: 300px;
+            border-left: 4px solid #28a745;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .toast.error {
+            border-left-color: #dc3545;
+        }
+
+        .toast.warning {
+            border-left-color: #ffc107;
+        }
+
+        /* Loading Spinner */
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
         /* Mobile Responsive */
         @media (max-width: 768px) {
+            .welcome-container,
             .start-container {
                 padding: 30px 20px;
                 margin: 10px;
@@ -620,6 +987,30 @@
                 font-size: 0.9rem;
                 padding: 10px 16px;
             }
+
+            .mode-btn {
+                font-size: 1rem;
+                padding: 18px;
+            }
+
+            .option-tabs {
+                flex-direction: column;
+            }
+
+            .share-link {
+                flex-direction: column;
+            }
+
+            .toast {
+                right: 10px;
+                left: 10px;
+                max-width: none;
+                transform: translateY(-100%);
+            }
+
+            .toast.show {
+                transform: translateY(0);
+            }
         }
 
         @media (max-height: 600px) {
@@ -636,22 +1027,6 @@
             }
         }
 
-        /* Landscape mode adjustments */
-        @media (orientation: landscape) and (max-height: 500px) {
-            .player-overlay {
-                padding: 10px 15px;
-                min-width: 100px;
-            }
-
-            .overlay-name {
-                font-size: 0.9rem;
-            }
-
-            .overlay-score {
-                font-size: 1.4rem;
-            }
-        }
-
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after {
                 animation-duration: 0.01ms !important;
@@ -662,47 +1037,91 @@
     </style>
 </head>
 <body>
+    <!-- Welcome Screen -->
+    <div class="welcome-screen" id="welcomeScreen">
+        <div class="welcome-container">
+            <h1 class="welcome-title">DOTS & BOXES</h1>
+            <p class="welcome-subtitle">Choose Your Gaming Mode</p>
+
+            <div class="mode-selection">
+                <button class="mode-btn online" onclick="selectMode('online')">
+                    <span class="mode-icon">🌐</span>
+                    <span>Play Online</span>
+                </button>
+                <button class="mode-btn offline" onclick="selectMode('offline')">
+                    <span class="mode-icon">🎮</span>
+                    <span>Play Locally</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Start Screen -->
     <div class="start-screen" id="startScreen">
+        <button class="back-btn" onclick="goBack()">←</button>
         <div class="start-container">
             <h1 class="game-title">DOTS & BOXES</h1>
-            <p class="game-subtitle">Modern Edition - Enhanced Gaming Experience</p>
+            <p class="game-subtitle" id="modeSubtitle">Local Multiplayer</p>
 
-            <div class="setup-section">
-                <div class="section-title">Players</div>
-                <div class="player-setup">
-                    <div class="player-input-group player1">
-                        <input type="text" class="player-input" id="player1Name" value="Player 1" maxlength="15" placeholder="Player 1 Name">
-                    </div>
-                    <div class="player-input-group player2">
-                        <input type="text" class="player-input" id="player2Name" value="Player 2" maxlength="15" placeholder="Player 2 Name">
-                    </div>
+            <div class="connection-status" id="connectionStatus" style="display: none;">
+                <div class="loading-spinner" id="loadingSpinner" style="display: none;"></div>
+                <span id="statusText">Initializing...</span>
+            </div>
+
+            <div class="player-setup">
+                <div class="player-input-group player1">
+                    <input type="text" class="player-input" id="player1Name" value="Player 1" maxlength="15" placeholder="Player 1 Name">
+                </div>
+                <div class="player-input-group player2">
+                    <input type="text" class="player-input" id="player2Name" value="Player 2" maxlength="15" placeholder="Player 2 Name">
                 </div>
             </div>
 
-            <div class="setup-section">
-                <div class="game-settings">
-                    <div class="setting-group">
-                        <div class="setting-label">Grid Size</div>
-                        <select class="setting-select" id="gridSize">
-                            <option value="3">3x3 (Quick)</option>
-                            <option value="4" selected>4x4 (Classic)</option>
-                            <option value="5">5x5 (Challenge)</option>
-                            <option value="6">6x6 (Expert)</option>
-                            <option value="7">7x7 (Master)</option>
-                        </select>
+            <div class="online-options" id="onlineOptions">
+                <div class="option-tabs">
+                    <button class="option-tab active" onclick="switchTab('create')">Create Game</button>
+                    <button class="option-tab" onclick="switchTab('join')">Join Game</button>
+                </div>
+
+                <div class="tab-content active" id="createTab">
+                    <div class="share-link">
+                        <input type="text" class="link-input" id="shareLink" readonly placeholder="Game link will appear here...">
+                        <button class="copy-btn" id="copyBtn" onclick="copyLink()">Copy</button>
                     </div>
-                    <div class="setting-group">
-                        <div class="setting-label">Visual Aid</div>
-                        <select class="setting-select" id="difficulty">
-                            <option value="easy" selected>Show Preview</option>
-                            <option value="hard">No Preview</option>
-                        </select>
-                    </div>
+                    <p style="text-align: center; color: #666; font-size: 0.9rem; margin-bottom: 15px;">
+                        Share this link with your friend to start playing!
+                    </p>
+                </div>
+
+                <div class="tab-content" id="joinTab">
+                    <input type="text" class="join-input" id="joinInput" placeholder="Paste game link here...">
+                    <p style="text-align: center; color: #666; font-size: 0.9rem;">
+                        Enter the game link shared by your friend
+                    </p>
                 </div>
             </div>
 
-            <button class="start-button" onclick="startGame()">
+            <div class="game-settings">
+                <div class="setting-group">
+                    <div class="setting-label">Grid Size</div>
+                    <select class="setting-select" id="gridSize">
+                        <option value="3">3x3 (Quick)</option>
+                        <option value="4" selected>4x4 (Classic)</option>
+                        <option value="5">5x5 (Challenge)</option>
+                        <option value="6">6x6 (Expert)</option>
+                        <option value="7">7x7 (Master)</option>
+                    </select>
+                </div>
+                <div class="setting-group">
+                    <div class="setting-label">Visual Aid</div>
+                    <select class="setting-select" id="difficulty">
+                        <option value="easy" selected>Show Preview</option>
+                        <option value="hard">No Preview</option>
+                    </select>
+                </div>
+            </div>
+
+            <button class="start-button" onclick="startGame()" id="startBtn">
                 🎮 Start Game
             </button>
         </div>
@@ -712,11 +1131,13 @@
     <div class="game-screen" id="gameScreen">
         <!-- Player Overlays -->
         <div class="player-overlay player1-overlay active" id="player1Overlay">
+            <div class="connection-indicator connected" id="player1Connection" style="display: none;"></div>
             <div class="overlay-name" id="player1DisplayName">Player 1</div>
             <div class="overlay-score" id="player1ScoreDisplay">0</div>
         </div>
 
         <div class="player-overlay player2-overlay inactive" id="player2Overlay">
+            <div class="connection-indicator connected" id="player2Connection" style="display: none;"></div>
             <div class="overlay-name" id="player2DisplayName">Player 2</div>
             <div class="overlay-score" id="player2ScoreDisplay">0</div>
         </div>
@@ -736,7 +1157,7 @@
         </div>
 
         <!-- Game Status -->
-        <div class="game-status" id="gameStatus">Player 1's turn - Draw a line!</div>
+        <div class="game-status" id="gameStatus">Player 1's turn</div>
 
         <!-- Floating Controls -->
         <div class="floating-controls">
@@ -753,29 +1174,22 @@
             <div class="menu-buttons">
                 <button class="menu-btn secondary" onclick="newGame()">🎮 New Game</button>
                 <button class="menu-btn primary" onclick="restartGame()">🔄 Restart Game</button>
-                <button class="menu-btn secondary" onclick="showHistory()">📊 Game History</button>
+                <button class="menu-btn secondary" onclick="showConnectionInfo()">📡 Connection Info</button>
                 <button class="menu-btn danger" onclick="leaveGame()">🚪 Leave Game</button>
             </div>
         </div>
     </div>
 
-    <!-- History Modal -->
-    <div class="menu-modal" id="historyModal">
-        <div class="menu-content">
-            <button class="close-menu" onclick="closeHistory()">×</button>
-            <div class="menu-title">Game History</div>
-            <div id="historyList" style="max-height: 300px; overflow-y: auto; margin: 20px 0;">
-                <p style="text-align: center; color: #666;">No games played yet!</p>
-            </div>
-            <div class="menu-buttons">
-                <button class="menu-btn secondary" onclick="clearHistory()">🗑️ Clear History</button>
-                <button class="menu-btn primary" onclick="closeHistory()">Close</button>
-            </div>
-        </div>
+    <!-- Toast Container -->
+    <div class="toast" id="toast">
+        <span id="toastMessage"></span>
     </div>
 
+    <!-- PeerJS CDN -->
+    <script src="https://unpkg.com/peerjs@1.5.0/dist/peerjs.min.js"></script>
+
     <script>
-        class DotsAndBoxes {
+        class MultiplayerDotsAndBoxes {
             constructor() {
                 this.canvas = document.getElementById('gameCanvas');
                 this.ctx = this.canvas.getContext('2d');
@@ -790,8 +1204,12 @@
                 this.hoveredLine = null;
                 this.moveHistory = [];
                 this.playerNames = ['Player 1', 'Player 2'];
-                this.gameHistory = this.loadGameHistory();
-                this.playerStats = this.loadPlayerStats();
+                this.gameMode = 'offline';
+                this.isMyTurn = true;
+                this.playerId = 1;
+                this.gameId = null;
+                this.peerId = null;
+                this.isHost = false;
                 
                 // Zoom and Pan properties
                 this.scale = 1;
@@ -805,6 +1223,12 @@
                 // Touch properties
                 this.touches = [];
                 this.lastTouchDistance = 0;
+                
+                // Connection properties
+                this.peer = null;
+                this.connection = null;
+                this.connectionRetries = 0;
+                this.maxRetries = 3;
                 
                 // Player colors
                 this.playerColors = {
@@ -822,54 +1246,292 @@
                 this.setupEventListeners();
             }
 
-            loadGameHistory() {
-                const history = localStorage.getItem('dotsBoxesHistory');
-                return history ? JSON.parse(history) : [];
+            // Initialize PeerJS with better error handling
+            initPeerJS() {
+                return new Promise((resolve, reject) => {
+                    try {
+                        // Use public PeerJS server
+                        this.peer = new Peer({
+                            config: {
+                                'iceServers': [
+                                    { urls: 'stun:stun.l.google.com:19302' },
+                                    { urls: 'stun:stun1.l.google.com:19302' },
+                                    { urls: 'stun:stun.relay.metered.ca:80' }
+                                ]
+                            }
+                        });
+
+                        this.peer.on('open', (id) => {
+                            this.peerId = id;
+                            this.gameId = this.generateGameId();
+                            const shareLink = `${window.location.origin}${window.location.pathname}?join=${id}`;
+                            document.getElementById('shareLink').value = shareLink;
+                            this.updateConnectionStatus('connected', 'Waiting for friend to join...');
+                            resolve();
+                        });
+
+                        this.peer.on('connection', (conn) => {
+                            this.connection = conn;
+                            this.setupConnection();
+                        });
+
+                        this.peer.on('error', (err) => {
+                            console.error('Peer error:', err);
+                            this.handlePeerError(err);
+                            if (this.connectionRetries < this.maxRetries) {
+                                this.connectionRetries++;
+                                setTimeout(() => {
+                                    this.initPeerJS().then(resolve).catch(reject);
+                                }, 2000);
+                            } else {
+                                reject(err);
+                            }
+                        });
+
+                        this.peer.on('disconnected', () => {
+                            console.log('Peer disconnected, attempting to reconnect...');
+                            this.peer.reconnect();
+                        });
+
+                    } catch (error) {
+                        console.error('Failed to create peer:', error);
+                        reject(error);
+                    }
+                });
             }
 
-            saveGameHistory() {
-                localStorage.setItem('dotsBoxesHistory', JSON.stringify(this.gameHistory));
+            handlePeerError(err) {
+                let message = 'Connection error';
+                
+                switch (err.type) {
+                    case 'peer-unavailable':
+                        message = 'Friend is not available. Please check the link.';
+                        break;
+                    case 'network':
+                        message = 'Network error. Please check your internet connection.';
+                        break;
+                    case 'server-error':
+                        message = 'Server error. Trying to reconnect...';
+                        break;
+                    case 'socket-error':
+                        message = 'Connection failed. Retrying...';
+                        break;
+                    case 'webrtc':
+                        message = 'WebRTC not supported in this browser.';
+                        break;
+                    default:
+                        message = `Connection error: ${err.message || 'Unknown error'}`;
+                }
+                
+                this.showToast(message, 'error');
+                this.updateConnectionStatus('error', message);
             }
 
-            loadPlayerStats() {
-                const stats = localStorage.getItem('dotsBoxesStats');
-                return stats ? JSON.parse(stats) : { totalGames: 0, player1Wins: 0, player2Wins: 0, ties: 0 };
+            setupConnection() {
+                if (!this.connection) return;
+
+                this.connection.on('open', () => {
+                    this.showToast('Friend connected!', 'success');
+                    this.updateConnectionStatus('connected', 'Connected - Ready to play!');
+                    const conn2 = document.getElementById('player2Connection');
+                    if (conn2) {
+                        conn2.style.display = 'block';
+                        conn2.className = 'connection-indicator connected';
+                    }
+                    
+                    if (this.isHost) {
+                        this.sendGameState();
+                    }
+                });
+
+                this.connection.on('data', (data) => {
+                    this.handleRemoteMessage(data);
+                });
+
+                this.connection.on('close', () => {
+                    this.showToast('Friend disconnected', 'warning');
+                    this.updateConnectionStatus('error', 'Friend disconnected');
+                    const conn2 = document.getElementById('player2Connection');
+                    if (conn2) {
+                        conn2.className = 'connection-indicator disconnected';
+                    }
+                });
+
+                this.connection.on('error', (err) => {
+                    console.error('Connection error:', err);
+                    this.showToast('Connection error', 'error');
+                });
             }
 
-            savePlayerStats() {
-                localStorage.setItem('dotsBoxesStats', JSON.stringify(this.playerStats));
+            generateGameId() {
+                return Math.random().toString(36).substring(2, 8).toLowerCase();
             }
 
-            loadPlayerNames() {
-                const names = localStorage.getItem('dotsBoxesPlayerNames');
-                if (names) {
-                    const parsedNames = JSON.parse(names);
-                    this.playerNames = parsedNames;
-                    document.getElementById('player1Name').value = parsedNames[0];
-                    document.getElementById('player2Name').value = parsedNames[1];
+            joinGame(peerId) {
+                if (!this.peer) return;
+
+                this.updateConnectionStatus('connecting', 'Connecting to friend...');
+                
+                try {
+                    this.connection = this.peer.connect(peerId, {
+                        reliable: true
+                    });
+                    this.isHost = false;
+                    this.playerId = 2;
+                    this.isMyTurn = false;
+                    
+                    this.setupConnection();
+                } catch (error) {
+                    console.error('Failed to connect:', error);
+                    this.showToast('Failed to connect to friend', 'error');
+                    this.updateConnectionStatus('error', 'Connection failed');
                 }
             }
 
-            savePlayerNames() {
-                localStorage.setItem('dotsBoxesPlayerNames', JSON.stringify(this.playerNames));
+            sendMessage(data) {
+                try {
+                    if (this.gameMode === 'online' && this.connection && this.connection.open) {
+                        this.connection.send(data);
+                    }
+                } catch (error) {
+                    console.error('Failed to send message:', error);
+                    this.showToast('Failed to sync with friend', 'error');
+                }
+            }
+
+            handleRemoteMessage(data) {
+                try {
+                    switch (data.type) {
+                        case 'move':
+                            this.applyRemoteMove(data);
+                            break;
+                        case 'gameState':
+                            this.syncGameState(data);
+                            break;
+                        case 'undo':
+                            this.applyRemoteUndo();
+                            break;
+                        case 'restart':
+                            this.resetGameState();
+                            break;
+                        case 'playerInfo':
+                            this.updateRemotePlayerInfo(data);
+                            break;
+                        default:
+                            console.log('Unknown message type:', data.type);
+                    }
+                } catch (error) {
+                    console.error('Error handling remote message:', error);
+                }
+            }
+
+            sendGameState() {
+                const gameState = {
+                    type: 'gameState',
+                    horizontalLines: this.horizontalLines,
+                    verticalLines: this.verticalLines,
+                    lineOwnership: this.lineOwnership,
+                    boxes: this.boxes,
+                    scores: this.scores,
+                    currentPlayer: this.currentPlayer,
+                    gameOver: this.gameOver,
+                    gridSize: this.gridSize,
+                    playerNames: this.playerNames
+                };
+                this.sendMessage(gameState);
+            }
+
+            syncGameState(data) {
+                this.horizontalLines = data.horizontalLines;
+                this.verticalLines = data.verticalLines;
+                this.lineOwnership = data.lineOwnership;
+                this.boxes = data.boxes;
+                this.scores = data.scores;
+                this.currentPlayer = data.currentPlayer;
+                this.gameOver = data.gameOver;
+                this.gridSize = data.gridSize;
+                this.playerNames = data.playerNames;
+                
+                this.isMyTurn = (this.currentPlayer === this.playerId);
+                this.updateUI();
+                this.draw();
+            }
+
+            applyRemoteMove(data) {
+                const { line, player, completedBoxes } = data;
+                
+                if (line.type === 'horizontal') {
+                    this.horizontalLines[line.row][line.col] = true;
+                    this.lineOwnership.horizontal[line.row][line.col] = player;
+                } else {
+                    this.verticalLines[line.row][line.col] = true;
+                    this.lineOwnership.vertical[line.row][line.col] = player;
+                }
+
+                if (completedBoxes.length > 0) {
+                    this.scores[player - 1] += completedBoxes.length;
+                    completedBoxes.forEach(box => {
+                        this.boxes[box.row][box.col] = player;
+                    });
+                    this.isMyTurn = (player === this.playerId);
+                } else {
+                    this.currentPlayer = this.currentPlayer === 1 ? 2 : 1;
+                    this.isMyTurn = (this.currentPlayer === this.playerId);
+                }
+
+                this.moveHistory.push({ line, player, completedBoxes: completedBoxes.length });
+                this.draw();
+                this.updateUI();
+                this.checkGameOver();
+            }
+
+            updateConnectionStatus(status, message) {
+                const statusElement = document.getElementById('connectionStatus');
+                const statusText = document.getElementById('statusText');
+                const spinner = document.getElementById('loadingSpinner');
+                
+                if (statusElement) {
+                    statusElement.style.display = 'block';
+                    statusElement.className = `connection-status ${status}`;
+                }
+                
+                if (statusText) {
+                    statusText.textContent = message;
+                }
+                
+                if (spinner) {
+                    spinner.style.display = status === 'connecting' ? 'block' : 'none';
+                }
+            }
+
+            showToast(message, type = 'success') {
+                const toast = document.getElementById('toast');
+                const toastMessage = document.getElementById('toastMessage');
+                
+                if (toast && toastMessage) {
+                    toastMessage.textContent = message;
+                    toast.className = `toast ${type}`;
+                    toast.classList.add('show');
+                    
+                    setTimeout(() => {
+                        toast.classList.remove('show');
+                    }, 3000);
+                }
             }
 
             initGame() {
                 this.updateCanvasSize();
                 this.resetGameState();
-                this.loadPlayerNames();
                 this.resetView();
                 this.draw();
             }
 
             updateCanvasSize() {
-                // Dynamic canvas sizing based on screen
                 const maxSize = Math.min(window.innerWidth, window.innerHeight) * 0.85;
                 const canvasSize = Math.min(800, maxSize);
                 this.canvas.width = canvasSize;
                 this.canvas.height = canvasSize;
                 
-                // Adjust cell size based on canvas size
                 this.cellSize = (canvasSize - 100) / (this.gridSize + 1);
                 this.dotRadius = Math.max(6, this.cellSize * 0.08);
                 this.lineWidth = Math.max(4, this.cellSize * 0.06);
@@ -921,31 +1583,71 @@
                 this.gameOver = false;
                 this.moveHistory = [];
                 this.hoveredLine = null;
+                
+                if (this.gameMode === 'offline') {
+                    this.isMyTurn = true;
+                } else {
+                    this.isMyTurn = (this.currentPlayer === this.playerId);
+                }
+                
                 this.updateUI();
             }
 
             setupEventListeners() {
-                // Canvas events
+                // Canvas events with proper passive handling
                 this.canvas.addEventListener('mousedown', (e) => this.handleMouseDown(e));
                 this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
                 this.canvas.addEventListener('mouseup', (e) => this.handleMouseUp(e));
                 this.canvas.addEventListener('mouseleave', (e) => this.handleMouseLeave(e));
-                this.canvas.addEventListener('wheel', (e) => this.handleWheel(e));
                 
-                // Touch events
-                this.canvas.addEventListener('touchstart', (e) => this.handleTouchStart(e));
-                this.canvas.addEventListener('touchmove', (e) => this.handleTouchMove(e));
-                this.canvas.addEventListener('touchend', (e) => this.handleTouchEnd(e));
+                // Use passive: false only when necessary for preventDefault
+                this.canvas.addEventListener('wheel', (e) => this.handleWheel(e), { passive: false });
+                
+                // Touch events with passive: false for preventDefault
+                this.canvas.addEventListener('touchstart', (e) => this.handleTouchStart(e), { passive: false });
+                this.canvas.addEventListener('touchmove', (e) => this.handleTouchMove(e), { passive: false });
+                this.canvas.addEventListener('touchend', (e) => this.handleTouchEnd(e), { passive: false });
 
                 // Control buttons
-                document.getElementById('zoomIn').addEventListener('click', () => this.zoomIn());
-                document.getElementById('zoomOut').addEventListener('click', () => this.zoomOut());
-                document.getElementById('resetView').addEventListener('click', () => this.resetView());
-                document.getElementById('undoBtn').addEventListener('click', () => this.undoLastMove());
-                document.getElementById('menuBtn').addEventListener('click', () => openMenu());
+                const zoomInBtn = document.getElementById('zoomIn');
+                const zoomOutBtn = document.getElementById('zoomOut');
+                const resetViewBtn = document.getElementById('resetView');
+                const undoBtn = document.getElementById('undoBtn');
+                const menuBtn = document.getElementById('menuBtn');
+
+                if (zoomInBtn) zoomInBtn.addEventListener('click', () => this.zoomIn());
+                if (zoomOutBtn) zoomOutBtn.addEventListener('click', () => this.zoomOut());
+                if (resetViewBtn) resetViewBtn.addEventListener('click', () => this.resetView());
+                if (undoBtn) undoBtn.addEventListener('click', () => this.undoLastMove());
+                if (menuBtn) menuBtn.addEventListener('click', () => openMenu());
 
                 // Prevent context menu
                 this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+                
+                // Window events
+                window.addEventListener('beforeunload', () => {
+                    this.cleanup();
+                });
+
+                // Handle visibility change
+                document.addEventListener('visibilitychange', () => {
+                    if (document.hidden && this.connection) {
+                        console.log('Page hidden, maintaining connection...');
+                    }
+                });
+            }
+
+            cleanup() {
+                try {
+                    if (this.connection && this.connection.open) {
+                        this.connection.close();
+                    }
+                    if (this.peer && !this.peer.destroyed) {
+                        this.peer.destroy();
+                    }
+                } catch (error) {
+                    console.error('Error during cleanup:', error);
+                }
             }
 
             getCanvasCoordinates(clientX, clientY) {
@@ -953,7 +1655,6 @@
                 const x = (clientX - rect.left) * (this.canvas.width / rect.width);
                 const y = (clientY - rect.top) * (this.canvas.height / rect.height);
                 
-                // Transform coordinates based on current zoom and pan
                 const transformedX = (x - this.panX) / this.scale;
                 const transformedY = (y - this.panY) / this.scale;
                 
@@ -962,16 +1663,22 @@
 
             handleMouseDown(e) {
                 e.preventDefault();
+                
+                if (this.gameMode === 'online' && !this.isMyTurn) {
+                    this.canvas.classList.add('disabled');
+                    return;
+                } else {
+                    this.canvas.classList.remove('disabled');
+                }
+                
                 const coords = this.getCanvasCoordinates(e.clientX, e.clientY);
                 
-                if (e.button === 0) { // Left mouse button
+                if (e.button === 0) {
                     if (e.ctrlKey || e.metaKey || this.scale > 1.1) {
-                        // Start dragging for pan
                         this.isDragging = true;
                         this.lastPanPoint = { x: e.clientX, y: e.clientY };
                         this.canvas.classList.add('dragging');
                     } else {
-                        // Handle game click
                         this.handleGameClick(coords.x, coords.y);
                     }
                 }
@@ -982,7 +1689,6 @@
                 const coords = this.getCanvasCoordinates(e.clientX, e.clientY);
                 
                 if (this.isDragging) {
-                    // Handle panning
                     const deltaX = e.clientX - this.lastPanPoint.x;
                     const deltaY = e.clientY - this.lastPanPoint.y;
                     
@@ -991,8 +1697,7 @@
                     
                     this.lastPanPoint = { x: e.clientX, y: e.clientY };
                     this.draw();
-                } else if (!this.gameOver && this.showPreview) {
-                    // Handle hover preview
+                } else if (!this.gameOver && this.showPreview && this.isMyTurn) {
                     const newHoveredLine = this.getClickedLine(coords.x, coords.y);
                     if (JSON.stringify(this.hoveredLine) !== JSON.stringify(newHoveredLine)) {
                         this.hoveredLine = newHoveredLine;
@@ -1000,7 +1705,6 @@
                     }
                 }
 
-                // Update cursor
                 if (this.scale > 1.1 && !this.isDragging) {
                     this.canvas.classList.add('grab');
                     this.canvas.classList.remove('dragging');
@@ -1036,11 +1740,9 @@
                 const newScale = Math.max(this.minScale, Math.min(this.maxScale, this.scale * zoomFactor));
                 
                 if (newScale !== this.scale) {
-                    // Zoom towards mouse position
                     this.panX = mouseX - (mouseX - this.panX) * (newScale / this.scale);
                     this.panY = mouseY - (mouseY - this.panY) * (newScale / this.scale);
                     this.scale = newScale;
-                    
                     this.draw();
                 }
             }
@@ -1048,6 +1750,12 @@
             // Touch event handlers
             handleTouchStart(e) {
                 e.preventDefault();
+                
+                if (this.gameMode === 'online' && !this.isMyTurn) {
+                    this.canvas.classList.add('disabled');
+                    return;
+                }
+                
                 this.touches = Array.from(e.touches);
                 
                 if (this.touches.length === 1) {
@@ -1068,7 +1776,6 @@
                 const newTouches = Array.from(e.touches);
                 
                 if (newTouches.length === 1 && this.touches.length === 1) {
-                    // Single finger drag - pan
                     const touch = newTouches[0];
                     const deltaX = touch.clientX - this.lastPanPoint.x;
                     const deltaY = touch.clientY - this.lastPanPoint.y;
@@ -1079,7 +1786,6 @@
                     this.lastPanPoint = { x: touch.clientX, y: touch.clientY };
                     this.draw();
                 } else if (newTouches.length === 2 && this.touches.length === 2) {
-                    // Two finger pinch - zoom
                     const touch1 = newTouches[0];
                     const touch2 = newTouches[1];
                     const currentDistance = Math.sqrt(
@@ -1101,7 +1807,6 @@
                             this.panX = canvasX - (canvasX - this.panX) * (newScale / this.scale);
                             this.panY = canvasY - (canvasY - this.panY) * (newScale / this.scale);
                             this.scale = newScale;
-                            
                             this.draw();
                         }
                     }
@@ -1123,7 +1828,7 @@
                     const deltaX = Math.abs(touch.clientX - this.lastPanPoint.x);
                     const deltaY = Math.abs(touch.clientY - this.lastPanPoint.y);
                     
-                    if (deltaX < 10 && deltaY < 10) {
+                    if (deltaX < 10 && deltaY < 10 && this.isMyTurn) {
                         this.handleGameClick(coords.x, coords.y);
                     }
                 }
@@ -1141,7 +1846,6 @@
                     this.panX = centerX - (centerX - this.panX) * (newScale / this.scale);
                     this.panY = centerY - (centerY - this.panY) * (newScale / this.scale);
                     this.scale = newScale;
-                    
                     this.draw();
                 }
             }
@@ -1155,7 +1859,6 @@
                     this.panX = centerX - (centerX - this.panX) * (newScale / this.scale);
                     this.panY = centerY - (centerY - this.panY) * (newScale / this.scale);
                     this.scale = newScale;
-                    
                     this.draw();
                 }
             }
@@ -1165,14 +1868,15 @@
             }
 
             handleGameClick(x, y) {
-                if (this.gameOver) return;
+                if (this.gameOver || (this.gameMode === 'online' && !this.isMyTurn)) return;
                 
                 const clickedLine = this.getClickedLine(x, y);
                 if (clickedLine && this.drawLine(clickedLine)) {
                     const completedBoxes = this.checkCompletedBoxes();
+                    let nextPlayer = this.currentPlayer;
                     
                     if (completedBoxes.length === 0) {
-                        this.currentPlayer = this.currentPlayer === 1 ? 2 : 1;
+                        nextPlayer = this.currentPlayer === 1 ? 2 : 1;
                     } else {
                         this.scores[this.currentPlayer - 1] += completedBoxes.length;
                         completedBoxes.forEach(box => {
@@ -1182,10 +1886,25 @@
                     
                     this.moveHistory.push({
                         line: clickedLine,
-                        player: this.currentPlayer === 1 ? 2 : 1, // Store the player who made the move
+                        player: this.currentPlayer,
                         completedBoxes: completedBoxes.length
                     });
                     
+                    // Send move to remote player if in online mode
+                    if (this.gameMode === 'online') {
+                        this.sendMessage({
+                            type: 'move',
+                            line: clickedLine,
+                            player: this.currentPlayer,
+                            completedBoxes: completedBoxes
+                        });
+                        
+                        if (completedBoxes.length === 0) {
+                            this.isMyTurn = false;
+                        }
+                    }
+                    
+                    this.currentPlayer = nextPlayer;
                     this.draw();
                     this.updateUI();
                     this.checkGameOver();
@@ -1245,9 +1964,24 @@
             undoLastMove() {
                 if (this.moveHistory.length === 0 || this.gameOver) return;
                 
+                if (this.gameMode === 'online') {
+                    const lastMove = this.moveHistory[this.moveHistory.length - 1];
+                    if (lastMove.player !== this.playerId && !this.isMyTurn) {
+                        this.showToast("You can only undo your own moves", 'warning');
+                        return;
+                    }
+                    
+                    this.sendMessage({ type: 'undo' });
+                }
+                
+                this.performUndo();
+            }
+
+            performUndo() {
+                if (this.moveHistory.length === 0) return;
+                
                 const lastMove = this.moveHistory.pop();
                 
-                // Remove the line
                 if (lastMove.line.type === 'horizontal') {
                     this.horizontalLines[lastMove.line.row][lastMove.line.col] = false;
                     this.lineOwnership.horizontal[lastMove.line.row][lastMove.line.col] = 0;
@@ -1256,14 +1990,11 @@
                     this.lineOwnership.vertical[lastMove.line.row][lastMove.line.col] = 0;
                 }
                 
-                // Remove completed boxes and adjust scores
                 if (lastMove.completedBoxes > 0) {
                     this.scores[lastMove.player - 1] -= lastMove.completedBoxes;
-                    // Find and remove the boxes
                     for (let row = 0; row < this.gridSize; row++) {
                         for (let col = 0; col < this.gridSize; col++) {
                             if (this.boxes[row][col] === lastMove.player) {
-                                // Check if this box should still be completed
                                 const top = this.horizontalLines[row][col];
                                 const bottom = this.horizontalLines[row + 1][col];
                                 const left = this.verticalLines[row][col];
@@ -1276,12 +2007,19 @@
                         }
                     }
                 } else {
-                    // Switch back to previous player
                     this.currentPlayer = lastMove.player;
+                }
+                
+                if (this.gameMode === 'online') {
+                    this.isMyTurn = (this.currentPlayer === this.playerId);
                 }
                 
                 this.draw();
                 this.updateUI();
+            }
+
+            applyRemoteUndo() {
+                this.performUndo();
             }
 
             checkCompletedBoxes() {
@@ -1314,7 +2052,7 @@
                 
                 this.drawBackground();
                 
-                if (this.hoveredLine && this.showPreview) {
+                if (this.hoveredLine && this.showPreview && this.isMyTurn) {
                     this.drawHoverPreview();
                 }
                 
@@ -1531,41 +2269,78 @@
 
             updateUI() {
                 // Update scores
-                document.getElementById('player1ScoreDisplay').textContent = this.scores[0];
-                document.getElementById('player2ScoreDisplay').textContent = this.scores[1];
+                const score1 = document.getElementById('player1ScoreDisplay');
+                const score2 = document.getElementById('player2ScoreDisplay');
+                if (score1) score1.textContent = this.scores[0];
+                if (score2) score2.textContent = this.scores[1];
                 
                 // Update player overlays
                 const player1Overlay = document.getElementById('player1Overlay');
                 const player2Overlay = document.getElementById('player2Overlay');
                 const undoBtn = document.getElementById('undoBtn');
                 
-                if (this.currentPlayer === 1) {
-                    player1Overlay.className = 'player-overlay player1-overlay active';
-                    player2Overlay.className = 'player-overlay player2-overlay inactive';
+                // Update active player display
+                if (this.gameMode === 'offline') {
+                    if (this.currentPlayer === 1) {
+                        if (player1Overlay) player1Overlay.className = 'player-overlay player1-overlay active';
+                        if (player2Overlay) player2Overlay.className = 'player-overlay player2-overlay inactive';
+                    } else {
+                        if (player1Overlay) player1Overlay.className = 'player-overlay player1-overlay inactive';
+                        if (player2Overlay) player2Overlay.className = 'player-overlay player2-overlay active';
+                    }
                 } else {
-                    player1Overlay.className = 'player-overlay player1-overlay inactive';
-                    player2Overlay.className = 'player-overlay player2-overlay active';
+                    if (this.playerId === 1) {
+                        if (this.isMyTurn) {
+                            if (player1Overlay) player1Overlay.className = 'player-overlay player1-overlay active';
+                            if (player2Overlay) player2Overlay.className = 'player-overlay player2-overlay inactive';
+                        } else {
+                            if (player1Overlay) player1Overlay.className = 'player-overlay player1-overlay inactive';
+                            if (player2Overlay) player2Overlay.className = 'player-overlay player2-overlay active';
+                        }
+                    } else {
+                        if (this.isMyTurn) {
+                            if (player1Overlay) player1Overlay.className = 'player-overlay player1-overlay inactive';
+                            if (player2Overlay) player2Overlay.className = 'player-overlay player2-overlay active';
+                        } else {
+                            if (player1Overlay) player1Overlay.className = 'player-overlay player1-overlay active';
+                            if (player2Overlay) player2Overlay.className = 'player-overlay player2-overlay inactive';
+                        }
+                    }
                 }
                 
                 // Update undo button
-                undoBtn.disabled = this.moveHistory.length === 0 || this.gameOver;
+                if (undoBtn) {
+                    undoBtn.disabled = this.moveHistory.length === 0 || this.gameOver;
+                }
                 
                 // Update status
                 const statusElement = document.getElementById('gameStatus');
-                if (this.gameOver) {
-                    let winnerText = '';
-                    if (this.scores[0] > this.scores[1]) {
-                        winnerText = `${this.playerNames[0]} wins with ${this.scores[0]} boxes!`;
-                    } else if (this.scores[1] > this.scores[0]) {
-                        winnerText = `${this.playerNames[1]} wins with ${this.scores[1]} boxes!`;
+                if (statusElement) {
+                    if (this.gameOver) {
+                        let winnerText = '';
+                        if (this.scores[0] > this.scores[1]) {
+                            winnerText = `${this.playerNames[0]} wins with ${this.scores[0]} boxes!`;
+                        } else if (this.scores[1] > this.scores[0]) {
+                            winnerText = `${this.playerNames[1]} wins with ${this.scores[1]} boxes!`;
+                        } else {
+                            winnerText = `It's a tie with ${this.scores[0]} boxes each!`;
+                        }
+                        statusElement.textContent = winnerText;
+                        statusElement.className = 'game-status winner';
                     } else {
-                        winnerText = `It's a tie with ${this.scores[0]} boxes each!`;
+                        if (this.gameMode === 'offline') {
+                            statusElement.textContent = `${this.playerNames[this.currentPlayer - 1]}'s turn`;
+                            statusElement.className = 'game-status';
+                        } else {
+                            if (this.isMyTurn) {
+                                statusElement.textContent = 'Your turn - Draw a line!';
+                                statusElement.className = 'game-status';
+                            } else {
+                                statusElement.textContent = 'Waiting for friend...';
+                                statusElement.className = 'game-status waiting';
+                            }
+                        }
                     }
-                    statusElement.textContent = winnerText;
-                    statusElement.className = 'game-status winner';
-                } else {
-                    statusElement.textContent = `${this.playerNames[this.currentPlayer - 1]}'s turn`;
-                    statusElement.className = 'game-status';
                 }
             }
 
@@ -1584,6 +2359,7 @@
                 const gameData = {
                     date: new Date().toLocaleString(),
                     gridSize: `${this.gridSize}x${this.gridSize}`,
+                    gameMode: this.gameMode,
                     player1Name: this.playerNames[0],
                     player2Name: this.playerNames[1],
                     player1Score: this.scores[0],
@@ -1593,56 +2369,244 @@
                             this.scores[1] > this.scores[0] ? this.playerNames[1] : 'Tie'
                 };
                 
-                this.gameHistory.unshift(gameData);
-                if (this.gameHistory.length > 50) {
-                    this.gameHistory = this.gameHistory.slice(0, 50);
+                try {
+                    const history = JSON.parse(localStorage.getItem('dotsBoxesHistory') || '[]');
+                    history.unshift(gameData);
+                    if (history.length > 50) {
+                        history.splice(50);
+                    }
+                    localStorage.setItem('dotsBoxesHistory', JSON.stringify(history));
+                } catch (error) {
+                    console.error('Failed to save game history:', error);
                 }
-                this.saveGameHistory();
-                
-                // Update stats
-                this.playerStats.totalGames++;
-                if (gameData.winner === this.playerNames[0]) {
-                    this.playerStats.player1Wins++;
-                } else if (gameData.winner === this.playerNames[1]) {
-                    this.playerStats.player2Wins++;
-                } else {
-                    this.playerStats.ties++;
-                }
-                this.savePlayerStats();
             }
         }
 
         let game;
+        let currentMode = 'offline';
+
+        // Welcome screen functions
+        function selectMode(mode) {
+            currentMode = mode;
+            document.getElementById('welcomeScreen').classList.add('hidden');
+            document.getElementById('startScreen').classList.add('active');
+            
+            const modeSubtitle = document.getElementById('modeSubtitle');
+            const onlineOptions = document.getElementById('onlineOptions');
+            const connectionStatus = document.getElementById('connectionStatus');
+            const player2Input = document.getElementById('player2Name');
+            const gridSizeSelect = document.getElementById('gridSize');
+            const difficultySelect = document.getElementById('difficulty');
+            
+            switch (mode) {
+                case 'online':
+                    if (modeSubtitle) modeSubtitle.textContent = 'Online Multiplayer';
+                    if (onlineOptions) onlineOptions.classList.add('active');
+                    if (connectionStatus) connectionStatus.style.display = 'block';
+                    if (player2Input) {
+                        player2Input.disabled = true;
+                        player2Input.placeholder = 'Friend will join...';
+                    }
+                    if (gridSizeSelect) gridSizeSelect.disabled = false;
+                    if (difficultySelect) difficultySelect.disabled = false;
+                    initOnlineMode();
+                    break;
+                case 'offline':
+                    if (modeSubtitle) modeSubtitle.textContent = 'Local Multiplayer';
+                    if (onlineOptions) onlineOptions.classList.remove('active');
+                    if (connectionStatus) connectionStatus.style.display = 'none';
+                    if (player2Input) {
+                        player2Input.disabled = false;
+                        player2Input.placeholder = 'Player 2 Name';
+                    }
+                    if (gridSizeSelect) gridSizeSelect.disabled = false;
+                    if (difficultySelect) difficultySelect.disabled = false;
+                    break;
+            }
+        }
+
+        function goBack() {
+            document.getElementById('startScreen').classList.remove('active');
+            document.getElementById('welcomeScreen').classList.remove('hidden');
+            
+            // Cleanup connections
+            if (game && game.connection) {
+                game.connection.close();
+            }
+            if (game && game.peer) {
+                game.peer.destroy();
+            }
+        }
+
+        function switchTab(tabName) {
+            const tabs = document.querySelectorAll('.option-tab');
+            const contents = document.querySelectorAll('.tab-content');
+            
+            tabs.forEach(tab => tab.classList.remove('active'));
+            contents.forEach(content => content.classList.remove('active'));
+            
+            document.querySelector(`.option-tab:nth-child(${tabName === 'create' ? 1 : 2})`).classList.add('active');
+            document.getElementById(`${tabName}Tab`).classList.add('active');
+        }
+
+        async function initOnlineMode() {
+            try {
+                game = new MultiplayerDotsAndBoxes();
+                game.gameMode = 'online';
+                
+                // Check if joining existing game
+                const urlParams = new URLSearchParams(window.location.search);
+                const joinGameId = urlParams.get('join');
+                
+                if (joinGameId) {
+                    // Switch to join tab
+                    switchTab('join');
+                    document.getElementById('joinInput').value = window.location.href;
+                    
+                    // Initialize peer and join
+                    await game.initPeerJS();
+                    setTimeout(() => {
+                        game.joinGame(joinGameId);
+                    }, 1000);
+                } else {
+                    // Host mode
+                    game.isHost = true;
+                    game.playerId = 1;
+                    await game.initPeerJS();
+                }
+                
+            } catch (error) {
+                console.error('Failed to initialize online mode:', error);
+                if (game) {
+                    game.showToast('Failed to initialize online mode', 'error');
+                    game.updateConnectionStatus('error', 'Initialization failed');
+                }
+            }
+        }
+
+        function copyLink() {
+            const shareLink = document.getElementById('shareLink');
+            if (shareLink) {
+                shareLink.select();
+                shareLink.setSelectionRange(0, 99999);
+                
+                try {
+                    document.execCommand('copy') || navigator.clipboard.writeText(shareLink.value);
+                    if (game) game.showToast('Link copied to clipboard!', 'success');
+                    
+                    const copyBtn = document.getElementById('copyBtn');
+                    if (copyBtn) {
+                        const originalText = copyBtn.textContent;
+                        copyBtn.textContent = 'Copied!';
+                        copyBtn.style.background = 'linear-gradient(45deg, #28a745, #20c997)';
+                        
+                        setTimeout(() => {
+                            copyBtn.textContent = originalText;
+                            copyBtn.style.background = '';
+                        }, 2000);
+                    }
+                } catch (err) {
+                    console.error('Failed to copy: ', err);
+                    if (game) game.showToast('Failed to copy link', 'error');
+                }
+            }
+        }
 
         function startGame() {
-            // Get settings from start screen
-            const player1Name = document.getElementById('player1Name').value.trim() || 'Player 1';
-            const player2Name = document.getElementById('player2Name').value.trim() || 'Player 2';
-            const gridSize = parseInt(document.getElementById('gridSize').value);
-            const showPreview = document.getElementById('difficulty').value === 'easy';
+            const player1Name = document.getElementById('player1Name')?.value.trim() || 'Player 1';
+            const player2Name = document.getElementById('player2Name')?.value.trim() || 'Player 2';
+            const gridSize = parseInt(document.getElementById('gridSize')?.value || '4');
+            const showPreview = document.getElementById('difficulty')?.value === 'easy';
             
-            // Hide start screen and show game screen
-            document.getElementById('startScreen').classList.add('hidden');
-            document.getElementById('gameScreen').classList.add('active');
+            if (currentMode === 'online') {
+                const activeTab = document.querySelector('.tab-content.active')?.id;
+                
+                if (activeTab === 'joinTab') {
+                    const joinInput = document.getElementById('joinInput');
+                    if (!joinInput?.value.trim()) {
+                        if (game) game.showToast('Please enter a game link', 'error');
+                        return;
+                    }
+                    
+                    try {
+                        const url = new URL(joinInput.value.trim());
+                        const gameId = url.searchParams.get('join');
+                        if (!gameId) {
+                            if (game) game.showToast('Invalid game link', 'error');
+                            return;
+                        }
+                        
+                        if (!game) {
+                            game = new MultiplayerDotsAndBoxes();
+                            game.gameMode = 'online';
+                        }
+                        
+                        game.initPeerJS().then(() => {
+                            setTimeout(() => {
+                                game.joinGame(gameId);
+                            }, 1000);
+                        });
+                        
+                    } catch (error) {
+                        if (game) game.showToast('Invalid game link format', 'error');
+                        return;
+                    }
+                }
+                
+                // Check connection status
+                if (!game || (!game.connection || !game.connection.open) && !game.isHost) {
+                    if (game) game.showToast('Please wait for connection or create a new game', 'warning');
+                    return;
+                }
+            }
             
-            // Initialize game with settings
-            game = new DotsAndBoxes();
+            if (!game) {
+                game = new MultiplayerDotsAndBoxes();
+                game.gameMode = currentMode;
+            }
+            
+            // Set game parameters
             game.playerNames = [player1Name, player2Name];
             game.gridSize = gridSize;
             game.showPreview = showPreview;
-            game.savePlayerNames();
             
             // Update display names
-            document.getElementById('player1DisplayName').textContent = player1Name;
-            document.getElementById('player2DisplayName').textContent = player2Name;
+            const p1Display = document.getElementById('player1DisplayName');
+            const p2Display = document.getElementById('player2DisplayName');
+            if (p1Display) p1Display.textContent = player1Name;
+            if (p2Display) p2Display.textContent = player2Name;
+            
+            // Hide connection indicators for offline mode
+            if (currentMode === 'offline') {
+                const conn1 = document.getElementById('player1Connection');
+                const conn2 = document.getElementById('player2Connection');
+                if (conn1) conn1.style.display = 'none';
+                if (conn2) conn2.style.display = 'none';
+            } else {
+                const conn1 = document.getElementById('player1Connection');
+                const conn2 = document.getElementById('player2Connection');
+                if (conn1) conn1.style.display = 'block';
+                if (conn2) conn2.style.display = 'block';
+            }
+            
+            // Hide start screen and show game screen
+            document.getElementById('startScreen').classList.remove('active');
+            document.getElementById('gameScreen').classList.add('active');
             
             // Initialize game
             game.initGame();
             
+            // Clear URL parameters
+            if (window.history.replaceState) {
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+            
             // Handle resize for responsive canvas
             window.addEventListener('resize', () => {
-                game.updateCanvasSize();
-                game.draw();
+                if (game) {
+                    game.updateCanvasSize();
+                    game.draw();
+                }
             });
         }
 
@@ -1656,82 +2620,88 @@
 
         function newGame() {
             closeMenu();
-            game.initGame();
+            if (game) {
+                game.initGame();
+                
+                // Send restart message to remote player
+                if (game.gameMode === 'online') {
+                    game.sendMessage({ type: 'restart' });
+                }
+            }
         }
 
         function restartGame() {
             closeMenu();
-            game.resetGameState();
-            game.draw();
+            if (game) {
+                game.resetGameState();
+                game.draw();
+                
+                // Send restart message to remote player
+                if (game.gameMode === 'online') {
+                    game.sendMessage({ type: 'restart' });
+                }
+            }
         }
 
         function leaveGame() {
             closeMenu();
+            
+            // Cleanup connections
+            if (game && game.connection) {
+                game.connection.close();
+            }
+            if (game && game.peer) {
+                game.peer.destroy();
+            }
+            
             document.getElementById('gameScreen').classList.remove('active');
-            document.getElementById('startScreen').classList.remove('hidden');
+            document.getElementById('welcomeScreen').classList.remove('hidden');
+            
+            // Reset game
+            game = null;
         }
 
-        function showHistory() {
+        function showConnectionInfo() {
             closeMenu();
-            const modal = document.getElementById('historyModal');
-            const historyList = document.getElementById('historyList');
             
-            if (game.gameHistory.length === 0) {
-                historyList.innerHTML = '<p style="text-align: center; color: #666;">No games played yet!</p>';
-            } else {
-                let historyHTML = '';
-                game.gameHistory.forEach((gameData, index) => {
-                    const isWinner = gameData.winner !== 'Tie';
-                    historyHTML += `
-                        <div style="padding: 15px; margin: 10px 0; border-radius: 10px; background: linear-gradient(45deg, #f8f9fa, #e9ecef); border-left: 5px solid ${isWinner ? '#28a745' : '#6c757d'}; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                <strong>Game ${game.gameHistory.length - index}</strong>
-                                <span style="color: #666; font-size: 0.9em;">${gameData.date}</span>
-                            </div>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 10px;">
-                                <div><strong>${gameData.player1Name}:</strong> ${gameData.player1Score}</div>
-                                <div><strong>${gameData.player2Name}:</strong> ${gameData.player2Score}</div>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; font-size: 0.9em;">
-                                <span>Grid: ${gameData.gridSize}</span>
-                                <span>Moves: ${gameData.totalMoves}</span>
-                                <span style="font-weight: bold; color: ${gameData.winner === 'Tie' ? '#666' : '#28a745'}">Winner: ${gameData.winner}</span>
-                            </div>
-                        </div>
-                    `;
-                });
-                historyList.innerHTML = historyHTML;
+            let info = `Game Mode: ${currentMode.charAt(0).toUpperCase() + currentMode.slice(1)}\n`;
+            
+            if (game) {
+                if (game.gameMode === 'online') {
+                    info += `Peer ID: ${game.peerId || 'Not connected'}\n`;
+                    info += `Connection Status: ${game.connection && game.connection.open ? 'Connected' : 'Disconnected'}\n`;
+                    info += `Player Role: ${game.isHost ? 'Host' : 'Guest'}\n`;
+                }
+                
+                info += `Player ID: ${game.playerId}\n`;
+                info += `Grid Size: ${game.gridSize}x${game.gridSize}`;
             }
             
-            modal.classList.add('active');
+            alert(info);
         }
 
-        function closeHistory() {
-            document.getElementById('historyModal').classList.remove('active');
-        }
-
-        function clearHistory() {
-            if (confirm('Are you sure you want to clear all game history?')) {
-                game.gameHistory = [];
-                game.saveGameHistory();
-                game.playerStats = { totalGames: 0, player1Wins: 0, player2Wins: 0, ties: 0 };
-                game.savePlayerStats();
-                closeHistory();
+        // Handle page load
+        window.addEventListener('load', () => {
+            // Check if joining a game via URL
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('join')) {
+                selectMode('online');
             }
-        }
-
-        // Close modals when clicking outside
-        window.onclick = function(event) {
-            const menuModal = document.getElementById('menuModal');
-            const historyModal = document.getElementById('historyModal');
             
-            if (event.target === menuModal) {
-                closeMenu();
+            // Load saved player names
+            try {
+                const savedNames = localStorage.getItem('dotsBoxesPlayerNames');
+                if (savedNames) {
+                    const names = JSON.parse(savedNames);
+                    const p1Input = document.getElementById('player1Name');
+                    const p2Input = document.getElementById('player2Name');
+                    if (p1Input) p1Input.value = names[0];
+                    if (p2Input) p2Input.value = names[1];
+                }
+            } catch (error) {
+                console.error('Failed to load saved names:', error);
             }
-            if (event.target === historyModal) {
-                closeHistory();
-            }
-        }
+        });
 
         // Handle device orientation changes
         window.addEventListener('orientationchange', () => {
@@ -1744,6 +2714,7 @@
         });
 
         // Prevent zoom on double tap (iOS)
+        let lastTouchEnd = 0;
         document.addEventListener('touchend', function (event) {
             const now = (new Date()).getTime();
             if (now - lastTouchEnd <= 300) {
@@ -1752,19 +2723,14 @@
             lastTouchEnd = now;
         }, false);
 
-        let lastTouchEnd = 0;
-
-        // Initialize the game when page loads
-        window.addEventListener('load', () => {
-            // Load saved player names
-            const savedNames = localStorage.getItem('dotsBoxesPlayerNames');
-            if (savedNames) {
-                const names = JSON.parse(savedNames);
-                document.getElementById('player1Name').value = names[0];
-                document.getElementById('player2Name').value = names[1];
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            const menuModal = document.getElementById('menuModal');
+            
+            if (event.target === menuModal) {
+                closeMenu();
             }
-        });
+        }
     </script>
 </body>
 </html>
-
