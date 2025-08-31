@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dots & Boxes - Enhanced Edition</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            overflow-x: auto;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 25px;
+            padding: 30px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+            max-width: 900px;
+            width: 100%;
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.8em;
+            font-weight: bold;
+            text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.1);
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.2em;
+            font-weight: 500;
+        }
+
+        .game-settings {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 25px;
+            padding: 20px;
+            background: linear-gradient(45deg, #f8f9fa, #e9ecef);
+            border-radius: 15px;
+            flex-wrap: wrap;
+        }
+
+        .setting-group {
+            text-align: center;
+        }
+
+        .setting-group label {
+            font-weight: bold;
+            margin-bottom: 8px;
+            display: block;
+            color: #333;
+            font-size: 1.1em;
+        }
+
+        .setting-group select {
+            padding: 10px 15px;
+            font-size: 1em;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            background: white;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .setting-group select:hover {
+            border-color: #667eea;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+        }
+
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding: 20px;
+            background: linear-gradient(45deg, #f8f9fa, #ffffff);
+            border-radius: 15px;
+            border: 2px solid #e9ecef;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .player-info {
+            text-align: center;
+            padding: 15px 25px;
+            border-radius: 12px;
+            transition: all 0.4s ease;
+            min-width: 120px;
+        }
+
+        .player-info.active {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            transform: scale(1.08);
+            box-shadow: 0 8px 20px rgba(76, 175, 80, 0.4);
+        }
+
+        .player-info.inactive {
+            background: linear-gradient(45deg, #e9ecef, #f8f9fa);
+            color: #666;
+        }
+
+        .player-name {
+            font-weight: bold;
+            font-size: 1.3em;
+            margin-bottom: 8px;
+        }
+
+        .player-score {
+            font-size: 1.6em;
+            font-weight: bold;
+        }
+
+        .canvas-container {
+            text-align: center;
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        .game-canvas {
+            border: 4px solid #333;
+            border-radius: 15px;
+            cursor: crosshair;
+            background: #fefefe;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+        }
+
+        .game-canvas:hover {
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            padding: 14px 28px;
+            font-size: 1.1em;
+            font-weight: bold;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            min-width: 120px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(45deg, #ffecd2, #fcb69f);
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(252, 182, 159, 0.4);
+        }
+
+        .btn-undo {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+            color: white;
+        }
+
+        .btn-undo:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(255, 107, 107, 0.4);
+        }
+
+        .btn-undo:disabled {
+            background: #cccccc;
+            color: #666666;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-undo:disabled:hover {
+            transform: none;
+            box-shadow: none;
+        }
+
+        .game-status {
+            text-align: center;
+            margin: 20px 0;
+            font-size: 1.3em;
+            font-weight: bold;
+            padding: 20px;
+            border-radius: 15px;
+            background: linear-gradient(45deg, #ff9a9e, #fecfef);
+            color: #333;
+            box-shadow: 0 5px 15px rgba(255, 154, 158, 0.3);
+        }
+
+        .winner-message {
+            background: linear-gradient(45deg, #a8edea, #fed6e3);
+            animation: celebration 1.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes celebration {
+            0% { 
+                transform: scale(1); 
+                box-shadow: 0 5px 15px rgba(168, 237, 234, 0.3);
+            }
+            100% { 
+                transform: scale(1.03); 
+                box-shadow: 0 15px 30px rgba(168, 237, 234, 0.5);
+            }
+        }
+
+        .move-history {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #666;
+            font-size: 0.95em;
+        }
+
+        .hover-line {
+            opacity: 0.4;
+            stroke-dasharray: 5, 5;
+        }
+
+        @media (max-width: 768px) {
+            .game-container {
+                padding: 20px;
+                margin: 10px;
+            }
+            
+            h1 {
+                font-size: 2.2em;
+            }
+            
+            .game-info {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .game-settings {
+                flex-direction: column;
+                align-items: center;
+                gap: 20px;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn {
+                width: 200px;
+            }
+        }
+
+        .line-preview {
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>DOTS & BOXES</h1>
+        <p class="subtitle">Enhanced Edition - Draw lines between dots to complete boxes and claim them!</p>
+
+        <div class="game-settings">
+            <div class="setting-group">
+                <label for="gridSize">Grid Size:</label>
+                <select id="gridSize">
+                    <option value="3">3x3 (Quick)</option>
+                    <option value="4" selected>4x4 (Classic)</option>
+                    <option value="5">5x5 (Challenge)</option>
+                    <option value="6">6x6 (Expert)</option>
+                    <option value="7">7x7 (Master)</option>
+                </select>
+            </div>
+            <div class="setting-group">
+                <label for="difficulty">Visual Aid:</label>
+                <select id="difficulty">
+                    <option value="easy" selected>Show Hover Preview</option>
+                    <option value="hard">No Preview</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="game-info">
+            <div class="player-info active" id="player1Info">
+                <div class="player-name">Player 1</div>
+                <div class="player-score" id="player1Score">0</div>
+            </div>
+            <div class="player-info inactive" id="player2Info">
+                <div class="player-name">Player 2</div>
+                <div class="player-score" id="player2Score">0</div>
+            </div>
+        </div>
+
+        <div class="move-history" id="moveHistory">
+            No moves yet - Click between dots to draw lines
+        </div>
+
+        <div class="game-status" id="gameStatus">Player 1's turn - Draw a line!</div>
+
+        <div class="canvas-container">
+            <canvas id="gameCanvas" class="game-canvas" width="700" height="700"></canvas>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-undo" id="undoBtn" onclick="undoLastMove()" disabled>Undo Last Move</button>
+            <button class="btn btn-primary" onclick="newGame()">New Game</button>
+            <button class="btn btn-secondary" onclick="resetGame()">Reset</button>
+        </div>
+    </div>
+
+    <script>
+        class DotsAndBoxes {
+            constructor() {
+                this.canvas = document.getElementById('gameCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.gridSize = 4;
+                this.cellSize = 90;
+                this.dotRadius = 8;
+                this.lineWidth = 5;
+                this.currentPlayer = 1;
+                this.scores = [0, 0];
+                this.gameOver = false;
+                this.showPreview = true;
+                this.hoveredLine = null;
+                this.moveHistory = [];
+                
+                // Game state
+                this.horizontalLines = [];
+                this.verticalLines = [];
+                this.boxes = [];
+                
+                this.initGame();
+                this.setupEventListeners();
+            }
+
+            initGame() {
+                this.updateCanvasSize();
+                this.resetGameState();
+                this.draw();
+            }
+
+            updateCanvasSize() {
+                const padding = 60;
+                const totalSize = (this.gridSize + 1) * this.cellSize + padding;
+                this.canvas.width = totalSize;
+                this.canvas.height = totalSize;
+            }
+
+            resetGameState() {
+                // Initialize horizontal lines (gridSize+1 rows, gridSize columns)
+                this.horizontalLines = [];
+                for (let row = 0; row <= this.gridSize; row++) {
+                    this.horizontalLines[row] = [];
+                    for (let col = 0; col < this.gridSize; col++) {
+                        this.horizontalLines[row][col] = false;
+                    }
+                }
+
+                // Initialize vertical lines (gridSize rows, gridSize+1 columns)
+                this.verticalLines = [];
+                for (let row = 0; row < this.gridSize; row++) {
+                    this.verticalLines[row] = [];
+                    for (let col = 0; col <= this.gridSize; col++) {
+                        this.verticalLines[row][col] = false;
+                    }
+                }
+
+                // Initialize boxes
+                this.boxes = [];
+                for (let row = 0; row < this.gridSize; row++) {
+                    this.boxes[row] = [];
+                    for (let col = 0; col < this.gridSize; col++) {
+                        this.boxes[row][col] = 0; // 0 = empty, 1 = player1, 2 = player2
+                    }
+                }
+
+                this.currentPlayer = 1;
+                this.scores = [0, 0];
+                this.gameOver = false;
+                this.moveHistory = [];
+                this.hoveredLine = null;
+                this.updateUI();
+                this.updateMoveHistory();
+            }
+
+            setupEventListeners() {
+                this.canvas.addEventListener('click', (e) => {
+                    if (this.gameOver) return;
+                    
+                    const rect = this.canvas.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    
+                    this.handleClick(x, y);
+                });
+
+                this.canvas.addEventListener('mousemove', (e) => {
+                    if (this.gameOver || !this.showPreview) return;
+                    
+                    const rect = this.canvas.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    
+                    const newHoveredLine = this.getClickedLine(x, y);
+                    if (JSON.stringify(this.hoveredLine) !== JSON.stringify(newHoveredLine)) {
+                        this.hoveredLine = newHoveredLine;
+                        this.draw();
+                    }
+                });
+
+                this.canvas.addEventListener('mouseleave', () => {
+                    if (this.hoveredLine) {
+                        this.hoveredLine = null;
+                        this.draw();
+                    }
+                });
+
+                document.getElementById('gridSize').addEventListener('change', (e) => {
+                    this.gridSize = parseInt(e.target.value);
+                    this.initGame();
+                });
+
+                document.getElementById('difficulty').addEventListener('change', (e) => {
+                    this.showPreview = e.target.value === 'easy';
+                    if (!this.showPreview) {
+                        this.hoveredLine = null;
+                        this.draw();
+                    }
+                });
+            }
+
+            getOffset() {
+                return 30; // Padding from canvas edges
+            }
+
+            handleClick(x, y) {
+                const clickedLine = this.getClickedLine(x, y);
+                if (clickedLine && this.drawLine(clickedLine)) {
+                    // Store the move for undo functionality
+                    const moveData = {
+                        line: clickedLine,
+                        player: this.currentPlayer,
+                        boxesBefore: JSON.parse(JSON.stringify(this.boxes)),
+                        scoresBefore: [...this.scores]
+                    };
+                    
+                    const completedBoxes = this.checkCompletedBoxes();
+                    
+                    if (completedBoxes.length === 0) {
+                        // No boxes completed, switch player
+                        this.currentPlayer = this.currentPlayer === 1 ? 2 : 1;
+                    } else {
+                        // Boxes completed, current player gets another turn
+                        this.scores[this.currentPlayer - 1] += completedBoxes.length;
+                        completedBoxes.forEach(box => {
+                            this.boxes[box.row][box.col] = this.currentPlayer;
+                        });
+                    }
+                    
+                    moveData.boxesAfter = JSON.parse(JSON.stringify(this.boxes));
+                    moveData.scoresAfter = [...this.scores];
+                    moveData.playerAfter = this.currentPlayer;
+                    
+                    this.moveHistory.push(moveData);
+                    
+                    this.draw();
+                    this.updateUI();
+                    this.updateMoveHistory();
+                    this.checkGameOver();
+                }
+            }
+
+            getClickedLine(x, y) {
+                const tolerance = 25;
+                const offset = this.getOffset();
+                
+                // Check horizontal lines
+                for (let row = 0; row <= this.gridSize; row++) {
+                    for (let col = 0; col < this.gridSize; col++) {
+                        const lineY = row * this.cellSize + offset;
+                        const lineX1 = col * this.cellSize + offset;
+                        const lineX2 = (col + 1) * this.cellSize + offset;
+                        const lineCenterX = (lineX1 + lineX2) / 2;
+                        
+                        if (Math.abs(y - lineY) < tolerance && 
+                            x >= lineX1 - tolerance && x <= lineX2 + tolerance) {
+                            if (!this.horizontalLines[row][col]) {
+                                return { type: 'horizontal', row, col };
+                            }
+                        }
+                    }
+                }
+                
+                // Check vertical lines
+                for (let row = 0; row < this.gridSize; row++) {
+                    for (let col = 0; col <= this.gridSize; col++) {
+                        const lineX = col * this.cellSize + offset;
+                        const lineY1 = row * this.cellSize + offset;
+                        const lineY2 = (row + 1) * this.cellSize + offset;
+                        const lineCenterY = (lineY1 + lineY2) / 2;
+                        
+                        if (Math.abs(x - lineX) < tolerance && 
+                            y >= lineY1 - tolerance && y <= lineY2 + tolerance) {
+                            if (!this.verticalLines[row][col]) {
+                                return { type: 'vertical', row, col };
+                            }
+                        }
+                    }
+                }
+                
+                return null;
+            }
+
+            drawLine(line) {
+                if (line.type === 'horizontal') {
+                    this.horizontalLines[line.row][line.col] = true;
+                } else {
+                    this.verticalLines[line.row][line.col] = true;
+                }
+                return true;
+            }
+
+            undoLastMove() {
+                if (this.moveHistory.length === 0) return;
+                
+                const lastMove = this.moveHistory.pop();
+                
+                // Restore line state
+                if (lastMove.line.type === 'horizontal') {
+                    this.horizontalLines[lastMove.line.row][lastMove.line.col] = false;
+                } else {
+                    this.verticalLines[lastMove.line.row][lastMove.line.col] = false;
+                }
+                
+                // Restore game state
+                this.boxes = lastMove.boxesBefore;
+                this.scores = lastMove.scoresBefore;
+                this.currentPlayer = lastMove.player;
+                this.gameOver = false;
+                
+                this.draw();
+                this.updateUI();
+                this.updateMoveHistory();
+            }
+
+            checkCompletedBoxes() {
+                const newBoxes = [];
+                
+                for (let row = 0; row < this.gridSize; row++) {
+                    for (let col = 0; col < this.gridSize; col++) {
+                        if (this.boxes[row][col] === 0) { // Empty box
+                            const top = this.horizontalLines[row][col];
+                            const bottom = this.horizontalLines[row + 1][col];
+                            const left = this.verticalLines[row][col];
+                            const right = this.verticalLines[row][col + 1];
+                            
+                            if (top && bottom && left && right) {
+                                newBoxes.push({ row, col });
+                            }
+                        }
+                    }
+                }
+                
+                return newBoxes;
+            }
+
+            draw() {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Draw background grid for better visibility
+                this.drawBackground();
+                
+                // Draw hover preview
+                if (this.hoveredLine && this.showPreview) {
+                    this.drawHoverPreview();
+                }
+                
+                // Draw dots
+                this.drawDots();
+                
+                // Draw lines
+                this.drawLines();
+                
+                // Draw boxes
+                this.drawBoxes();
+            }
+
+            drawBackground() {
+                const offset = this.getOffset();
+                this.ctx.strokeStyle = '#f0f0f0';
+                this.ctx.lineWidth = 1;
+                this.ctx.setLineDash([2, 2]);
+                
+                // Draw potential horizontal lines
+                for (let row = 0; row <= this.gridSize; row++) {
+                    for (let col = 0; col < this.gridSize; col++) {
+                        if (!this.horizontalLines[row][col]) {
+                            const y = row * this.cellSize + offset;
+                            const x1 = col * this.cellSize + offset + this.dotRadius;
+                            const x2 = (col + 1) * this.cellSize + offset - this.dotRadius;
+                            
+                            this.ctx.beginPath();
+                            this.ctx.moveTo(x1, y);
+                            this.ctx.lineTo(x2, y);
+                            this.ctx.stroke();
+                        }
+                    }
+                }
+                
+                // Draw potential vertical lines
+                for (let row = 0; row < this.gridSize; row++) {
+                    for (let col = 0; col <= this.gridSize; col++) {
+                        if (!this.verticalLines[row][col]) {
+                            const x = col * this.cellSize + offset;
+                            const y1 = row * this.cellSize + offset + this.dotRadius;
+                            const y2 = (row + 1) * this.cellSize + offset - this.dotRadius;
+                            
+                            this.ctx.beginPath();
+                            this.ctx.moveTo(x, y1);
+                            this.ctx.lineTo(x, y2);
+                            this.ctx.stroke();
+                        }
+                    }
+                }
+                
+                this.ctx.setLineDash([]);
+            }
+
+            drawHoverPreview() {
+                if (!this.hoveredLine) return;
+                
+                const offset = this.getOffset();
+                this.ctx.lineWidth = this.lineWidth;
+                this.ctx.lineCap = 'round';
+                this.ctx.strokeStyle = '#4CAF50';
+                this.ctx.globalAlpha = 0.6;
+                this.ctx.setLineDash([8, 4]);
+                
+                if (this.hoveredLine.type === 'horizontal') {
+                    const y = this.hoveredLine.row * this.cellSize + offset;
+                    const x1 = this.hoveredLine.col * this.cellSize + offset + this.dotRadius;
+                    const x2 = (this.hoveredLine.col + 1) * this.cellSize + offset - this.dotRadius;
+                    
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(x1, y);
+                    this.ctx.lineTo(x2, y);
+                    this.ctx.stroke();
+                } else {
+                    const x = this.hoveredLine.col * this.cellSize + offset;
+                    const y1 = this.hoveredLine.row * this.cellSize + offset + this.dotRadius;
+                    const y2 = (this.hoveredLine.row + 1) * this.cellSize + offset - this.dotRadius;
+                    
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(x, y1);
+                    this.ctx.lineTo(x, y2);
+                    this.ctx.stroke();
+                }
+                
+                this.ctx.setLineDash([]);
+                this.ctx.globalAlpha = 1.0;
+            }
+
+            drawDots() {
+                const offset = this.getOffset();
+                this.ctx.fillStyle = '#2c3e50';
+                this.ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+                this.ctx.shadowBlur = 4;
+                this.ctx.shadowOffsetX = 2;
+                this.ctx.shadowOffsetY = 2;
+                
+                for (let row = 0; row <= this.gridSize; row++) {
+                    for (let col = 0; col <= this.gridSize; col++) {
+                        const x = col * this.cellSize + offset;
+                        const y = row * this.cellSize + offset;
+                        
+                        this.ctx.beginPath();
+                        this.ctx.arc(x, y, this.dotRadius, 0, 2 * Math.PI);
+                        this.ctx.fill();
+                    }
+                }
+                
+                this.ctx.shadowBlur = 0;
+                this.ctx.shadowOffsetX = 0;
+                this.ctx.shadowOffsetY = 0;
+            }
+
+            drawLines() {
+                const offset = this.getOffset();
+                this.ctx.lineWidth = this.lineWidth;
+                this.ctx.lineCap = 'round';
+                this.ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+                this.ctx.shadowBlur = 3;
+                this.ctx.shadowOffsetX = 1;
+                this.ctx.shadowOffsetY = 1;
+                
+                // Draw horizontal lines
+                this.ctx.strokeStyle = '#3498db';
+                for (let row = 0; row <= this.gridSize; row++) {
+                    for (let col = 0; col < this.gridSize; col++) {
+                        if (this.horizontalLines[row][col]) {
+                            const y = row * this.cellSize + offset;
+                            const x1 = col * this.cellSize + offset + this.dotRadius;
+                            const x2 = (col + 1) * this.cellSize + offset - this.dotRadius;
+                            
+                            this.ctx.beginPath();
+                            this.ctx.moveTo(x1, y);
+                            this.ctx.lineTo(x2, y);
+                            this.ctx.stroke();
+                        }
+                    }
+                }
+                
+                // Draw vertical lines
+                this.ctx.strokeStyle = '#e74c3c';
+                for (let row = 0; row < this.gridSize; row++) {
+                    for (let col = 0; col <= this.gridSize; col++) {
+                        if (this.verticalLines[row][col]) {
+                            const x = col * this.cellSize + offset;
+                            const y1 = row * this.cellSize + offset + this.dotRadius;
+                            const y2 = (row + 1) * this.cellSize + offset - this.dotRadius;
+                            
+                            this.ctx.beginPath();
+                            this.ctx.moveTo(x, y1);
+                            this.ctx.lineTo(x, y2);
+                            this.ctx.stroke();
+                        }
+                    }
+                }
+                
+                this.ctx.shadowBlur = 0;
+                this.ctx.shadowOffsetX = 0;
+                this.ctx.shadowOffsetY = 0;
+            }
+
+            drawBoxes() {
+                const offset = this.getOffset();
+                this.ctx.font = 'bold 28px Arial';
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+                
+                for (let row = 0; row < this.gridSize; row++) {
+                    for (let col = 0; col < this.gridSize; col++) {
+                        if (this.boxes[row][col] > 0) {
+                            const x = col * this.cellSize + this.cellSize / 2 + offset;
+                            const y = row * this.cellSize + this.cellSize / 2 + offset;
+                            
+                            // Draw box background with gradient
+                            const gradient = this.ctx.createRadialGradient(x, y, 0, x, y, this.cellSize / 2);
+                            if (this.boxes[row][col] === 1) {
+                                gradient.addColorStop(0, 'rgba(76, 175, 80, 0.4)');
+                                gradient.addColorStop(1, 'rgba(76, 175, 80, 0.2)');
+                            } else {
+                                gradient.addColorStop(0, 'rgba(255, 193, 7, 0.4)');
+                                gradient.addColorStop(1, 'rgba(255, 193, 7, 0.2)');
+                            }
+                            
+                            this.ctx.fillStyle = gradient;
+                            this.ctx.fillRect(
+                                col * this.cellSize + offset + this.dotRadius + 2,
+                                row * this.cellSize + offset + this.dotRadius + 2,
+                                this.cellSize - 2 * this.dotRadius - 4,
+                                this.cellSize - 2 * this.dotRadius - 4
+                            );
+                            
+                            // Draw border
+                            this.ctx.strokeStyle = this.boxes[row][col] === 1 ? '#4CAF50' : '#FFC107';
+                            this.ctx.lineWidth = 2;
+                            this.ctx.strokeRect(
+                                col * this.cellSize + offset + this.dotRadius + 2,
+                                row * this.cellSize + offset + this.dotRadius + 2,
+                                this.cellSize - 2 * this.dotRadius - 4,
+                                this.cellSize - 2 * this.dotRadius - 4
+                            );
+                            
+                            // Draw player initial with shadow
+                            this.ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+                            this.ctx.shadowBlur = 2;
+                            this.ctx.shadowOffsetX = 1;
+                            this.ctx.shadowOffsetY = 1;
+                            this.ctx.fillStyle = this.boxes[row][col] === 1 ? '#2E7D32' : '#F57C00';
+                            this.ctx.fillText(`P${this.boxes[row][col]}`, x, y);
+                            
+                            this.ctx.shadowBlur = 0;
+                            this.ctx.shadowOffsetX = 0;
+                            this.ctx.shadowOffsetY = 0;
+                        }
+                    }
+                }
+            }
+
+            updateUI() {
+                document.getElementById('player1Score').textContent = this.scores[0];
+                document.getElementById('player2Score').textContent = this.scores[1];
+                
+                const player1Info = document.getElementById('player1Info');
+                const player2Info = document.getElementById('player2Info');
+                const undoBtn = document.getElementById('undoBtn');
+                
+                if (this.currentPlayer === 1) {
+                    player1Info.className = 'player-info active';
+                    player2Info.className = 'player-info inactive';
+                } else {
+                    player1Info.className = 'player-info inactive';
+                    player2Info.className = 'player-info active';
+                }
+                
+                // Update undo button state
+                undoBtn.disabled = this.moveHistory.length === 0 || this.gameOver;
+                
+                const statusElement = document.getElementById('gameStatus');
+                if (this.gameOver) {
+                    if (this.scores[0] > this.scores[1]) {
+                        statusElement.textContent = `🎉 Game Over! Player 1 wins with ${this.scores[0]} boxes! 🎉`;
+                    } else if (this.scores[1] > this.scores[0]) {
+                        statusElement.textContent = `🎉 Game Over! Player 2 wins with ${this.scores[1]} boxes! 🎉`;
+                    } else {
+                        statusElement.textContent = `🤝 Game Over! It's a tie with ${this.scores[0]} boxes each! 🤝`;
+                    }
+                    statusElement.className = 'game-status winner-message';
+                } else {
+                    statusElement.textContent = `Player ${this.currentPlayer}'s turn - Draw a line!`;
+                    statusElement.className = 'game-status';
+                }
+            }
+
+            updateMoveHistory() {
+                const historyElement = document.getElementById('moveHistory');
+                if (this.moveHistory.length === 0) {
+                    historyElement.textContent = 'No moves yet - Click between dots to draw lines';
+                } else {
+                    const lastMove = this.moveHistory[this.moveHistory.length - 1];
+                    const boxCount = lastMove.scoresAfter[lastMove.player - 1] - lastMove.scoresBefore[lastMove.player - 1];
+                    let moveText = `Move ${this.moveHistory.length}: Player ${lastMove.player} drew a ${lastMove.line.type} line`;
+                    if (boxCount > 0) {
+                        moveText += ` and completed ${boxCount} box${boxCount > 1 ? 'es' : ''}!`;
+                    }
+                    historyElement.textContent = moveText;
+                }
+            }
+
+            checkGameOver() {
+                let totalPossibleBoxes = this.gridSize * this.gridSize;
+                let completedBoxes = this.scores[0] + this.scores[1];
+                
+                if (completedBoxes === totalPossibleBoxes) {
+                    this.gameOver = true;
+                    this.updateUI();
+                }
+            }
+        }
+
+        let game;
+
+        function initializeGame() {
+            game = new DotsAndBoxes();
+        }
+
+        function newGame() {
+            game.initGame();
+        }
+
+        function resetGame() {
+            game.resetGameState();
+            game.draw();
+        }
+
+        function undoLastMove() {
+            game.undoLastMove();
+        }
+
+        // Initialize the game when the page loads
+        window.addEventListener('load', initializeGame);
+    </script>
+</body>
+</html>
+

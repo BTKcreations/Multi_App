@@ -93,7 +93,15 @@ document.addEventListener("DOMContentLoaded", () => {
       icon: "📝",
       category: "Productivity",
       keywords: "generate summarize format markdown",
-    }];
+    },
+    {
+      name: "Dots & Boxes",
+      file: "Dots_and_Boxes.html",
+      icon: "🟦",
+      category: "Games",
+      keywords: "dots boxes grid strategy board game",
+    }
+  ];
 
   // --- 2. ELEMENT REFERENCES ---
   // Views and Core App
