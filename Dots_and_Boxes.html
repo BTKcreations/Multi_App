@@ -218,22 +218,98 @@
             text-align: center;
             margin-bottom: 20px;
             position: relative;
+            background: linear-gradient(45deg, #f8f9fa, #ffffff);
+            border-radius: 15px;
+            padding: 10px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            display: inline-block;
+            border: 4px solid #333;
+            border-radius: 15px;
+            overflow: hidden;
+            background: linear-gradient(45deg, #fefefe, #f8f9fa);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
         }
 
         .game-canvas {
-            border: 4px solid #333;
-            border-radius: 15px;
             cursor: crosshair;
-            background: linear-gradient(45deg, #fefefe, #f8f9fa);
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
-            transition: all 0.3s ease;
-            max-width: 100%;
-            height: auto;
+            transition: cursor 0.2s ease;
+            display: block;
         }
 
-        .game-canvas:hover {
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
-            transform: translateY(-2px);
+        .game-canvas.dragging {
+            cursor: grabbing !important;
+        }
+
+        .game-canvas.grab {
+            cursor: grab !important;
+        }
+
+        .zoom-controls {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 10;
+        }
+
+        .zoom-btn {
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .zoom-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+        }
+
+        .zoom-btn:active {
+            transform: scale(0.95);
+        }
+
+        .zoom-info {
+            position: absolute;
+            bottom: 15px;
+            left: 15px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            z-index: 10;
+        }
+
+        .canvas-instructions {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 8px 12px;
+            border-radius: 15px;
+            font-size: 11px;
+            color: #666;
+            max-width: 200px;
+            z-index: 10;
+            border: 1px solid #ddd;
         }
 
         .controls {
@@ -446,97 +522,6 @@
             opacity: 0.9;
         }
 
-        /* Mobile Specific Styles */
-        @media (max-width: 768px) {
-            .game-container {
-                padding: 15px;
-                margin: 5px;
-                border-radius: 20px;
-            }
-            
-            .game-info {
-                flex-direction: column;
-                gap: 15px;
-            }
-            
-            .player-info {
-                min-width: auto;
-                width: 100%;
-            }
-            
-            .controls {
-                flex-direction: column;
-                align-items: center;
-            }
-            
-            .btn {
-                width: 90%;
-                max-width: 250px;
-            }
-
-            .game-canvas {
-                max-width: calc(100vw - 40px);
-                height: auto;
-            }
-
-            .player-names {
-                grid-template-columns: 1fr;
-                gap: 10px;
-            }
-
-            .game-settings {
-                grid-template-columns: 1fr;
-                gap: 15px;
-                padding: 15px;
-            }
-        }
-
-        /* Tablet Specific Styles */
-        @media (min-width: 769px) and (max-width: 1024px) {
-            .game-container {
-                padding: 25px;
-                max-width: 90vw;
-            }
-
-            .game-canvas {
-                max-width: 80vw;
-                height: auto;
-            }
-
-            .controls {
-                gap: 15px;
-            }
-
-            .btn {
-                min-width: 140px;
-            }
-        }
-
-        /* Desktop Specific Styles */
-        @media (min-width: 1025px) {
-            .game-container {
-                padding: 30px;
-                max-width: 1000px;
-            }
-
-            .game-canvas {
-                max-width: none;
-            }
-
-            .controls {
-                gap: 20px;
-            }
-        }
-
-        /* Color indicators for player turns */
-        .player1-indicator {
-            background: linear-gradient(45deg, #ff6b6b, #ee5a52);
-        }
-
-        .player2-indicator {
-            background: linear-gradient(45deg, #4ecdc4, #44a08d);
-        }
-
         .color-legend {
             display: flex;
             justify-content: center;
@@ -570,6 +555,91 @@
             background: linear-gradient(45deg, #4ecdc4, #44a08d);
         }
 
+        /* Mobile Specific Styles */
+        @media (max-width: 768px) {
+            .game-container {
+                padding: 15px;
+                margin: 5px;
+                border-radius: 20px;
+            }
+            
+            .game-info {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .player-info {
+                min-width: auto;
+                width: 100%;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn {
+                width: 90%;
+                max-width: 250px;
+            }
+
+            .player-names {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            .game-settings {
+                grid-template-columns: 1fr;
+                gap: 15px;
+                padding: 15px;
+            }
+
+            .zoom-controls {
+                right: 10px;
+                top: 10px;
+            }
+
+            .zoom-btn {
+                width: 35px;
+                height: 35px;
+                font-size: 16px;
+            }
+
+            .canvas-instructions {
+                font-size: 10px;
+                max-width: 150px;
+                padding: 6px 10px;
+            }
+        }
+
+        /* Tablet Specific Styles */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .game-container {
+                padding: 25px;
+                max-width: 90vw;
+            }
+
+            .controls {
+                gap: 15px;
+            }
+
+            .btn {
+                min-width: 140px;
+            }
+        }
+
+        /* Desktop Specific Styles */
+        @media (min-width: 1025px) {
+            .game-container {
+                padding: 30px;
+                max-width: 1000px;
+            }
+
+            .controls {
+                gap: 20px;
+            }
+        }
+
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after {
                 animation-duration: 0.01ms !important;
@@ -582,7 +652,7 @@
 <body>
     <div class="game-container">
         <h1>DOTS & BOXES</h1>
-        <p class="subtitle">Enhanced Edition - Draw lines between dots to complete boxes and claim them!</p>
+        <p class="subtitle">Enhanced Edition - Zoomable & Draggable Board!</p>
 
         <div class="player-names">
             <div class="player-name-input">
@@ -642,7 +712,23 @@
         <div class="game-status" id="gameStatus">Player 1's turn - Draw a line!</div>
 
         <div class="canvas-container">
-            <canvas id="gameCanvas" class="game-canvas" width="700" height="700"></canvas>
+            <div class="canvas-instructions">
+                🔍 Mouse wheel/pinch to zoom<br>
+                🖱️ Drag to pan when zoomed<br>
+                📱 Use zoom buttons on mobile
+            </div>
+            
+            <div class="zoom-controls">
+                <button class="zoom-btn" id="zoomIn" title="Zoom In">+</button>
+                <button class="zoom-btn" id="zoomOut" title="Zoom Out">−</button>
+                <button class="zoom-btn" id="resetView" title="Reset View">⌂</button>
+            </div>
+
+            <div class="zoom-info" id="zoomInfo">100%</div>
+
+            <div class="canvas-wrapper">
+                <canvas id="gameCanvas" class="game-canvas" width="800" height="800"></canvas>
+            </div>
         </div>
 
         <div class="controls">
@@ -688,9 +774,9 @@
                 this.canvas = document.getElementById('gameCanvas');
                 this.ctx = this.canvas.getContext('2d');
                 this.gridSize = 4;
-                this.cellSize = 80;
-                this.dotRadius = 8;
-                this.lineWidth = 5;
+                this.cellSize = 100;
+                this.dotRadius = 10;
+                this.lineWidth = 6;
                 this.currentPlayer = 1;
                 this.scores = [0, 0];
                 this.gameOver = false;
@@ -700,6 +786,19 @@
                 this.playerNames = ['Player 1', 'Player 2'];
                 this.gameHistory = this.loadGameHistory();
                 this.playerStats = this.loadPlayerStats();
+                
+                // Zoom and Pan properties
+                this.scale = 1;
+                this.minScale = 0.5;
+                this.maxScale = 3;
+                this.panX = 0;
+                this.panY = 0;
+                this.isDragging = false;
+                this.lastPanPoint = { x: 0, y: 0 };
+                
+                // Touch properties
+                this.touches = [];
+                this.lastTouchDistance = 0;
                 
                 // Player colors
                 this.playerColors = {
@@ -755,31 +854,26 @@
                 this.updateCanvasSize();
                 this.resetGameState();
                 this.loadPlayerNames();
+                this.resetView();
                 this.draw();
             }
 
             updateCanvasSize() {
-                const isMobile = window.innerWidth <= 768;
-                const isTablet = window.innerWidth > 768 && window.innerWidth <= 1024;
-                
-                if (isMobile) {
-                    this.cellSize = Math.min(60, (window.innerWidth - 80) / (this.gridSize + 2));
-                } else if (isTablet) {
-                    this.cellSize = Math.min(80, (window.innerWidth * 0.8) / (this.gridSize + 2));
-                } else {
-                    this.cellSize = 80;
-                }
-                
-                const padding = 40;
-                const totalSize = (this.gridSize + 1) * this.cellSize + padding;
-                this.canvas.width = totalSize;
-                this.canvas.height = totalSize;
-                
-                // Update canvas display size for mobile
-                if (isMobile) {
-                    this.canvas.style.width = Math.min(totalSize, window.innerWidth - 40) + 'px';
-                    this.canvas.style.height = Math.min(totalSize, window.innerWidth - 40) + 'px';
-                }
+                // Always use consistent canvas size for better zoom/pan experience
+                this.canvas.width = 800;
+                this.canvas.height = 800;
+            }
+
+            resetView() {
+                this.scale = 1;
+                this.panX = 0;
+                this.panY = 0;
+                this.updateZoomInfo();
+                this.draw();
+            }
+
+            updateZoomInfo() {
+                document.getElementById('zoomInfo').textContent = Math.round(this.scale * 100) + '%';
             }
 
             resetGameState() {
@@ -826,40 +920,24 @@
             }
 
             setupEventListeners() {
-                this.canvas.addEventListener('click', (e) => {
-                    if (this.gameOver) return;
-                    
-                    const rect = this.canvas.getBoundingClientRect();
-                    const scaleX = this.canvas.width / rect.width;
-                    const scaleY = this.canvas.height / rect.height;
-                    const x = (e.clientX - rect.left) * scaleX;
-                    const y = (e.clientY - rect.top) * scaleY;
-                    
-                    this.handleClick(x, y);
-                });
+                // Canvas click events
+                this.canvas.addEventListener('mousedown', (e) => this.handleMouseDown(e));
+                this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
+                this.canvas.addEventListener('mouseup', (e) => this.handleMouseUp(e));
+                this.canvas.addEventListener('mouseleave', (e) => this.handleMouseLeave(e));
+                
+                // Zoom events
+                this.canvas.addEventListener('wheel', (e) => this.handleWheel(e));
+                
+                // Touch events for mobile
+                this.canvas.addEventListener('touchstart', (e) => this.handleTouchStart(e));
+                this.canvas.addEventListener('touchmove', (e) => this.handleTouchMove(e));
+                this.canvas.addEventListener('touchend', (e) => this.handleTouchEnd(e));
 
-                this.canvas.addEventListener('mousemove', (e) => {
-                    if (this.gameOver || !this.showPreview) return;
-                    
-                    const rect = this.canvas.getBoundingClientRect();
-                    const scaleX = this.canvas.width / rect.width;
-                    const scaleY = this.canvas.height / rect.height;
-                    const x = (e.clientX - rect.left) * scaleX;
-                    const y = (e.clientY - rect.top) * scaleY;
-                    
-                    const newHoveredLine = this.getClickedLine(x, y);
-                    if (JSON.stringify(this.hoveredLine) !== JSON.stringify(newHoveredLine)) {
-                        this.hoveredLine = newHoveredLine;
-                        this.draw();
-                    }
-                });
-
-                this.canvas.addEventListener('mouseleave', () => {
-                    if (this.hoveredLine) {
-                        this.hoveredLine = null;
-                        this.draw();
-                    }
-                });
+                // Zoom control buttons
+                document.getElementById('zoomIn').addEventListener('click', () => this.zoomIn());
+                document.getElementById('zoomOut').addEventListener('click', () => this.zoomOut());
+                document.getElementById('resetView').addEventListener('click', () => this.resetView());
 
                 // Player name inputs
                 document.getElementById('player1Name').addEventListener('change', (e) => {
@@ -887,11 +965,232 @@
                     }
                 });
 
-                // Responsive canvas resize
-                window.addEventListener('resize', () => {
-                    this.updateCanvasSize();
+                // Prevent context menu on canvas
+                this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+            }
+
+            getCanvasCoordinates(clientX, clientY) {
+                const rect = this.canvas.getBoundingClientRect();
+                const x = (clientX - rect.left) * (this.canvas.width / rect.width);
+                const y = (clientY - rect.top) * (this.canvas.height / rect.height);
+                
+                // Transform coordinates based on current zoom and pan
+                const transformedX = (x - this.panX) / this.scale;
+                const transformedY = (y - this.panY) / this.scale;
+                
+                return { x: transformedX, y: transformedY };
+            }
+
+            handleMouseDown(e) {
+                e.preventDefault();
+                const coords = this.getCanvasCoordinates(e.clientX, e.clientY);
+                
+                if (e.button === 0) { // Left mouse button
+                    if (e.ctrlKey || e.metaKey || this.scale > 1.1) {
+                        // Start dragging for pan
+                        this.isDragging = true;
+                        this.lastPanPoint = { x: e.clientX, y: e.clientY };
+                        this.canvas.classList.add('dragging');
+                    } else {
+                        // Handle game click
+                        this.handleGameClick(coords.x, coords.y);
+                    }
+                }
+            }
+
+            handleMouseMove(e) {
+                e.preventDefault();
+                const coords = this.getCanvasCoordinates(e.clientX, e.clientY);
+                
+                if (this.isDragging) {
+                    // Handle panning
+                    const deltaX = e.clientX - this.lastPanPoint.x;
+                    const deltaY = e.clientY - this.lastPanPoint.y;
+                    
+                    this.panX += deltaX;
+                    this.panY += deltaY;
+                    
+                    this.lastPanPoint = { x: e.clientX, y: e.clientY };
                     this.draw();
-                });
+                } else if (!this.gameOver && this.showPreview) {
+                    // Handle hover preview
+                    const newHoveredLine = this.getClickedLine(coords.x, coords.y);
+                    if (JSON.stringify(this.hoveredLine) !== JSON.stringify(newHoveredLine)) {
+                        this.hoveredLine = newHoveredLine;
+                        this.draw();
+                    }
+                }
+
+                // Update cursor
+                if (this.scale > 1.1 && !this.isDragging) {
+                    this.canvas.classList.add('grab');
+                    this.canvas.classList.remove('dragging');
+                } else if (!this.isDragging) {
+                    this.canvas.classList.remove('grab');
+                    this.canvas.classList.remove('dragging');
+                }
+            }
+
+            handleMouseUp(e) {
+                e.preventDefault();
+                if (this.isDragging) {
+                    this.isDragging = false;
+                    this.canvas.classList.remove('dragging');
+                }
+            }
+
+            handleMouseLeave(e) {
+                this.isDragging = false;
+                this.canvas.classList.remove('dragging', 'grab');
+                if (this.hoveredLine) {
+                    this.hoveredLine = null;
+                    this.draw();
+                }
+            }
+
+            handleWheel(e) {
+                e.preventDefault();
+                const rect = this.canvas.getBoundingClientRect();
+                const mouseX = (e.clientX - rect.left) * (this.canvas.width / rect.width);
+                const mouseY = (e.clientY - rect.top) * (this.canvas.height / rect.height);
+                
+                const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+                const newScale = Math.max(this.minScale, Math.min(this.maxScale, this.scale * zoomFactor));
+                
+                if (newScale !== this.scale) {
+                    // Zoom towards mouse position
+                    this.panX = mouseX - (mouseX - this.panX) * (newScale / this.scale);
+                    this.panY = mouseY - (mouseY - this.panY) * (newScale / this.scale);
+                    this.scale = newScale;
+                    
+                    this.updateZoomInfo();
+                    this.draw();
+                }
+            }
+
+            // Touch event handlers for mobile
+            handleTouchStart(e) {
+                e.preventDefault();
+                this.touches = Array.from(e.touches);
+                
+                if (this.touches.length === 1) {
+                    // Single touch - potential game move or pan start
+                    const touch = this.touches[0];
+                    this.lastPanPoint = { x: touch.clientX, y: touch.clientY };
+                } else if (this.touches.length === 2) {
+                    // Two finger pinch start
+                    const touch1 = this.touches[0];
+                    const touch2 = this.touches[1];
+                    this.lastTouchDistance = Math.sqrt(
+                        Math.pow(touch2.clientX - touch1.clientX, 2) +
+                        Math.pow(touch2.clientY - touch1.clientY, 2)
+                    );
+                }
+            }
+
+            handleTouchMove(e) {
+                e.preventDefault();
+                const newTouches = Array.from(e.touches);
+                
+                if (newTouches.length === 1 && this.touches.length === 1) {
+                    // Single finger drag - pan
+                    const touch = newTouches[0];
+                    const deltaX = touch.clientX - this.lastPanPoint.x;
+                    const deltaY = touch.clientY - this.lastPanPoint.y;
+                    
+                    this.panX += deltaX;
+                    this.panY += deltaY;
+                    
+                    this.lastPanPoint = { x: touch.clientX, y: touch.clientY };
+                    this.draw();
+                } else if (newTouches.length === 2 && this.touches.length === 2) {
+                    // Two finger pinch - zoom
+                    const touch1 = newTouches[0];
+                    const touch2 = newTouches[1];
+                    const currentDistance = Math.sqrt(
+                        Math.pow(touch2.clientX - touch1.clientX, 2) +
+                        Math.pow(touch2.clientY - touch1.clientY, 2)
+                    );
+                    
+                    if (this.lastTouchDistance > 0) {
+                        const zoomFactor = currentDistance / this.lastTouchDistance;
+                        const newScale = Math.max(this.minScale, Math.min(this.maxScale, this.scale * zoomFactor));
+                        
+                        if (newScale !== this.scale) {
+                            // Zoom towards center of pinch
+                            const centerX = (touch1.clientX + touch2.clientX) / 2;
+                            const centerY = (touch1.clientY + touch2.clientY) / 2;
+                            const rect = this.canvas.getBoundingClientRect();
+                            const canvasX = (centerX - rect.left) * (this.canvas.width / rect.width);
+                            const canvasY = (centerY - rect.top) * (this.canvas.height / rect.height);
+                            
+                            this.panX = canvasX - (canvasX - this.panX) * (newScale / this.scale);
+                            this.panY = canvasY - (canvasY - this.panY) * (newScale / this.scale);
+                            this.scale = newScale;
+                            
+                            this.updateZoomInfo();
+                            this.draw();
+                        }
+                    }
+                    
+                    this.lastTouchDistance = currentDistance;
+                }
+                
+                this.touches = newTouches;
+            }
+
+            handleTouchEnd(e) {
+                e.preventDefault();
+                const remainingTouches = Array.from(e.touches);
+                
+                // If we had one touch and now have none, it might be a tap for game move
+                if (this.touches.length === 1 && remainingTouches.length === 0) {
+                    const touch = this.touches[0];
+                    const coords = this.getCanvasCoordinates(touch.clientX, touch.clientY);
+                    
+                    // Only register as game click if we haven't moved much (not a pan)
+                    const deltaX = Math.abs(touch.clientX - this.lastPanPoint.x);
+                    const deltaY = Math.abs(touch.clientY - this.lastPanPoint.y);
+                    
+                    if (deltaX < 10 && deltaY < 10) {
+                        this.handleGameClick(coords.x, coords.y);
+                    }
+                }
+                
+                this.touches = remainingTouches;
+                this.lastTouchDistance = 0;
+            }
+
+            zoomIn() {
+                const newScale = Math.min(this.maxScale, this.scale * 1.2);
+                if (newScale !== this.scale) {
+                    // Zoom towards center
+                    const centerX = this.canvas.width / 2;
+                    const centerY = this.canvas.height / 2;
+                    
+                    this.panX = centerX - (centerX - this.panX) * (newScale / this.scale);
+                    this.panY = centerY - (centerY - this.panY) * (newScale / this.scale);
+                    this.scale = newScale;
+                    
+                    this.updateZoomInfo();
+                    this.draw();
+                }
+            }
+
+            zoomOut() {
+                const newScale = Math.max(this.minScale, this.scale * 0.8);
+                if (newScale !== this.scale) {
+                    // Zoom towards center
+                    const centerX = this.canvas.width / 2;
+                    const centerY = this.canvas.height / 2;
+                    
+                    this.panX = centerX - (centerX - this.panX) * (newScale / this.scale);
+                    this.panY = centerY - (centerY - this.panY) * (newScale / this.scale);
+                    this.scale = newScale;
+                    
+                    this.updateZoomInfo();
+                    this.draw();
+                }
             }
 
             updatePlayerDisplays() {
@@ -905,10 +1204,12 @@
             }
 
             getOffset() {
-                return 20;
+                return 50; // Padding from canvas edges
             }
 
-            handleClick(x, y) {
+            handleGameClick(x, y) {
+                if (this.gameOver) return;
+                
                 const clickedLine = this.getClickedLine(x, y);
                 if (clickedLine && this.drawLine(clickedLine)) {
                     const moveData = {
@@ -945,7 +1246,7 @@
             }
 
             getClickedLine(x, y) {
-                const tolerance = 30;
+                const tolerance = 40;
                 const offset = this.getOffset();
                 
                 // Check horizontal lines
@@ -1041,6 +1342,11 @@
             draw() {
                 this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
                 
+                // Apply transformations
+                this.ctx.save();
+                this.ctx.translate(this.panX, this.panY);
+                this.ctx.scale(this.scale, this.scale);
+                
                 this.drawBackground();
                 
                 if (this.hoveredLine && this.showPreview) {
@@ -1050,13 +1356,15 @@
                 this.drawDots();
                 this.drawLines();
                 this.drawBoxes();
+                
+                this.ctx.restore();
             }
 
             drawBackground() {
                 const offset = this.getOffset();
                 this.ctx.strokeStyle = '#f0f0f0';
-                this.ctx.lineWidth = 1;
-                this.ctx.setLineDash([3, 3]);
+                this.ctx.lineWidth = 2;
+                this.ctx.setLineDash([5, 5]);
                 
                 for (let row = 0; row <= this.gridSize; row++) {
                     for (let col = 0; col < this.gridSize; col++) {
@@ -1099,7 +1407,7 @@
                 this.ctx.lineCap = 'round';
                 this.ctx.strokeStyle = this.playerColors[this.currentPlayer].primary;
                 this.ctx.globalAlpha = 0.7;
-                this.ctx.setLineDash([10, 5]);
+                this.ctx.setLineDash([12, 6]);
                 
                 if (this.hoveredLine.type === 'horizontal') {
                     const y = this.hoveredLine.row * this.cellSize + offset;
@@ -1129,9 +1437,9 @@
                 const offset = this.getOffset();
                 this.ctx.fillStyle = '#2c3e50';
                 this.ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
-                this.ctx.shadowBlur = 6;
-                this.ctx.shadowOffsetX = 3;
-                this.ctx.shadowOffsetY = 3;
+                this.ctx.shadowBlur = 8;
+                this.ctx.shadowOffsetX = 4;
+                this.ctx.shadowOffsetY = 4;
                 
                 for (let row = 0; row <= this.gridSize; row++) {
                     for (let col = 0; col <= this.gridSize; col++) {
@@ -1154,9 +1462,9 @@
                 this.ctx.lineWidth = this.lineWidth;
                 this.ctx.lineCap = 'round';
                 this.ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
-                this.ctx.shadowBlur = 4;
-                this.ctx.shadowOffsetX = 2;
-                this.ctx.shadowOffsetY = 2;
+                this.ctx.shadowBlur = 6;
+                this.ctx.shadowOffsetX = 3;
+                this.ctx.shadowOffsetY = 3;
                 
                 // Draw horizontal lines
                 for (let row = 0; row <= this.gridSize; row++) {
@@ -1203,7 +1511,7 @@
 
             drawBoxes() {
                 const offset = this.getOffset();
-                this.ctx.font = `bold ${Math.min(24, this.cellSize / 3)}px Arial`;
+                this.ctx.font = `bold ${Math.min(32, this.cellSize / 3)}px Arial`;
                 this.ctx.textAlign = 'center';
                 this.ctx.textBaseline = 'middle';
                 
@@ -1221,27 +1529,27 @@
                             
                             this.ctx.fillStyle = gradient;
                             this.ctx.fillRect(
-                                col * this.cellSize + offset + this.dotRadius + 3,
-                                row * this.cellSize + offset + this.dotRadius + 3,
-                                this.cellSize - 2 * this.dotRadius - 6,
-                                this.cellSize - 2 * this.dotRadius - 6
+                                col * this.cellSize + offset + this.dotRadius + 4,
+                                row * this.cellSize + offset + this.dotRadius + 4,
+                                this.cellSize - 2 * this.dotRadius - 8,
+                                this.cellSize - 2 * this.dotRadius - 8
                             );
                             
                             // Draw border
                             this.ctx.strokeStyle = this.playerColors[player].primary;
-                            this.ctx.lineWidth = 3;
+                            this.ctx.lineWidth = 4;
                             this.ctx.strokeRect(
-                                col * this.cellSize + offset + this.dotRadius + 3,
-                                row * this.cellSize + offset + this.dotRadius + 3,
-                                this.cellSize - 2 * this.dotRadius - 6,
-                                this.cellSize - 2 * this.dotRadius - 6
+                                col * this.cellSize + offset + this.dotRadius + 4,
+                                row * this.cellSize + offset + this.dotRadius + 4,
+                                this.cellSize - 2 * this.dotRadius - 8,
+                                this.cellSize - 2 * this.dotRadius - 8
                             );
                             
                             // Draw player initial
-                            this.ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
-                            this.ctx.shadowBlur = 3;
-                            this.ctx.shadowOffsetX = 1;
-                            this.ctx.shadowOffsetY = 1;
+                            this.ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
+                            this.ctx.shadowBlur = 4;
+                            this.ctx.shadowOffsetX = 2;
+                            this.ctx.shadowOffsetY = 2;
                             this.ctx.fillStyle = this.playerColors[player].secondary;
                             
                             const playerName = this.playerNames[player - 1];
@@ -1444,7 +1752,6 @@
         // Handle orientation change on mobile
         window.addEventListener('orientationchange', () => {
             setTimeout(() => {
-                game.updateCanvasSize();
                 game.draw();
             }, 100);
         });
