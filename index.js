@@ -327,6 +327,38 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  // About link - open as modal or new tab (here: modal inside main app)
+const aboutLink = document.getElementById("about-link");
+
+aboutLink.addEventListener("click", (e) => {
+  e.preventDefault();
+  // Show About page in modal
+  showAboutModal();
+  // Optionally: userDropdown.classList.add("hidden"); // hide dropdown after click
+});
+
+// Modal creation function
+function showAboutModal() {
+  let modal = document.getElementById("about-modal");
+  if (!modal) {
+    modal = document.createElement("div");
+    modal.id = "about-modal";
+    modal.className = "fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50";
+    modal.innerHTML = `
+      <div class="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-6 max-w-lg w-full relative">
+        <button id="close-about-modal" class="absolute top-2 right-2 text-gray-400 hover:text-gray-900 dark:hover:text-white text-2xl">&times;</button>
+        <iframe src="about.html" class="w-full h-96 rounded-lg border dark:border-gray-700" title="About"></iframe>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    document.getElementById("close-about-modal").onclick = () => modal.remove();
+    // Optional: close on outside click
+    modal.addEventListener("click", (ev) => {
+      if (ev.target === modal) modal.remove();
+    });
+  }
+}
+
   // --- 6. INITIALIZATION CALLS ---
   renderSidebar();
   showDashboard();
@@ -345,3 +377,4 @@ function toggleFullScreen() {
     elem.msRequestFullscreen();
   }
 }
+
