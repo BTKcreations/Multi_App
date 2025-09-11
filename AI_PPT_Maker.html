@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Presentation Maker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- FIX: Add the JSZip dependency required by pptxgenjs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+        .slide-content ul {
+            list-style-position: inside;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-700">
+
+    <div id="app" class="flex h-screen">
+        <!-- --- Sidebar --- -->
+        <aside class="w-1/4 max-w-xs flex flex-col bg-white/30 backdrop-blur-sm p-4 shadow-lg border-r border-gray-200/50">
+            <div class="flex items-center space-x-2 mb-4">
+                 <i data-lucide="wand-2" class="text-blue-600"></i>
+                 <h1 class="text-xl font-bold text-gray-800">AI Presenter</h1>
+            </div>
+           
+            <div class="flex flex-col space-y-4">
+                <textarea
+                    id="topic-input"
+                    placeholder="Enter your presentation topic..."
+                    class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 transition"
+                    rows="3"
+                ></textarea>
+                <button
+                    id="generate-slides-btn"
+                    class="w-full flex justify-center items-center bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 disabled:bg-blue-300 transition-all shadow-md"
+                >
+                    Generate Slides
+                </button>
+                <p id="error-message" class="text-red-500 text-sm"></p>
+            </div>
+
+            <div id="theme-controls" class="mt-6 border-t border-gray-200/80 pt-4">
+                <h2 class="font-bold mb-2 text-gray-800">Theme</h2>
+                 <div id="theme-buttons" class="grid grid-cols-2 gap-2">
+                    <!-- Theme buttons will be injected here -->
+                 </div>
+            </div>
+
+            <div id="main-controls" class="mt-6 border-t border-gray-200/80 pt-4 flex-grow flex-col hidden">
+                 <h2 class="font-bold mb-2 text-gray-800">Controls</h2>
+                 <div class="space-y-2">
+                     <button
+                        id="generate-images-btn"
+                        class="w-full flex items-center justify-center space-x-2 bg-purple-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-purple-700 disabled:bg-purple-300 transition-all shadow-md"
+                    >
+                        <i data-lucide="image" class="w-4 h-4"></i>
+                        <span>Generate Images</span>
+                    </button>
+                    <button
+                        id="download-btn"
+                        class="w-full flex items-center justify-center space-x-2 bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 disabled:bg-green-300 transition-all shadow-md"
+                    >
+                        <i data-lucide="file-down" class="w-4 h-4"></i>
+                        <span>Export to PPTX</span>
+                    </button>
+                 </div>
+            </div>
+        </aside>
+
+        <!-- --- Main Content --- -->
+        <main class="flex-1 flex flex-col p-8 items-center justify-center">
+            <div id="loader" class="text-center hidden">
+                <div class="flex flex-col items-center">
+                    <i data-lucide="loader-2" class="animate-spin text-blue-500 h-12 w-12"></i>
+                    <p class="mt-4 text-lg">Generating your presentation...</p>
+                </div>
+            </div>
+            
+            <div id="welcome-message" class="text-center text-gray-500">
+                <h2 class="text-2xl font-semibold">Welcome to AI Presenter</h2>
+                <p>Enter a topic on the left and click "Generate Slides" to begin.</p>
+            </div>
+
+            <div id="presentation-container" class="w-full h-full flex-col hidden">
+                <!-- Slide View -->
+                <div id="slide-view" class="w-full flex-grow shadow-2xl rounded-xl p-12 flex flex-col relative overflow-hidden bg-white">
+                     <img id="slide-image-bg" class="absolute inset-0 w-full h-full object-cover opacity-20" alt="Slide background" style="display: none;"/>
+                     <div class="relative z-10 flex-grow flex flex-col">
+                        <h2 id="slide-title" class="text-5xl font-bold mb-6 text-gray-900"></h2>
+                        <ul id="slide-content" class="space-y-4 text-2xl list-disc pl-8 text-gray-700">
+                        </ul>
+                        <div id="slide-image-loader" class="absolute inset-0 bg-white/50 flex items-center justify-center backdrop-blur-sm hidden">
+                             <i data-lucide="loader-2" class="animate-spin text-purple-500 h-8 w-8"></i>
+                        </div>
+                     </div>
+                </div>
+
+                <!-- Navigation & Speaker Notes -->
+                <div class="flex items-center justify-between mt-4">
+                    <div class="flex items-center space-x-2">
+                        <button id="prev-slide-btn" class="p-2 rounded-full bg-white/50 hover:bg-white disabled:opacity-50 transition"><i data-lucide="chevron-left"></i></button>
+                        <span id="slide-counter"></span>
+                        <button id="next-slide-btn" class="p-2 rounded-full bg-white/50 hover:bg-white disabled:opacity-50 transition"><i data-lucide="chevron-right"></i></button>
+                    </div>
+                    <div class="w-1/2">
+                       <div class="bg-white/50 rounded-lg p-3">
+                           <h3 class="font-bold text-sm mb-2 flex items-center justify-between">
+                               Speaker Notes
+                               <button id="generate-notes-btn" class="text-xs flex items-center space-x-1 text-blue-600 hover:text-blue-800 disabled:text-gray-400">
+                                   <i data-lucide="wand-2" class="w-3 h-3"></i>
+                                   <span>Generate</span>
+                               </button>
+                           </h3>
+                           <div id="speaker-notes-content" class="text-xs h-20 overflow-y-auto pr-2 text-gray-600">
+                               Click generate to create speaker notes for this slide.
+                           </div>
+                            <div id="audio-container" class="mt-2 border-t pt-2 hidden">
+                                <button id="generate-audio-btn" class="text-xs flex items-center space-x-1 text-green-600 hover:text-green-800 disabled:text-gray-400">
+                                    Generate Audio
+                                </button>
+                                <audio id="audio-player" controls class="mt-2 w-full h-8 hidden"></audio>
+                            </div>
+                       </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script type="module">
+        // --- State Management ---
+        let state = {
+            topic: '',
+            slides: [],
+            currentSlide: 0,
+            isLoading: false,
+            error: null,
+            theme: {
+                bg: 'bg-gray-100',
+                title: 'text-gray-900',
+                content: 'text-gray-700',
+                slideBg: 'bg-white',
+                accent: 'bg-blue-600'
+            },
+            isGeneratingImages: false,
+            speakerNotes: {},
+            isGeneratingNotes: false,
+            audioUrl: null,
+            isGeneratingAudio: false,
+        };
+
+        const themes = {
+            "Corporate Blue": { bg: 'bg-gray-100', title: 'text-gray-900', content: 'text-gray-700', slideBg: 'bg-white', accent: 'bg-blue-600' },
+            "Creative Dark": { bg: 'bg-gray-800', title: 'text-white', content: 'text-gray-300', slideBg: 'bg-gray-900', accent: 'bg-purple-600' },
+            "Forest Green": { bg: 'bg-green-50', title: 'text-green-900', content: 'text-green-800', slideBg: 'bg-white', accent: 'bg-green-600' },
+            "Sunset Orange": { bg: 'bg-orange-50', title: 'text-orange-900', content: 'text-orange-800', slideBg: 'bg-white', accent: 'bg-orange-500' },
+        };
+
+        // --- DOM Element References ---
+        const topicInput = document.getElementById('topic-input');
+        const generateSlidesBtn = document.getElementById('generate-slides-btn');
+        const errorMessage = document.getElementById('error-message');
+        const loader = document.getElementById('loader');
+        const welcomeMessage = document.getElementById('welcome-message');
+        const presentationContainer = document.getElementById('presentation-container');
+        const slideView = document.getElementById('slide-view');
+        const slideTitle = document.getElementById('slide-title');
+        const slideContent = document.getElementById('slide-content');
+        const slideImageBg = document.getElementById('slide-image-bg');
+        const slideImageLoader = document.getElementById('slide-image-loader');
+        const prevSlideBtn = document.getElementById('prev-slide-btn');
+        const nextSlideBtn = document.getElementById('next-slide-btn');
+        const slideCounter = document.getElementById('slide-counter');
+        const mainControls = document.getElementById('main-controls');
+        const generateImagesBtn = document.getElementById('generate-images-btn');
+        const downloadBtn = document.getElementById('download-btn');
+        const themeButtonsContainer = document.getElementById('theme-buttons');
+        const generateNotesBtn = document.getElementById('generate-notes-btn');
+        const speakerNotesContent = document.getElementById('speaker-notes-content');
+        const audioContainer = document.getElementById('audio-container');
+        const generateAudioBtn = document.getElementById('generate-audio-btn');
+        const audioPlayer = document.getElementById('audio-player');
+        const appBody = document.body;
+
+        // --- Helper Functions ---
+        const base64ToArrayBuffer = (base64) => {
+            const binaryString = window.atob(base64);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes.buffer;
+        };
+
+        const pcmToWav = (pcmData, sampleRate) => {
+            const header = new ArrayBuffer(44);
+            const view = new DataView(header);
+            const pcm16 = new Int16Array(pcmData);
+
+            const writeString = (view, offset, string) => {
+                for (let i = 0; i < string.length; i++) {
+                    view.setUint8(offset + i, string.charCodeAt(i));
+                }
+            };
+
+            writeString(view, 0, 'RIFF');
+            view.setUint32(4, 36 + pcm16.length * 2, true);
+            writeString(view, 8, 'WAVE');
+            writeString(view, 12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true);
+            view.setUint16(22, 1, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * 2, true);
+            view.setUint16(32, 2, true);
+            view.setUint16(34, 16, true);
+            writeString(view, 36, 'data');
+            view.setUint32(40, pcm16.length * 2, true);
+
+            return new Blob([header, pcm16], { type: 'audio/wav' });
+        };
+
+
+        // --- State Update and Render Function ---
+        function setState(newState) {
+            state = { ...state, ...newState };
+            render();
+        }
+
+        function render() {
+            // Render loading state
+            loader.classList.toggle('hidden', !state.isLoading);
+            generateSlidesBtn.disabled = state.isLoading;
+            generateSlidesBtn.innerHTML = state.isLoading ? `<i data-lucide="loader-2" class="animate-spin"></i>` : 'Generate Slides';
+
+            // Render error message
+            errorMessage.textContent = state.error || '';
+
+            // Render welcome or presentation view
+            welcomeMessage.classList.toggle('hidden', state.slides.length > 0 || state.isLoading);
+            presentationContainer.classList.toggle('hidden', state.slides.length === 0 || state.isLoading);
+            mainControls.classList.toggle('hidden', state.slides.length === 0);
+            
+            if (state.slides.length > 0) {
+                const current = state.slides[state.currentSlide];
+                
+                // Apply theme
+                appBody.className = `${state.theme.bg} ${state.theme.content}`;
+                slideView.className = `w-full flex-grow shadow-2xl rounded-xl p-12 flex flex-col relative overflow-hidden ${state.theme.slideBg}`;
+                slideTitle.className = `text-5xl font-bold mb-6 ${state.theme.title}`;
+                slideContent.className = `space-y-4 text-2xl list-disc pl-8 ${state.theme.content}`;
+                
+                // Render slide content
+                slideTitle.textContent = current.title;
+                slideContent.innerHTML = current.content.map(item => `<li>${item}</li>`).join('');
+                
+                // Render slide image
+                slideImageLoader.classList.toggle('hidden', !current.imageIsLoading);
+                if (current.image) {
+                    slideImageBg.src = current.image;
+                    slideImageBg.style.display = 'block';
+                } else {
+                    slideImageBg.style.display = 'none';
+                }
+
+                // Render navigation
+                slideCounter.textContent = `${state.currentSlide + 1} / ${state.slides.length}`;
+                prevSlideBtn.disabled = state.currentSlide === 0;
+                nextSlideBtn.disabled = state.currentSlide === state.slides.length - 1;
+
+                // Render speaker notes
+                speakerNotesContent.textContent = state.speakerNotes[state.currentSlide] || "Click generate to create speaker notes for this slide.";
+                generateNotesBtn.disabled = state.isGeneratingNotes;
+                if(state.isGeneratingNotes) {
+                    generateNotesBtn.innerHTML = `<i data-lucide="loader-2" class="animate-spin w-3 h-3"></i><span>Generating...</span>`;
+                } else {
+                     generateNotesBtn.innerHTML = `<i data-lucide="wand-2" class="w-3 h-3"></i><span>Generate</span>`;
+                }
+
+                // Render audio
+                audioContainer.classList.toggle('hidden', !state.speakerNotes[state.currentSlide]);
+                generateAudioBtn.disabled = state.isGeneratingAudio;
+                 if(state.isGeneratingAudio) {
+                    generateAudioBtn.innerHTML = `<i data-lucide="loader-2" class="animate-spin"></i> Generating Audio...`;
+                } else {
+                     generateAudioBtn.textContent = 'Generate Audio';
+                }
+                if(state.audioUrl) {
+                    audioPlayer.src = state.audioUrl;
+                    audioPlayer.classList.remove('hidden');
+                } else {
+                    audioPlayer.classList.add('hidden');
+                }
+            }
+            
+            // Render image generation button state
+            generateImagesBtn.disabled = state.isGeneratingImages;
+            if(state.isGeneratingImages){
+                 generateImagesBtn.innerHTML = `<i data-lucide="loader-2" class="animate-spin w-4 h-4"></i><span>Generating...</span>`;
+            } else {
+                 generateImagesBtn.innerHTML = `<i data-lucide="image" class="w-4 h-4"></i><span>Generate Images</span>`;
+            }
+
+            // Re-initialize icons
+            lucide.createIcons();
+        }
+
+        // --- API Call Functions ---
+        async function generateSlides() {
+            const topic = topicInput.value;
+            if (!topic) {
+                setState({ error: 'Please enter a topic.' });
+                return;
+            }
+            setState({ isLoading: true, error: null, slides: [], currentSlide: 0, speakerNotes: {} });
+
+            const prompt = `You are an AI presentation assistant. Based on the topic "${topic}", create a 7-10-slide presentation. The first slide should be a title slide. The last slide should be a "Thank You" or "Q&A" slide. For each slide, provide a short title and 3-4 bullet points. Respond with ONLY a valid JSON array of objects. Each object must have "title" (string) and "content" (array of strings).`;
+
+            try {
+                const payload = {
+                    contents: [{ role: "user", parts: [{ text: prompt }] }],
+                    generationConfig: {
+                        responseMimeType: "application/json",
+                        responseSchema: {
+                            type: "ARRAY",
+                            items: {
+                                type: "OBJECT",
+                                properties: {
+                                    "title": { "type": "STRING" },
+                                    "content": { "type": "ARRAY", "items": { "type": "STRING" } }
+                                },
+                                required: ["title", "content"]
+                            }
+                        }
+                    }
+                };
+                const apiKey = "AIzaSyD_hF3zYDCo4UoGn-LPdqa0nL9lbG3v4nA"; // Leave empty
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) throw new Error(`API error: ${response.statusText}`);
+
+                const result = await response.json();
+                if (result.candidates?.[0]?.content?.parts?.[0]) {
+                    const parsedSlides = JSON.parse(result.candidates[0].content.parts[0].text);
+                    const slidesWithPlaceholders = parsedSlides.map(slide => ({ ...slide, image: null, imageIsLoading: false }));
+                    setState({ slides: slidesWithPlaceholders, isLoading: false });
+                } else {
+                    throw new Error("Invalid response structure from AI.");
+                }
+            } catch (e) {
+                console.error(e);
+                setState({ error: 'Failed to generate slides. Please try again.', isLoading: false });
+            }
+        }
+
+        async function generateImageForSlide(index) {
+            const slide = state.slides[index];
+            if (!slide || slide.image) return;
+
+            const newSlides = [...state.slides];
+            newSlides[index].imageIsLoading = true;
+            setState({ slides: newSlides });
+
+            const keyword = encodeURIComponent(slide.title);
+            const PIXABAY_API_KEY = "42796876-d1de2f58b781abc8e58c5354b"; // <-- Replace with your Pixabay API key
+            const fallbackImage = "https://via.placeholder.com/800x600?text=No+Image";
+            try {
+                // Pixabay API for images
+                const apiUrl = `https://pixabay.com/api/?key=${PIXABAY_API_KEY}&q=${keyword}&image_type=photo&orientation=horizontal&safesearch=true&per_page=3`;
+                const response = await fetch(apiUrl);
+                if (!response.ok) throw new Error("Pixabay API error");
+                const data = await response.json();
+                let imageUrl = fallbackImage;
+                if (data.hits && data.hits.length > 0) {
+                    // Use the first image result
+                    imageUrl = data.hits[0].webformatURL || fallbackImage;
+                }
+                // Check if the image loads
+                const img = new window.Image();
+                img.onload = () => {
+                    const finalSlides = [...state.slides];
+                    finalSlides[index] = { ...finalSlides[index], image: imageUrl, imageIsLoading: false };
+                    setState({ slides: finalSlides });
+                };
+                img.onerror = () => {
+                    const finalSlides = [...state.slides];
+                    finalSlides[index].image = fallbackImage;
+                    finalSlides[index].imageIsLoading = false;
+                    setState({ slides: finalSlides });
+                };
+                img.src = imageUrl;
+            } catch (e) {
+                console.error(e);
+                const finalSlides = [...state.slides];
+                finalSlides[index].image = fallbackImage;
+                finalSlides[index].imageIsLoading = false;
+                setState({ slides: finalSlides });
+            }
+        }
+
+        async function generateAllImages() {
+            if (state.slides.length === 0) return;
+            setState({ isGeneratingImages: true });
+
+            for (let i = 0; i < state.slides.length; i++) {
+                if (i === 0 || i === state.slides.length - 1 || state.slides[i].image) {
+                    continue;
+                }
+                await generateImageForSlide(i);
+            }
+
+            setState({ isGeneratingImages: false });
+        }
+        
+        async function generateSpeakerNotesForSlide() {
+            const index = state.currentSlide;
+            const slide = state.slides[index];
+            if (!slide) return;
+
+            setState({ isGeneratingNotes: true });
+            const prompt = `You are a speech writer. For a presentation slide with the title "${slide.title}" and content "${slide.content.join(', ')}", write concise speaker notes. Provide key talking points, potential questions to ask the audience, and a smooth transition to the next slide. Respond in plain text.`;
+
+            try {
+                const payload = { contents: [{ role: "user", parts: [{ text: prompt }] }] };
+                const apiKey = "AIzaSyD_hF3zYDCo4UoGn-LPdqa0nL9lbG3v4nA";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) throw new Error('Failed to generate notes.');
+                
+                const result = await response.json();
+                if (result.candidates?.[0]?.content?.parts?.[0]?.text) {
+                    const notes = result.candidates[0].content.parts[0].text;
+                    const newNotes = {...state.speakerNotes, [index]: notes};
+                    setState({ speakerNotes: newNotes, isGeneratingNotes: false });
+                } else {
+                    throw new Error('Invalid notes response.');
+                }
+            } catch (e) {
+                console.error(e);
+                const newNotes = {...state.speakerNotes, [index]: "Error generating notes."};
+                setState({ speakerNotes: newNotes, isGeneratingNotes: false });
+            }
+        }
+
+        async function generateAudioForNotes() {
+            const index = state.currentSlide;
+            const notes = state.speakerNotes[index];
+            if (!notes) return;
+            
+            setState({ isGeneratingAudio: true, audioUrl: null });
+
+            const prompt = `Read the following text in a clear, professional, and engaging voice: ${notes}`;
+
+            try {
+                const payload = {
+                    contents: [{ parts: [{ text: prompt }] }],
+                    generationConfig: {
+                        responseModalities: ["AUDIO"],
+                        speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Charon" } } }
+                    },
+                    model: "gemini-2.5-flash-preview-tts"
+                };
+                const apiKey = "AIzaSyD_hF3zYDCo4UoGn-LPdqa0nL9lbG3v4nA";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) throw new Error('Audio generation failed.');
+
+                const result = await response.json();
+                const part = result?.candidates?.[0]?.content?.parts?.[0];
+                const audioData = part?.inlineData?.data;
+                const mimeType = part?.inlineData?.mimeType;
+
+                if (audioData && mimeType?.startsWith("audio/")) {
+                    const sampleRateMatch = mimeType.match(/rate=(\d+)/);
+                    const sampleRate = sampleRateMatch ? parseInt(sampleRateMatch[1], 10) : 24000;
+                    const pcmData = base64ToArrayBuffer(audioData);
+                    const wavBlob = pcmToWav(pcmData, sampleRate);
+                    const url = URL.createObjectURL(wavBlob);
+                    setState({ audioUrl: url, isGeneratingAudio: false });
+                } else {
+                    throw new Error('Invalid audio response.');
+                }
+            } catch (e) {
+                console.error(e);
+                setState({ isGeneratingAudio: false });
+            }
+        }
+
+        function handleDownload() {
+            if (typeof window.PptxGenJS === 'undefined') {
+                console.error('PptxGenJS library is not loaded.');
+                setState({ error: 'Could not export to PPTX. Library not found.' });
+                return;
+            }
+
+            async function urlToBase64(url) {
+                try {
+                    const response = await fetch(url);
+                    const blob = await response.blob();
+                    return new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                            resolve(reader.result);
+                        };
+                        reader.onerror = reject;
+                        reader.readAsDataURL(blob);
+                    });
+                } catch (e) {
+                    return null;
+                }
+            }
+
+            async function buildAndExportPPTX() {
+                let pptx = new window.PptxGenJS();
+                for (let index = 0; index < state.slides.length; index++) {
+                    const slideData = state.slides[index];
+                    let slide = pptx.addSlide();
+                    slide.addText(slideData.title, {
+                        x: 0.5, y: 0.25, w: '90%', h: 1,
+                        fontSize: 32, bold: true,
+                        color: state.theme.title.includes('white') ? 'FFFFFF' : '333333'
+                    });
+                    slide.addText(slideData.content.join('\n'), {
+                        x: 0.5, y: 1.5, w: '90%', h: 3.5,
+                        fontSize: 18, bullet: true,
+                        color: state.theme.content.includes('gray-300') ? 'F1F1F1' : '666666'
+                    });
+                    if (slideData.image && !slideData.image.startsWith('data:image')) {
+                        // Convert image URL to base64
+                        const base64img = await urlToBase64(slideData.image);
+                        if (base64img) {
+                            slide.addImage({ data: base64img, x: 6, y: 1.5, w: 3.5, h: 3.5 });
+                        }
+                    } else if (slideData.image) {
+                        slide.addImage({ data: slideData.image, x: 6, y: 1.5, w: 3.5, h: 3.5 });
+                    }
+                    if (state.speakerNotes[index]) {
+                        slide.addNotes(state.speakerNotes[index]);
+                    }
+                }
+                pptx.writeFile({ fileName: `${state.topic || 'Presentation'}.pptx` });
+            }
+
+            buildAndExportPPTX();
+        }
+
+        // --- Event Listeners ---
+        generateSlidesBtn.addEventListener('click', generateSlides);
+        generateImagesBtn.addEventListener('click', generateAllImages);
+        downloadBtn.addEventListener('click', handleDownload);
+        generateNotesBtn.addEventListener('click', generateSpeakerNotesForSlide);
+        generateAudioBtn.addEventListener('click', generateAudioForNotes);
+
+        prevSlideBtn.addEventListener('click', () => {
+            const newSlide = Math.max(state.currentSlide - 1, 0);
+            setState({ currentSlide: newSlide, audioUrl: null });
+        });
+
+        nextSlideBtn.addEventListener('click', () => {
+            const newSlide = Math.min(state.currentSlide + 1, state.slides.length - 1);
+            setState({ currentSlide: newSlide, audioUrl: null });
+        });
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') {
+                nextSlideBtn.click();
+            } else if (e.key === 'ArrowLeft') {
+                prevSlideBtn.click();
+            }
+        });
+
+        // --- Initial Setup ---
+        function initialize() {
+            Object.entries(themes).forEach(([name, themeObj]) => {
+                const button = document.createElement('button');
+                button.className = "text-left text-sm p-2 rounded-md hover:bg-gray-200/50 transition";
+                button.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <div class="w-4 h-4 rounded-full ${themeObj.accent}"></div>
+                        <span>${name}</span>
+                    </div>
+                `;
+                button.onclick = () => setState({ theme: themeObj });
+                themeButtonsContainer.appendChild(button);
+            });
+            render();
+        }
+
+        initialize();
+    </script>
+</body>
+</html>

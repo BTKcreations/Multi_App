@@ -100,7 +100,16 @@ document.addEventListener("DOMContentLoaded", () => {
       icon: "🟦",
       category: "Games",
       keywords: "dots boxes grid strategy board game",
-    }
+    },
+    // AI_PPT_Maker
+    {
+      name: "AI PPT Maker",
+      file: "AI_PPT_Maker.html",
+      icon: "📊",
+      category: "Productivity",
+      keywords: "presentation slides generate ai",
+    },
+    // Add more apps here...
   ];
 
   // --- 2. ELEMENT REFERENCES ---
