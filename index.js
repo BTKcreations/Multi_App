@@ -109,6 +109,13 @@ document.addEventListener("DOMContentLoaded", () => {
       category: "Productivity",
       keywords: "presentation slides generate ai",
     },
+    {
+      name: "AI Data Analysis",
+      file: "AI_Data_Analysis.html",
+      icon: "📈",
+      category: "Productivity",
+      keywords: "data analysis charts graphs ai",
+    },
     // Add more apps here...
   ];
 
