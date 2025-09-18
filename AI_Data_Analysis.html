@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Data Analysis Dashboard</title>
+    
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Plotly.js for charting -->
+    <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+    
+    <!-- PapaParse for CSV parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+    <!-- jsPDF for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Custom styles for a polished look */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827; /* Tailwind gray-900 */
+            color: #f3f4f6; /* Tailwind gray-100 */
+        }
+        .chart-container, .card {
+            border: 1px solid #374151; /* Tailwind gray-700 */
+            border-radius: 0.75rem; /* rounded-xl */
+            background-color: #1f2937; /* Tailwind gray-800 */
+            padding: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease-in-out;
+        }
+        .chart-container:hover, .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+        }
+        /* Custom file input */
+        .file-input-label {
+            border: 2px dashed #4b5563; /* Tailwind gray-600 */
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+        .file-input-label:hover, .file-input-label.dragover {
+            border-color: #3b82f6; /* Tailwind blue-500 */
+            background-color: #374151; /* Tailwind gray-700 */
+        }
+        /* Loader animation */
+        .loader {
+            border: 6px solid #374151; /* gray-700 */
+            border-top: 6px solid #3b82f6; /* blue-500 */
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* Make Plotly charts responsive and use dark theme */
+        .js-plotly-plot .plotly .modebar {
+            right: 20px;
+        }
+        /* Custom Select & Input styles */
+        select, input[type="search"], .btn {
+            background-color: #374151;
+            border: 1px solid #4b5563;
+            border-radius: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            color: #f3f4f6;
+            transition: all 0.2s ease;
+        }
+        select:focus, input[type="search"]:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px #1e40af;
+        }
+        .btn {
+            background-color: #2563eb;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background-color: #1d4ed8;
+        }
+        .btn-secondary {
+            background-color: #4b5563;
+        }
+        .btn-secondary:hover {
+            background-color: #6b7280;
+        }
+        /* Table styles */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .data-table th, .data-table td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid #374151;
+        }
+        .data-table th {
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .data-table thead {
+            background-color: #374151;
+        }
+        .data-table tbody tr:hover {
+            background-color: #374151;
+        }
+        .pagination-btn {
+            padding: 0.5rem 1rem;
+        }
+    </style>
+</head>
+<body class="antialiased">
+    <div class="min-h-screen p-4 sm:p-6 lg:p-8">
+        <div class="max-w-7xl mx-auto">
+            
+            <header class="text-center mb-8">
+                <h1 class="text-3xl sm:text-4xl font-bold text-white tracking-tight">Advanced AI Data Dashboard</h1>
+                <p class="mt-2 text-lg text-gray-400">Instant analysis, dynamic charts, and data exploration.</p>
+            </header>
+
+            <main id="main-content">
+                
+                <section id="upload-section" class="w-full max-w-2xl mx-auto">
+                    <label for="file-upload" class="file-input-label flex flex-col items-center justify-center w-full h-64 p-6 rounded-2xl">
+                        <svg class="w-12 h-12 mb-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/></svg>
+                        <p class="mb-2 text-sm text-gray-400"><span class="font-semibold">Click to upload</span> or drag and drop</p>
+                        <p class="text-xs text-gray-500">CSV files only</p>
+                    </label>
+                    <input id="file-upload" type="file" class="hidden" accept=".csv" />
+                    <p id="file-name" class="text-center mt-4 text-gray-400"></p>
+                </section>
+
+                <section id="loader-section" class="hidden flex flex-col items-center justify-center py-20">
+                    <div class="loader"></div>
+                    <p id="loader-text" class="mt-4 text-lg text-gray-300">Analyzing your data...</p>
+                </section>
+                
+                <section id="error-section" class="hidden text-center py-20">
+                    <div class="max-w-md mx-auto bg-red-900/50 border border-red-700 rounded-lg p-6">
+                        <h3 class="text-xl font-semibold text-red-300">Analysis Failed</h3>
+                        <p id="error-message" class="mt-2 text-red-400"></p>
+                        <button onclick="location.reload()" class="mt-6 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold transition-colors">Try Again</button>
+                    </div>
+                </section>
+
+                <section id="dashboard-section" class="hidden space-y-6">
+                    <div class="flex justify-between items-center">
+                        <h2 id="dashboard-title" class="text-2xl font-bold">Analysis Dashboard</h2>
+                        <button id="export-pdf-btn" class="btn">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 inline-block mr-2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
+                            Export as PDF
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" id="summary-stats"></div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="chart-container lg:col-span-2" id="heatmap-parent">
+                            <h2 class="text-xl font-bold mb-4 text-gray-200">Correlation Heatmap</h2>
+                            <div id="heatmap-container" class="w-full h-96 sm:h-[500px]"></div>
+                        </div>
+                        
+                        <div class="chart-container lg:col-span-2">
+                            <h2 class="text-xl font-bold mb-4 text-gray-200">Data Distributions</h2>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-8" id="distribution-charts"></div>
+                        </div>
+
+                         <div class="chart-container lg:col-span-2">
+                            <h2 class="text-xl font-bold mb-4 text-gray-200">Relationships between Variables</h2>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-8" id="scatter-plots"></div>
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Chart Creator -->
+                    <div class="card lg:col-span-2">
+                        <h2 class="text-xl font-bold mb-4 text-gray-200">Create Your Own Chart</h2>
+                        <div class="flex flex-wrap gap-4 mb-4 items-end">
+                            <div>
+                                <label for="chart-type" class="block text-sm font-medium text-gray-400 mb-1">Chart Type</label>
+                                <select id="chart-type">
+                                    <option value="bar">Bar Chart</option>
+                                    <option value="pie">Pie Chart</option>
+                                    <option value="line">Line Chart</option>
+                                    <option value="scatter">Scatter Plot</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="x-axis-col" class="block text-sm font-medium text-gray-400 mb-1">X-Axis / Labels</label>
+                                <select id="x-axis-col"></select>
+                            </div>
+                             <div id="y-axis-container">
+                                <label for="y-axis-col" class="block text-sm font-medium text-gray-400 mb-1">Y-Axis / Values</label>
+                                <select id="y-axis-col"></select>
+                            </div>
+                            <button id="create-chart-btn" class="btn">Create Chart</button>
+                        </div>
+                        <div id="dynamic-chart-container" class="w-full h-96 mt-6"></div>
+                    </div>
+
+                    <!-- Interactive Data Table -->
+                    <div class="card lg:col-span-2">
+                         <div class="flex justify-between items-center mb-4">
+                             <h2 class="text-xl font-bold text-gray-200">Data Explorer</h2>
+                             <input type="search" id="table-search" placeholder="Search table...">
+                         </div>
+                         <div class="overflow-x-auto">
+                            <table class="data-table">
+                                <thead id="table-head"></thead>
+                                <tbody id="table-body"></tbody>
+                            </table>
+                         </div>
+                         <div class="flex justify-between items-center mt-4" id="pagination-controls"></div>
+                    </div>
+
+                </section>
+                
+            </main>
+        </div>
+    </div>
+
+    <script>
+        // Use a global state object
+        const AppState = {
+            data: [],
+            headers: [],
+            numericCols: [],
+            categoricalCols: [],
+            table: {
+                currentPage: 1,
+                rowsPerPage: 10,
+                sortColumn: null,
+                sortDirection: 'asc',
+                filter: ''
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // All the element getters can go here
+            const fileUpload = document.getElementById('file-upload');
+            const fileNameDisplay = document.getElementById('file-name');
+            const uploadSection = document.getElementById('upload-section');
+            const loaderSection = document.getElementById('loader-section');
+            const loaderText = document.getElementById('loader-text');
+            const errorSection = document.getElementById('error-section');
+            const errorMessage = document.getElementById('error-message');
+            const dashboardSection = document.getElementById('dashboard-section');
+            const fileInputLabel = document.querySelector('.file-input-label');
+            
+            // --- UI Control Functions ---
+            const showLoader = (text) => {
+                uploadSection.classList.add('hidden');
+                dashboardSection.classList.add('hidden');
+                errorSection.classList.add('hidden');
+                loaderSection.classList.remove('hidden');
+                loaderText.textContent = text;
+            };
+
+            const showDashboard = () => {
+                loaderSection.classList.add('hidden');
+                dashboardSection.classList.remove('hidden');
+            };
+
+            const showError = (message) => {
+                loaderSection.classList.add('hidden');
+                uploadSection.classList.add('hidden');
+                errorSection.classList.remove('hidden');
+                errorMessage.textContent = message;
+            };
+            
+            // --- Event Listeners Setup ---
+            fileInputLabel.addEventListener('dragover', e => { e.preventDefault(); fileInputLabel.classList.add('dragover'); });
+            fileInputLabel.addEventListener('dragleave', e => { e.preventDefault(); fileInputLabel.classList.remove('dragover'); });
+            fileInputLabel.addEventListener('drop', e => {
+                e.preventDefault();
+                fileInputLabel.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    fileUpload.files = files;
+                    handleFile(files[0]);
+                }
+            });
+            fileUpload.addEventListener('change', e => e.target.files[0] && handleFile(e.target.files[0]));
+            document.getElementById('create-chart-btn').addEventListener('click', renderDynamicChart);
+            document.getElementById('chart-type').addEventListener('change', updateDynamicChartUI);
+            document.getElementById('table-search').addEventListener('input', e => {
+                AppState.table.filter = e.target.value.toLowerCase();
+                AppState.table.currentPage = 1;
+                renderTable();
+            });
+            document.getElementById('export-pdf-btn').addEventListener('click', exportDashboardToPDF);
+
+            function handleFile(file) {
+                fileNameDisplay.textContent = `Selected file: ${file.name}`;
+                document.getElementById('dashboard-title').textContent = `Analysis for ${file.name}`;
+                showLoader('Parsing CSV file...');
+
+                Papa.parse(file, {
+                    header: true, skipEmptyLines: true, dynamicTyping: true,
+                    complete: res => {
+                        if (res.errors.length) {
+                            showError('Failed to parse CSV. Please check format.');
+                            console.error('Parsing errors:', res.errors);
+                            return;
+                        }
+                        AppState.data = res.data;
+                        AppState.headers = res.meta.fields;
+                        setTimeout(() => analyzeData(res.data, res.meta.fields), 500);
+                    },
+                    error: err => {
+                        showError('An unexpected error occurred during parsing.');
+                        console.error('PapaParse error:', err);
+                    }
+                });
+            }
+
+            // --- Analysis and Rendering ---
+            function analyzeData(data, headers) {
+                try {
+                    showLoader('Classifying columns...');
+                    const { numericCols, categoricalCols } = classifyColumns(data, headers);
+                    AppState.numericCols = numericCols;
+                    AppState.categoricalCols = categoricalCols;
+                    
+                    if (numericCols.length === 0 && categoricalCols.length === 0) {
+                        showError("No usable numeric or categorical columns found for analysis.");
+                        return;
+                    }
+
+                    showLoader('Calculating statistics...');
+                    renderSummaryStats(data, numericCols, data.length);
+                    
+                    showLoader('Generating automated visualizations...');
+                    if (numericCols.length > 1) {
+                        const matrix = calculateCorrelationMatrix(data, numericCols);
+                        renderHeatmap(matrix, numericCols);
+                    } else {
+                        document.getElementById('heatmap-parent').classList.add('hidden');
+                    }
+                    renderDistributions(data, numericCols, categoricalCols);
+                    renderScatterPlots(data, numericCols);
+                    
+                    showLoader('Preparing interactive tools...');
+                    setupDynamicChartCreator();
+                    renderTable();
+
+                    setTimeout(showDashboard, 1000);
+                } catch (e) {
+                    showError(`Analysis error: ${e.message}`);
+                    console.error(e);
+                }
+            }
+
+            // --- Plotly and Charting Functions ---
+            const PLOTLY_DARK_LAYOUT = {
+                paper_bgcolor: '#1f2937', plot_bgcolor: '#1f2937',
+                font: { color: '#d1d5db' },
+                xaxis: { gridcolor: '#374151', linecolor: '#4b5563', zerolinecolor: '#4b5563' },
+                yaxis: { gridcolor: '#374151', linecolor: '#4b5563', zerolinecolor: '#4b5563' },
+                margin: { l: 50, r: 20, b: 50, t: 50, pad: 4 },
+            };
+            
+            function renderHeatmap(matrix, labels) {
+                Plotly.newPlot('heatmap-container', [{
+                    z: matrix, x: labels, y: labels, type: 'heatmap', colorscale: 'Blues', reversescale: true,
+                }], { ...PLOTLY_DARK_LAYOUT, title: '' }, { responsive: true });
+            }
+
+            function renderDistributions(data, numericCols, categoricalCols) {
+                const container = document.getElementById('distribution-charts');
+                container.innerHTML = '';
+                numericCols.slice(0, 2).forEach(col => { /* ... histogram logic ... */
+                    const chartDiv = document.createElement('div');
+                    chartDiv.className = 'w-full h-80'; container.appendChild(chartDiv);
+                    const plotData = [{ x: getColumn(data, col), type: 'histogram', marker: { color: '#3b82f6' }}];
+                    Plotly.newPlot(chartDiv, plotData, { ...PLOTLY_DARK_LAYOUT, title: `${col} Distribution` }, {responsive: true});
+                });
+                categoricalCols.slice(0, 2).forEach(col => { /* ... bar chart logic ... */
+                    const chartDiv = document.createElement('div');
+                    chartDiv.className = 'w-full h-80'; container.appendChild(chartDiv);
+                    const counts = data.reduce((acc, row) => {
+                        const val = row[col];
+                        if (val != null) { acc[val] = (acc[val] || 0) + 1; }
+                        return acc;
+                    }, {});
+                    const plotData = [{ x: Object.keys(counts), y: Object.values(counts), type: 'bar', marker: { color: '#6366f1' }}];
+                    Plotly.newPlot(chartDiv, plotData, { ...PLOTLY_DARK_LAYOUT, title: `Counts for ${col}` }, {responsive: true});
+                });
+            }
+
+            function renderScatterPlots(data, numericCols) {
+                const container = document.getElementById('scatter-plots');
+                container.innerHTML = '';
+                if (numericCols.length < 2) return;
+                const combo = [numericCols[0], numericCols[1]];
+                const [xCol, yCol] = combo;
+                const chartDiv = document.createElement('div');
+                chartDiv.className = 'w-full h-80'; container.appendChild(chartDiv);
+                const plotData = [{ x: data.map(r => r[xCol]), y: data.map(r => r[yCol]), mode: 'markers', type: 'scatter', marker: { color: '#8b5cf6', size: 5, opacity: 0.7 }}];
+                Plotly.newPlot(chartDiv, plotData, { ...PLOTLY_DARK_LAYOUT, title: `${yCol} vs. ${xCol}`, xaxis: { title: xCol }, yaxis: { title: yCol } }, {responsive: true});
+            }
+            
+            // --- DYNAMIC CHART CREATOR ---
+            function setupDynamicChartCreator() {
+                const xSelect = document.getElementById('x-axis-col');
+                const ySelect = document.getElementById('y-axis-col');
+                xSelect.innerHTML = AppState.headers.map(h => `<option value="${h}">${h}</option>`).join('');
+                ySelect.innerHTML = AppState.numericCols.map(h => `<option value="${h}">${h}</option>`).join('');
+                updateDynamicChartUI();
+            }
+
+            function updateDynamicChartUI() {
+                const chartType = document.getElementById('chart-type').value;
+                const yContainer = document.getElementById('y-axis-container');
+                const xSelect = document.getElementById('x-axis-col');
+                const ySelect = document.getElementById('y-axis-col');
+                
+                if (chartType === 'pie') {
+                    yContainer.style.display = 'block';
+                    xSelect.innerHTML = AppState.categoricalCols.map(h => `<option value="${h}">${h}</option>`).join('');
+                    ySelect.innerHTML = AppState.numericCols.map(h => `<option value="${h}">${h}</option>`).join('');
+                } else if (chartType === 'bar' || chartType === 'line') {
+                    yContainer.style.display = 'block';
+                    xSelect.innerHTML = AppState.headers.map(h => `<option value="${h}">${h}</option>`).join('');
+                    ySelect.innerHTML = AppState.numericCols.map(h => `<option value="${h}">${h}</option>`).join('');
+                } else if (chartType === 'scatter') {
+                    yContainer.style.display = 'block';
+                    xSelect.innerHTML = AppState.numericCols.map(h => `<option value="${h}">${h}</option>`).join('');
+                    ySelect.innerHTML = AppState.numericCols.map(h => `<option value="${h}">${h}</option>`).join('');
+                }
+            }
+
+            function renderDynamicChart() {
+                const chartType = document.getElementById('chart-type').value;
+                const xCol = document.getElementById('x-axis-col').value;
+                const yCol = document.getElementById('y-axis-col').value;
+                const container = 'dynamic-chart-container';
+                let plotData, layout;
+                
+                const xData = AppState.data.map(r => r[xCol]);
+                const yData = AppState.data.map(r => r[yCol]);
+
+                switch(chartType) {
+                    case 'bar':
+                        plotData = [{ x: xData, y: yData, type: 'bar' }];
+                        layout = { ...PLOTLY_DARK_LAYOUT, title: `${yCol} by ${xCol}` };
+                        break;
+                    case 'line':
+                        plotData = [{ x: xData, y: yData, type: 'scatter', mode: 'lines+markers' }];
+                        layout = { ...PLOTLY_DARK_LAYOUT, title: `${yCol} over ${xCol}` };
+                        break;
+                    case 'scatter':
+                        plotData = [{ x: xData, y: yData, mode: 'markers', type: 'scatter' }];
+                        layout = { ...PLOTLY_DARK_LAYOUT, title: `${yCol} vs ${xCol}`, xaxis: {title: xCol}, yaxis: {title: yCol} };
+                        break;
+                    case 'pie':
+                        // For pie, we need to aggregate data first
+                        const aggregated = {};
+                        for (let i = 0; i < AppState.data.length; i++) {
+                            const label = AppState.data[i][xCol];
+                            const value = AppState.data[i][yCol];
+                            if (typeof value === 'number') {
+                                aggregated[label] = (aggregated[label] || 0) + value;
+                            }
+                        }
+                        plotData = [{ labels: Object.keys(aggregated), values: Object.values(aggregated), type: 'pie', hole: .4 }];
+                        layout = { ...PLOTLY_DARK_LAYOUT, title: `Distribution of ${yCol} by ${xCol}` };
+                        break;
+                }
+                Plotly.newPlot(container, plotData, layout, { responsive: true });
+            }
+
+            // --- DATA TABLE ---
+            function renderTable() {
+                const head = document.getElementById('table-head');
+                const body = document.getElementById('table-body');
+                
+                // Header
+                head.innerHTML = `<tr>${AppState.headers.map(h => `<th data-col="${h}">${h}</th>`).join('')}</tr>`;
+                
+                // Sort and Filter Data
+                let displayData = [...AppState.data];
+                if (AppState.table.filter) {
+                    displayData = displayData.filter(row => 
+                        Object.values(row).some(val => String(val).toLowerCase().includes(AppState.table.filter))
+                    );
+                }
+                if (AppState.table.sortColumn) {
+                    const { sortColumn, sortDirection } = AppState.table;
+                    displayData.sort((a, b) => {
+                        const valA = a[sortColumn], valB = b[sortColumn];
+                        if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
+                        if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
+                        return 0;
+                    });
+                }
+
+                // Pagination
+                const startIndex = (AppState.table.currentPage - 1) * AppState.table.rowsPerPage;
+                const endIndex = startIndex + AppState.table.rowsPerPage;
+                const paginatedData = displayData.slice(startIndex, endIndex);
+
+                // Body
+                body.innerHTML = paginatedData.map(row => 
+                    `<tr>${AppState.headers.map(h => `<td>${row[h]}</td>`).join('')}</tr>`
+                ).join('');
+
+                renderPaginationControls(displayData.length);
+                setupTableSorting();
+            }
+
+            function renderPaginationControls(totalRows) {
+                const controls = document.getElementById('pagination-controls');
+                const { currentPage, rowsPerPage } = AppState.table;
+                const totalPages = Math.ceil(totalRows / rowsPerPage);
+                const startIndex = (currentPage - 1) * rowsPerPage;
+                const endIndex = startIndex + rowsPerPage;
+                
+                controls.innerHTML = `
+                    <p class="text-sm text-gray-400">Showing ${Math.min(startIndex + 1, totalRows)} to ${Math.min(endIndex, totalRows)} of ${totalRows} entries</p>
+                    <div class="flex gap-2">
+                        <button id="prev-page" class="btn btn-secondary pagination-btn" ${currentPage === 1 ? 'disabled' : ''}>Prev</button>
+                        <span class="p-2">${currentPage} / ${totalPages}</span>
+                        <button id="next-page" class="btn btn-secondary pagination-btn" ${currentPage === totalPages || totalPages === 0 ? 'disabled' : ''}>Next</button>
+                    </div>
+                `;
+                
+                document.getElementById('prev-page').addEventListener('click', () => {
+                    if (AppState.table.currentPage > 1) {
+                        AppState.table.currentPage--;
+                        renderTable();
+                    }
+                });
+                document.getElementById('next-page').addEventListener('click', () => {
+                    if (AppState.table.currentPage < totalPages) {
+                        AppState.table.currentPage++;
+                        renderTable();
+                    }
+                });
+            }
+
+            function setupTableSorting() {
+                document.querySelectorAll('#table-head th').forEach(th => {
+                    th.addEventListener('click', () => {
+                        const col = th.dataset.col;
+                        const { sortColumn, sortDirection } = AppState.table;
+                        if (sortColumn === col) {
+                            AppState.table.sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+                        } else {
+                            AppState.table.sortColumn = col;
+                            AppState.table.sortDirection = 'asc';
+                        }
+                        renderTable();
+                    });
+                });
+            }
+
+            // --- PDF EXPORT ---
+            function exportDashboardToPDF() {
+                const { jsPDF } = window.jspdf;
+                const dashboard = document.getElementById('dashboard-section');
+                const btn = document.getElementById('export-pdf-btn');
+                const originalTitle = btn.innerHTML;
+                
+                btn.innerHTML = 'Exporting...';
+                btn.disabled = true;
+
+                html2canvas(dashboard, { 
+                    backgroundColor: '#111827',
+                    scale: 2 // Higher scale for better quality
+                }).then(canvas => {
+                    const imgData = canvas.toDataURL('image/png');
+                    const pdf = new jsPDF({
+                        orientation: 'p',
+                        unit: 'px',
+                        format: [canvas.width, canvas.height]
+                    });
+                    pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+                    pdf.save(`dashboard-report-${new Date().toISOString().slice(0,10)}.pdf`);
+                    btn.innerHTML = originalTitle;
+                    btn.disabled = false;
+                }).catch(err => {
+                    console.error("PDF export failed:", err);
+                    showError("Could not export dashboard to PDF.");
+                    btn.innerHTML = originalTitle;
+                    btn.disabled = false;
+                });
+            }
+            
+            // --- Calculation Helpers ---
+            function classifyColumns(data, headers) {
+                const numericCols = [], categoricalCols = [];
+                headers.forEach(h => {
+                    const numericCount = data.reduce((acc, row) => acc + (typeof row[h] === 'number' ? 1 : 0), 0);
+                    const uniqueCount = new Set(data.map(row => row[h])).size;
+                    if (numericCount / data.length > 0.8) numericCols.push(h);
+                    else if (uniqueCount <= 25 && uniqueCount > 1) categoricalCols.push(h);
+                });
+                return { numericCols, categoricalCols };
+            }
+            function getColumn(data, col) { return data.map(r => r[col]).filter(v => typeof v === 'number' && isFinite(v)); }
+            function calculateCorrelationMatrix(data, cols) {
+                const n = cols.length, matrix = Array(n).fill(0).map(() => Array(n).fill(0));
+                const columns = cols.map(c => getColumn(data, c));
+                for (let i = 0; i < n; i++) for (let j = i; j < n; j++) {
+                    const corr = calculatePearson(columns[i], columns[j]);
+                    matrix[i][j] = matrix[j][i] = corr;
+                }
+                return matrix;
+            }
+            function calculatePearson(x, y) {
+                const n = Math.min(x.length, y.length); if (n === 0) return 0;
+                let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0, sumY2 = 0;
+                for (let i = 0; i < n; i++) { sumX += x[i]; sumY += y[i]; sumXY += x[i] * y[i]; sumX2 += x[i]**2; sumY2 += y[i]**2; }
+                const num = n * sumXY - sumX * sumY;
+                const den = Math.sqrt((n * sumX2 - sumX**2) * (n * sumY2 - sumY**2));
+                return den === 0 ? 0 : num / den;
+            }
+            function renderSummaryStats(data, numericCols, rowCount) { /* ... same as before ... */
+                const container = document.getElementById('summary-stats');
+                container.innerHTML = '';
+                const stats = [
+                    { label: 'Total Rows', value: rowCount.toLocaleString(), icon: 'M3 4.5h14.25M3 9h9.75M3 13.5h9.75m4.5-4.5v12m0 0l-3.75-3.75M17.25 21L21 17.25' },
+                    { label: 'Numeric Cols', value: numericCols.length, icon: 'M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 01-1.125-1.125v-1.5c0-.621.504-1.125 1.125-1.125H20.625c.621 0 1.125.504 1.125 1.125v1.5c0 .621-.504 1.125-1.125 1.125m-17.25 0h.008v.015h-.008v-.015z' },
+                    { label: 'Categorical Cols', value: AppState.categoricalCols.length, icon: 'M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128z' }
+                ];
+                if (numericCols.length > 0) {
+                    const avg = getColumn(data, numericCols[0]).reduce((a, b) => a + b, 0) / getColumn(data, numericCols[0]).length;
+                    stats.push({ label: `Avg. ${numericCols[0]}`, value: avg.toFixed(2), icon: 'm2.25 12 .89-8.9a.75.75 0 0 1 .74-.69h12.34a.75.75 0 0 1 .74.69l.89 8.9a.75.75 0 0 1-.75.81H3a.75.75 0 0 1-.75-.81Z' });
+                }
+                stats.forEach(stat => {
+                    container.innerHTML += `<div class="bg-gray-800 p-4 rounded-lg flex items-center"><div class="p-3 rounded-md bg-blue-600/30 mr-4"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-blue-400"><path stroke-linecap="round" stroke-linejoin="round" d="${stat.icon}" /></svg></div><div><p class="text-sm font-medium text-gray-400">${stat.label}</p><p class="text-2xl font-semibold text-white">${stat.value}</p></div></div>`;
+                });
+            }
+        });
+    </script>
+</body>
+</html>
+
