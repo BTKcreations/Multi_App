@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mermaid Diagram Editor</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Mermaid.js for diagram rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <!-- interact.js for making diagrams editable -->
+    <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
+    <!-- FileSaver.js for saving files -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Style for draggable elements in edit mode */
+        .draggable {
+            touch-action: none;
+            user-select: none;
+        }
+        .editable-text:hover {
+            outline: 2px dashed #3498db;
+            cursor: pointer;
+        }
+        /* Custom scrollbar for a cleaner look */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        /* Simple loader animation */
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* Style for the inline text editor */
+        #text-editor {
+            position: absolute;
+            z-index: 100;
+            background-color: white;
+            border: 1px solid #3498db;
+            border-radius: 4px;
+            padding: 4px;
+            font-family: monospace;
+            font-size: 14px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            resize: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 antialiased">
+    <div id="app" class="flex flex-col h-screen">
+        <!-- Header -->
+        <header class="bg-white shadow-md p-4 z-10">
+            <div class="container mx-auto flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-600"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+                    <h1 class="text-2xl font-bold text-gray-700">Mermaid Diagram Editor</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                     <!-- Edit Mode Toggle -->
+                    <div class="flex items-center space-x-2">
+                        <span class="text-sm font-medium">Edit Mode</span>
+                        <label for="edit-toggle" class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" value="" id="edit-toggle" class="sr-only peer">
+                            <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-300 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                        </label>
+                    </div>
+                    <button id="export-svg-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        Export SVG
+                    </button>
+                    <button id="export-png-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        Export PNG
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="flex-grow flex flex-col md:flex-row overflow-hidden">
+            <!-- Code Editor Panel -->
+            <div id="code-panel" class="w-full md:w-1/3 h-1/2 md:h-full flex flex-col border-r border-gray-300">
+                <div class="bg-gray-200 p-2 text-sm font-semibold text-gray-600 border-b border-gray-300 flex justify-between items-center">
+                    <span>Mermaid Code</span>
+                </div>
+                <textarea id="mermaid-code" class="w-full flex-grow p-4 font-mono text-sm outline-none resize-none bg-gray-50 leading-6" spellcheck="false"></textarea>
+                <button id="render-btn" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3 px-4 transition-colors duration-300 w-full">Render Diagram</button>
+            </div>
+
+            <!-- Diagram Output Panel -->
+            <div id="diagram-panel" class="w-full md:w-2/3 h-1/2 md:h-full flex flex-col">
+                 <div class="bg-gray-200 p-2 text-sm font-semibold text-gray-600 border-b border-gray-300 flex justify-between items-center">
+                    <span>Visual Output</span>
+                    <div class="flex items-center gap-2">
+                        <span id="edit-mode-status" class="text-xs font-bold text-green-600 opacity-0 transition-opacity">EDIT MODE: Drag nodes and double-click text to edit.</span>
+                    </div>
+                </div>
+                <div id="output-container" class="flex-grow p-5 bg-white overflow-auto flex items-center justify-center relative">
+                    <div id="output"></div>
+                    <div id="loader" class="loader hidden"></div>
+                    <div id="error-display" class="hidden text-red-500 bg-red-100 p-4 rounded-lg"></div>
+                </div>
+            </div>
+        </main>
+        
+        <!-- Toast Notification -->
+        <div id="toast" class="fixed bottom-5 right-5 bg-gray-800 text-white py-2 px-5 rounded-lg shadow-lg opacity-0 translate-y-3 transition-all duration-300">
+            <p id="toast-message"></p>
+        </div>
+
+    </div>
+
+    <script>
+        // Initialize Mermaid
+        mermaid.initialize({ startOnLoad: false, securityLevel: 'loose' });
+
+        const codeEditor = document.getElementById('mermaid-code');
+        const outputContainer = document.getElementById('output');
+        const renderBtn = document.getElementById('render-btn');
+        const exportSvgBtn = document.getElementById('export-svg-btn');
+        const exportPngBtn = document.getElementById('export-png-btn');
+        const editToggle = document.getElementById('edit-toggle');
+        const editModeStatus = document.getElementById('edit-mode-status');
+        const loader = document.getElementById('loader');
+        const errorDisplay = document.getElementById('error-display');
+        const toast = document.getElementById('toast');
+        const toastMessage = document.getElementById('toast-message');
+
+        // Default mermaid code
+        const defaultCode = `graph TD
+    A[Start] --> B[Process Step 1];
+    B --> C{Decision};
+    C -- Option 1 --> D[End Step 1];
+    C -- Option 2 --> E[End Step 2];`;
+
+        codeEditor.value = defaultCode;
+
+        // --- Core Rendering Logic ---
+        const renderDiagram = async () => {
+            const mermaidCode = codeEditor.value;
+            if (!mermaidCode.trim()) {
+                showToast('Code is empty!', 'error');
+                return;
+            }
+
+            loader.classList.remove('hidden');
+            outputContainer.classList.add('hidden');
+            errorDisplay.classList.add('hidden');
+            
+            destroyEditable();
+
+            try {
+                const elementId = `mermaid-graph-${Date.now()}`;
+                const { svg } = await mermaid.render(elementId, mermaidCode);
+                outputContainer.innerHTML = svg;
+                errorDisplay.classList.add('hidden');
+                
+                if (editToggle.checked) {
+                    makeEditable();
+                }
+            } catch (error) {
+                console.error("Mermaid Render Error:", error);
+                errorDisplay.textContent = `Error rendering diagram: ${error.message}`;
+                errorDisplay.classList.remove('hidden');
+                outputContainer.innerHTML = '';
+            } finally {
+                loader.classList.add('hidden');
+                outputContainer.classList.remove('hidden');
+            }
+        };
+
+        // --- Edit Mode Logic ---
+        const updatePath = (path, deltaX, deltaY, isStart) => {
+            const d = path.getAttribute('d');
+            const pathCommands = d.match(/[MmLlHhVvCcSsQqTtAaZz][^MmLlHhVvCcSsQqTtAaZz]*/g);
+            if (!pathCommands) return;
+
+            if (isStart) {
+                const command = pathCommands[0].charAt(0);
+                const coords = pathCommands[0].substring(1).trim().split(/[\s,]+/).map(parseFloat);
+                coords[0] += deltaX;
+                coords[1] += deltaY;
+                pathCommands[0] = `${command}${coords.join(' ')}`;
+            } else {
+                const lastCommand = pathCommands[pathCommands.length - 1];
+                const command = lastCommand.charAt(0);
+                const coords = lastCommand.substring(1).trim().split(/[\s,]+/).map(parseFloat);
+                const lastCoordIndex = coords.length - 2;
+                coords[lastCoordIndex] += deltaX;
+                coords[lastCoordIndex + 1] += deltaY;
+                pathCommands[pathCommands.length - 1] = command + coords.join(' ');
+            }
+            path.setAttribute('d', pathCommands.join(' '));
+        };
+
+        const updateLabelPosition = (label, dx, dy) => {
+            const transform = label.style.transform || 'translate(0, 0)';
+            const parts = /translate\(([^,]+),([^)]+)\)/.exec(transform);
+            if (parts) {
+                const x = parseFloat(parts[1]) + dx / 2;
+                const y = parseFloat(parts[2]) + dy / 2;
+                label.style.transform = `translate(${x}px, ${y}px)`;
+            }
+        };
+
+        function dragNodeListener(event) {
+            const target = event.target;
+            const { dx, dy } = event;
+
+            const x = (parseFloat(target.getAttribute('data-x')) || 0) + dx;
+            const y = (parseFloat(target.getAttribute('data-y')) || 0) + dy;
+            target.style.transform = `translate(${x}px, ${y}px)`;
+            target.setAttribute('data-x', x);
+            target.setAttribute('data-y', y);
+
+            const nodeId = target.id;
+            if (!nodeId) return;
+
+            document.querySelectorAll(`.LS-${nodeId}`).forEach(el => {
+                if (el.classList.contains('edgePath')) {
+                    const path = el.querySelector('path');
+                    if (path) updatePath(path, dx, dy, true);
+                } else if (el.classList.contains('edgeLabel')) {
+                    updateLabelPosition(el, dx, dy);
+                }
+            });
+
+            document.querySelectorAll(`.LE-${nodeId}`).forEach(el => {
+                if (el.classList.contains('edgePath')) {
+                    const path = el.querySelector('path');
+                    if (path) updatePath(path, dx, dy, false);
+                } else if (el.classList.contains('edgeLabel')) {
+                    updateLabelPosition(el, dx, dy);
+                }
+            });
+        }
+
+        const textEditHandler = (event) => {
+            const target = event.target.closest('.nodeLabel, .edgeLabel tspan');
+            if (!target) return;
+
+            if (document.getElementById('text-editor')) return;
+
+            const textContent = target.textContent;
+            const bbox = target.getBoundingClientRect();
+            const outputRect = outputContainer.getBoundingClientRect();
+
+            const editor = document.createElement('textarea');
+            editor.id = 'text-editor';
+            editor.value = textContent;
+            editor.style.left = `${bbox.left - outputRect.left}px`;
+            editor.style.top = `${bbox.top - outputRect.top}px`;
+            editor.style.width = `${bbox.width + 20}px`;
+            editor.style.height = `${bbox.height + 10}px`;
+            
+            target.style.visibility = 'hidden';
+
+            let isFinishing = false;
+            const finishEditing = () => {
+                // FIX: Prevent double-execution from blur/keydown events firing closely.
+                if (isFinishing) return;
+                isFinishing = true;
+
+                if (!editor.parentNode) return;
+                target.textContent = editor.value;
+                target.style.visibility = 'visible';
+                editor.remove();
+                showToast('Text updated. Re-render for node to resize.', 'info');
+            };
+
+            editor.addEventListener('blur', finishEditing);
+            editor.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    finishEditing();
+                } else if (e.key === 'Escape') {
+                    editor.value = textContent; // Revert changes
+                    finishEditing();
+                }
+            });
+
+            outputContainer.appendChild(editor);
+            editor.focus();
+            editor.select();
+        };
+
+        const makeEditable = () => {
+            interact('#output .node').draggable({ listeners: { move: dragNodeListener } });
+            outputContainer.querySelectorAll('.nodeLabel, .edgeLabel').forEach(el => el.classList.add('editable-text'));
+            outputContainer.addEventListener('dblclick', textEditHandler);
+        };
+
+        const destroyEditable = () => {
+            // FIX: The `interact.isSet()` check caused an error. 
+            // Calling `unset()` directly is the correct way to remove listeners.
+            interact('#output .node').unset();
+            
+            outputContainer.querySelectorAll('.editable-text').forEach(el => el.classList.remove('editable-text'));
+            outputContainer.removeEventListener('dblclick', textEditHandler);
+            const editor = document.getElementById('text-editor');
+            if(editor) editor.remove();
+        };
+
+        // --- Export Logic ---
+        const exportSVG = () => {
+            const svgElement = outputContainer.querySelector('svg');
+            if (!svgElement) return showToast('No diagram to export!', 'error');
+            const svgData = new XMLSerializer().serializeToString(svgElement);
+            saveAs(new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' }), `diagram-${Date.now()}.svg`);
+            showToast('SVG exported successfully!');
+        };
+        
+        const exportPNG = () => {
+            const svgElement = outputContainer.querySelector('svg');
+            if (!svgElement) return showToast('No diagram to export!', 'error');
+            const svgData = new XMLSerializer().serializeToString(svgElement);
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+            
+            img.crossOrigin = 'anonymous';
+
+            const url = URL.createObjectURL(new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' }));
+            
+            img.onload = () => {
+                const padding = 20;
+                canvas.width = img.width + padding * 2;
+                canvas.height = img.height + padding * 2;
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, padding, padding);
+                try {
+                    canvas.toBlob((pngBlob) => {
+                        saveAs(pngBlob, `diagram-${Date.now()}.png`);
+                        showToast('PNG exported successfully!');
+                    });
+                } catch (e) {
+                     console.error("PNG Export Error:", e);
+                     showToast('Could not export PNG. The diagram might contain external resources.', 'error');
+                }
+                URL.revokeObjectURL(url);
+            };
+            img.onerror = (err) => {
+                console.error("Image load error for PNG export:", err);
+                showToast('Failed to load image for PNG export.', 'error');
+                URL.revokeObjectURL(url);
+            };
+            img.src = url;
+        };
+
+        // --- UI Helpers ---
+        const showToast = (message, type = 'success') => {
+            toastMessage.textContent = message;
+            toast.className = toast.className.replace(/bg-gray-800|bg-red-500|bg-blue-500/g, '');
+            if (type === 'error') toast.classList.add('bg-red-500');
+            else if (type === 'info') toast.classList.add('bg-blue-500');
+            else toast.classList.add('bg-gray-800');
+            toast.classList.remove('opacity-0', 'translate-y-3');
+            setTimeout(() => toast.classList.add('opacity-0', 'translate-y-3'), 3000);
+        };
+
+        // --- Event Listeners ---
+        renderBtn.addEventListener('click', renderDiagram);
+        exportSvgBtn.addEventListener('click', exportSVG);
+        exportPngBtn.addEventListener('click', exportPNG);
+        
+        editToggle.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                makeEditable();
+                editModeStatus.classList.remove('opacity-0');
+                showToast('Edit mode enabled.');
+            } else {
+                destroyEditable();
+                editModeStatus.classList.add('opacity-0');
+                showToast('Edit mode disabled. Rerendering to reset positions.');
+                renderDiagram();
+            }
+        });
+
+        // Initial render on page load
+        renderDiagram();
+    </script>
+</body>
+</html>
+
