@@ -276,20 +276,31 @@
             editor.style.top = `${bbox.top - outputRect.top}px`;
             editor.style.width = `${bbox.width + 20}px`;
             editor.style.height = `${bbox.height + 10}px`;
-            
+
             target.style.visibility = 'hidden';
 
             let isFinishing = false;
             const finishEditing = () => {
-                // FIX: Prevent double-execution from blur/keydown events firing closely.
                 if (isFinishing) return;
                 isFinishing = true;
-
                 if (!editor.parentNode) return;
                 target.textContent = editor.value;
                 target.style.visibility = 'visible';
                 editor.remove();
-                showToast('Text updated. Re-render for node to resize.', 'info');
+
+                // --- Make text edits persistent in the code editor ---
+                // Try to update the corresponding label in the Mermaid code
+                // This is a best-effort string replacement for common node/edge labels
+                const oldLabel = textContent.trim();
+                const newLabel = editor.value.trim();
+                if (oldLabel && newLabel && oldLabel !== newLabel) {
+                    // Replace only the first occurrence to avoid over-replacing
+                    const code = codeEditor.value;
+                    // Try to match [oldLabel] or {oldLabel} or (oldLabel)
+                    const labelRegex = new RegExp(`([\[\{\(])${oldLabel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}([\]\}\)])`);
+                    codeEditor.value = code.replace(labelRegex, `$1${newLabel}$2`);
+                }
+                showToast('Text updated and code synced. Re-render for node to resize.', 'info');
             };
 
             editor.addEventListener('blur', finishEditing);
@@ -315,10 +326,12 @@
         };
 
         const destroyEditable = () => {
-            // FIX: The `interact.isSet()` check caused an error. 
-            // Calling `unset()` directly is the correct way to remove listeners.
-            interact('#output .node').unset();
-            
+            // FIX: Prevent error if interactable is not set
+            try {
+                interact('#output .node').unset();
+            } catch (e) {
+                // Ignore if not set
+            }
             outputContainer.querySelectorAll('.editable-text').forEach(el => el.classList.remove('editable-text'));
             outputContainer.removeEventListener('dblclick', textEditHandler);
             const editor = document.getElementById('text-editor');
@@ -329,7 +342,17 @@
         const exportSVG = () => {
             const svgElement = outputContainer.querySelector('svg');
             if (!svgElement) return showToast('No diagram to export!', 'error');
-            const svgData = new XMLSerializer().serializeToString(svgElement);
+            let svgData = new XMLSerializer().serializeToString(svgElement);
+            // Embed styles for Tailwind and Mermaid
+            const styleContent = `
+                /* Tailwind minimal for SVG export */
+                .node rect, .node circle, .node ellipse, .node polygon, .node path { stroke: #3498db; fill: #fff; }
+                .nodeLabel { font-family: 'Inter', 'monospace', sans-serif; font-size: 16px; fill: #222; }
+                .edgeLabel { font-family: 'Inter', 'monospace', sans-serif; font-size: 14px; fill: #555; }
+                .edgePath path { stroke: #888; stroke-width: 2; fill: none; }
+                .cluster rect { stroke: #888; fill: #f3f3f3; }
+            `;
+            svgData = svgData.replace('<svg', `<svg><style>${styleContent}</style>`);
             saveAs(new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' }), `diagram-${Date.now()}.svg`);
             showToast('SVG exported successfully!');
         };
@@ -387,7 +410,16 @@
         renderBtn.addEventListener('click', renderDiagram);
         exportSvgBtn.addEventListener('click', exportSVG);
         exportPngBtn.addEventListener('click', exportPNG);
-        
+
+        // --- Live Preview Rendering (debounced) ---
+        let debounceTimer;
+        codeEditor.addEventListener('input', () => {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                renderDiagram();
+            }, 400);
+        });
+
         editToggle.addEventListener('change', (e) => {
             if (e.target.checked) {
                 makeEditable();
