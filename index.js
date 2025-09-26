@@ -116,6 +116,13 @@ document.addEventListener("DOMContentLoaded", () => {
       category: "Productivity",
       keywords: "data analysis charts graphs ai",
     },
+    {
+      name: "Mermaid Diagram Editor",
+      file: "Apps/Mermaid_Diagram_Editor.html",
+      icon: "🧩",
+      category: "Productivity",
+      keywords: "mermaid diagram flowchart editor",
+    }
     // Add more apps here...
   ];
 
