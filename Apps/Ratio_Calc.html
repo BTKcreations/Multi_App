@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ratio Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .input-group {
+            position: relative;
+        }
+        .input-field {
+            border: 2px solid #D1D5DB;
+            transition: all 0.3s ease;
+        }
+        .input-field:focus, .input-field.calculated {
+            border-color: #3B82F6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+        .input-field.error {
+            border-color: #EF4444;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+        }
+        .colon, .equals {
+            transition: all 0.3s ease;
+            transform-origin: center;
+        }
+        .animate-pop {
+            animation: pop 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+        }
+        @keyframes pop {
+            0% { transform: scale(0.9); opacity: 0; }
+            70% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .result-container.show {
+             animation: slideUpFadeIn 0.5s ease-out forwards;
+        }
+        @keyframes slideUpFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .toast {
+            transition: all 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            transform: translateY(100%);
+            opacity: 0;
+        }
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-md mx-auto bg-white rounded-2xl shadow-lg p-6 md:p-8">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-800">Ratio Calculator</h1>
+            <p class="text-gray-500 mt-2">Enter any three values to find the fourth.</p>
+        </div>
+
+        <!-- Calculator Form -->
+        <div id="calculator-form" class="space-y-6">
+            <div class="flex items-center justify-center space-x-2 md:space-x-4">
+                <!-- Ratio 1 -->
+                <input type="number" id="x1" placeholder="x1" class="input-field w-full text-center text-lg p-3 rounded-lg focus:outline-none">
+                <span class="colon text-2xl font-semibold text-gray-500">:</span>
+                <input type="number" id="y1" placeholder="y1" class="input-field w-full text-center text-lg p-3 rounded-lg focus:outline-none">
+
+                <span class="equals text-2xl font-semibold text-gray-500 mx-2">=</span>
+
+                <!-- Ratio 2 -->
+                <input type="number" id="x2" placeholder="x2" class="input-field w-full text-center text-lg p-3 rounded-lg focus:outline-none">
+                <span class="colon text-2xl font-semibold text-gray-500">:</span>
+                <input type="number" id="y2" placeholder="y2" class="input-field w-full text-center text-lg p-3 rounded-lg focus:outline-none">
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex flex-col sm:flex-row gap-4 pt-4">
+                <button id="calculate-btn" class="w-full bg-blue-500 text-white font-semibold py-3 px-6 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-300 transition-all duration-300 transform hover:scale-105">
+                    Calculate
+                </button>
+                <button id="reset-btn" class="w-full bg-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-4 focus:ring-gray-200 transition-all duration-300">
+                    Reset
+                </button>
+            </div>
+        </div>
+        
+        <!-- Result Display -->
+        <div id="result-container" class="hidden mt-8">
+            <div class="bg-gray-50 p-5 rounded-lg border border-gray-200 text-center">
+                 <h3 class="text-md font-semibold text-gray-500 uppercase tracking-wider">Result</h3>
+                 <p id="result-output" class="text-3xl font-bold text-blue-600 mt-2"></p>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast fixed bottom-5 right-5 bg-red-500 text-white py-3 px-5 rounded-lg shadow-xl">
+        <p id="toast-message"></p>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const inputs = {
+                x1: document.getElementById('x1'),
+                y1: document.getElementById('y1'),
+                x2: document.getElementById('x2'),
+                y2: document.getElementById('y2'),
+            };
+            const calculateBtn = document.getElementById('calculate-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+            const resultContainer = document.getElementById('result-container');
+            const resultOutput = document.getElementById('result-output');
+
+            // --- Event Listeners ---
+            calculateBtn.addEventListener('click', handleCalculation);
+            resetBtn.addEventListener('click', resetCalculator);
+
+            Object.values(inputs).forEach(input => {
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        handleCalculation();
+                    }
+                });
+                input.addEventListener('input', () => {
+                    input.classList.remove('calculated', 'error');
+                });
+            });
+
+            // --- Functions ---
+            function handleCalculation() {
+                clearStyles();
+                hideResult();
+                const values = {};
+                let emptyFields = [];
+                
+                for (const key in inputs) {
+                    const value = inputs[key].value;
+                    if (value === '') {
+                        emptyFields.push(key);
+                    } else {
+                        values[key] = parseFloat(value);
+                        if(isNaN(values[key])){
+                             showToast('Please enter valid numbers.');
+                             inputs[key].classList.add('error');
+                             return;
+                        }
+                    }
+                }
+
+                if (emptyFields.length !== 1) {
+                    showToast('Please leave exactly one field blank.');
+                    Object.values(inputs).forEach(input => {
+                        if (input.value === '') input.classList.add('error');
+                    });
+                    return;
+                }
+
+                const targetField = emptyFields[0];
+                let result = null;
+
+                try {
+                    switch (targetField) {
+                        case 'x1':
+                            result = (values.x2 * values.y1) / values.y2;
+                            break;
+                        case 'y1':
+                            result = (values.x1 * values.y2) / values.x2;
+                            break;
+                        case 'x2':
+                            result = (values.x1 * values.y2) / values.y1;
+                            break;
+                        case 'y2':
+                            result = (values.y1 * values.x2) / values.x1;
+                            break;
+                    }
+
+                    if (!isFinite(result) || isNaN(result)) {
+                        throw new Error("Cannot divide by zero.");
+                    }
+                    
+                    const formattedResult = parseFloat(result.toFixed(4));
+                    
+                    // Fill input field and display result externally
+                    inputs[targetField].value = formattedResult; 
+                    inputs[targetField].classList.add('calculated', 'animate-pop');
+                    showResult(targetField, formattedResult);
+
+                } catch (error) {
+                    showToast(error.message || 'Invalid calculation.');
+                    for(const key in values) {
+                        if(values[key] === 0) inputs[key].classList.add('error');
+                    }
+                }
+            }
+            
+            function showResult(variableName, value) {
+                resultOutput.innerHTML = `<span class="font-semibold">${variableName}</span> = ${value}`;
+                resultContainer.classList.remove('hidden');
+                resultContainer.classList.add('show');
+            }
+            
+            function hideResult() {
+                resultContainer.classList.add('hidden');
+                resultContainer.classList.remove('show');
+            }
+
+            function resetCalculator() {
+                clearStyles();
+                hideResult();
+                for (const key in inputs) {
+                    inputs[key].value = '';
+                }
+            }
+
+            function clearStyles() {
+                 Object.values(inputs).forEach(input => {
+                    input.classList.remove('calculated', 'error', 'animate-pop');
+                });
+            }
+
+            let toastTimeout;
+            function showToast(message) {
+                clearTimeout(toastTimeout);
+                toastMessage.textContent = message;
+                toast.classList.add('show');
+                toastTimeout = setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 3000);
+            }
+        });
+    </script>
+</body>
+</html>
+
+
