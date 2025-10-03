@@ -122,7 +122,14 @@ document.addEventListener("DOMContentLoaded", () => {
       icon: "🧩",
       category: "Productivity",
       keywords: "mermaid diagram flowchart editor",
-    }
+    },
+{
+name: " Ratio Calculator",
+file: "Apps/Ratio_Calc.html",
+icon: "🧮",
+category: "Calc",
+keywords: "Ratio Calculator",
+}
     // Add more apps here...
   ];
 
