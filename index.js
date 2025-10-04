@@ -352,7 +352,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function renderSidebar(searchTerm = "") {
-  function renderSidebar(searchTerm = "") {
     nav.innerHTML = "";
     const lowerCaseSearchTerm = searchTerm.toLowerCase().trim();
 
