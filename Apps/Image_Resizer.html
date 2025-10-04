@@ -179,9 +179,29 @@
                     <!-- FIX: Wrapper for details and download button to ensure correct layout -->
                     <div class="mt-2">
                         <div id="resized-details" class="text-sm text-center md:text-left text-slate-600"></div>
-                        <a id="download-btn" href="#" class="hidden w-full mt-2 bg-green-600 text-white text-center font-semibold py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 transform hover:scale-105">
-                            Download Resized Image
-                        </a>
+                        <div class="flex gap-2">
+                            <a id="download-btn" href="#" class="hidden flex-1 mt-2 bg-green-600 text-white text-center font-semibold py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 transform hover:scale-105">
+                                Download
+                            </a>
+                            <button id="copy-btn" class="hidden mt-2 px-4 py-2 bg-slate-200 hover:bg-slate-300 rounded-md text-slate-900">Copy</button>
+                        </div>
+                        <!-- Compare (Before/After) -->
+                        <div class="mt-3">
+                            <details id="compare-details" class="rounded border border-slate-200 bg-white p-3">
+                                <summary class="cursor-pointer text-sm font-medium text-slate-700 select-none">Compare (Before/After)</summary>
+                                <div class="mt-3">
+                                    <div id="compare-container" class="relative w-full aspect-square sm:aspect-video bg-slate-100 rounded overflow-hidden border">
+                                        <img id="compare-before" alt="Before" class="absolute inset-0 w-full h-full object-contain" />
+                                        <div id="compare-after-wrap" class="absolute inset-0 overflow-hidden" style="width:50%">
+                                            <img id="compare-after" alt="After" class="absolute inset-0 w-full h-full object-contain" />
+                                        </div>
+                                        <div class="absolute top-2 left-2 bg-black/50 text-white text-xs px-2 py-0.5 rounded">Before</div>
+                                        <div class="absolute top-2 right-2 bg-black/50 text-white text-xs px-2 py-0.5 rounded">After</div>
+                                    </div>
+                                    <input id="compare-slider" type="range" min="0" max="100" value="50" class="mt-2 w-full" />
+                                </div>
+                            </details>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -200,6 +220,20 @@
         <p class="text-sm text-slate-500 mb-3">Last 20 items. Stores a small preview and settings (not the full image) to keep storage light.</p>
         <div id="history-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
     </div>
+
+    <!-- Mobile action bar -->
+    <div id="mobile-action-bar" class="sm:hidden fixed bottom-0 inset-x-0 z-50 bg-white/95 backdrop-blur border-t border-slate-200 shadow flex gap-2 p-2">
+        <button id="mobile-resize" class="flex-1 bg-indigo-600 text-white py-2 rounded-md">Resize</button>
+        <button id="mobile-download" class="flex-1 bg-green-600 text-white py-2 rounded-md disabled:opacity-50" disabled>Download</button>
+    </div>
+
+    <!-- Drop overlay -->
+    <div id="drop-overlay" class="fixed inset-0 hidden items-center justify-center z-50 bg-black/50 text-white">
+        <div class="bg-black/60 px-4 py-2 rounded">Drop image to upload</div>
+    </div>
+
+    <!-- Toast region -->
+    <div id="toast-region" class="fixed bottom-20 right-4 z-50 space-y-2" aria-live="polite"></div>
 
     <!-- Custom Modal -->
     <div id="modal" class="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 opacity-0 pointer-events-none">
@@ -251,10 +285,26 @@
         const modalMessage = document.getElementById('modal-message');
         const modalCloseBtn = document.getElementById('modal-close-btn');
         const advancedDetails = document.getElementById('advanced-controls');
+        // Compare elements
+        const compareDetails = document.getElementById('compare-details');
+        const compareBefore = document.getElementById('compare-before');
+        const compareAfter = document.getElementById('compare-after');
+        const compareAfterWrap = document.getElementById('compare-after-wrap');
+        const compareSlider = document.getElementById('compare-slider');
+        // Mobile bar
+        const mobileResizeBtn = document.getElementById('mobile-resize');
+        const mobileDownloadBtn = document.getElementById('mobile-download');
+        // Copy
+        const copyBtn = document.getElementById('copy-btn');
+        // Overlays
+        const dropOverlay = document.getElementById('drop-overlay');
+        const toastRegion = document.getElementById('toast-region');
 
         let originalImage = null;
         let originalAspectRatio = 1;
         let originalFilename = 'resized-image.png';
+        let originalDataUrl = null;
+        let lastResizedDataUrl = null;
 
         const HISTORY_KEY = 'imageResizerHistory';
 
@@ -296,6 +346,14 @@
                 img.src = dataUrl;
             });
         }
+        function showToast(msg) {
+            const item = document.createElement('div');
+            item.className = 'bg-slate-900 text-white text-sm px-3 py-2 rounded shadow';
+            item.textContent = msg;
+            toastRegion.appendChild(item);
+            setTimeout(() => { item.remove(); }, 2500);
+        }
+
         function renderHistory() {
             const items = loadHistory();
             historyList.innerHTML = '';
@@ -394,7 +452,10 @@
             if (file) handleFile(file);
         });
         // Also allow dropping anywhere in the window
+        window.addEventListener('dragenter', () => { dropOverlay.classList.remove('hidden'); dropOverlay.classList.add('flex'); });
+        window.addEventListener('dragleave', (e) => { if (e.target === document || e.clientX<=0 || e.clientY<=0) { dropOverlay.classList.add('hidden'); dropOverlay.classList.remove('flex'); } });
         window.addEventListener('drop', (e) => {
+            dropOverlay.classList.add('hidden'); dropOverlay.classList.remove('flex');
             if (e.target.closest && e.target.closest('#file-upload-label')) return; // handled above
             const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
             if (file) handleFile(file);
@@ -466,6 +527,7 @@
                     originalImageContainer.innerHTML = '';
                     const imgElement = document.createElement('img');
                     imgElement.src = event.target.result;
+                    originalDataUrl = event.target.result;
                     imgElement.className = 'w-full h-full object-contain rounded-md animate-fade-in';
                     originalImageContainer.appendChild(imgElement);
 
@@ -480,6 +542,7 @@
                     downloadBtn.classList.add('hidden');
                     fileUploadLabel.querySelector('span.font-semibold').textContent = 'Change image';
                     scaleSlider.value = 100; scaleValue.textContent = '100%';
+                    showToast('Image loaded');
                 };
                 originalImage.onerror = () => {
                     showModal('This image format is not supported by your browser. Please try a PNG or JPEG.');
@@ -553,6 +616,35 @@
             formatSelect.value = 'PNG';
             qualityControl.classList.add('hidden');
             fitModeSelect.value = 'exact';
+        });
+
+        mobileResizeBtn.addEventListener('click', () => resizeBtn.click());
+        mobileDownloadBtn.addEventListener('click', () => { if (!downloadBtn.classList.contains('hidden')) downloadBtn.click(); });
+
+        copyBtn.addEventListener('click', async () => {
+            try {
+                if (!lastResizedDataUrl) return;
+                if (navigator.clipboard && window.ClipboardItem && window.isSecureContext) {
+                    const resp = await fetch(lastResizedDataUrl);
+                    const blob = await resp.blob();
+                    await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+                } else {
+                    await navigator.clipboard.writeText(lastResizedDataUrl);
+                }
+                showToast('Copied to clipboard');
+            } catch (_) {
+                showToast('Copy failed');
+            }
+        });
+
+        function renderCompare() {
+            if (!originalDataUrl || !lastResizedDataUrl) return;
+            compareBefore.src = originalDataUrl;
+            compareAfter.src = lastResizedDataUrl;
+            compareAfterWrap.style.width = compareSlider.value + '%';
+        }
+        compareSlider.addEventListener('input', () => {
+            compareAfterWrap.style.width = compareSlider.value + '%';
         });
 
         resizeBtn.addEventListener('click', async () => {
@@ -641,9 +733,12 @@
             downloadBtn.href = resizedImageDataUrl;
             downloadBtn.download = `resized-${newFilename}`;
             downloadBtn.classList.remove('hidden');
+            copyBtn.classList.remove('hidden');
+            mobileDownloadBtn.disabled = false;
             triggerAnimation(downloadBtn, 'animate-slide-up');
 
             // History entry (store small preview + settings, optionally dataUrl if small)
+            lastResizedDataUrl = resizedImageDataUrl;
             const thumb = await createThumbnail(resizedImageDataUrl, 160);
             const entry = {
                 time: Date.now(),
@@ -662,6 +757,9 @@
             while (list.length > 20) list.pop();
             saveHistory(list);
             renderHistory();
+            renderCompare();
+            if (compareDetails && !compareDetails.hasAttribute('open')) { compareDetails.setAttribute('open',''); }
+            showToast('Resized image ready');
         });
 
         exportHistoryBtn.addEventListener('click', () => {
