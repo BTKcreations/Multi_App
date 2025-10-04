@@ -389,6 +389,74 @@ function showAboutModal() {
   }
 }
 
+  // Service Worker update toast UI
+  function showUpdateToast(onUpdate) {
+    if (document.getElementById('update-toast')) return; // avoid duplicates
+    const container = document.createElement('div');
+    container.id = 'update-toast';
+    container.className = 'fixed bottom-4 right-4 z-50 bg-gray-900 text-white rounded-lg shadow-lg p-4 flex items-center space-x-3';
+
+    const text = document.createElement('span');
+    text.textContent = 'Update available';
+    const btn = document.createElement('button');
+    btn.className = 'px-3 py-1 bg-blue-500 hover:bg-blue-600 rounded text-sm';
+    btn.textContent = 'Reload';
+    btn.onclick = () => {
+      try { onUpdate && onUpdate(); } catch (_) {}
+    };
+
+    container.appendChild(text);
+    container.appendChild(btn);
+    document.body.appendChild(container);
+  }
+
+  // Register the service worker (only on secure contexts such as https or localhost)
+  if ('serviceWorker' in navigator && window.isSecureContext) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./service-worker.js')
+        .then((registration) => {
+          function trackInstalling(worker) {
+            worker.addEventListener('statechange', () => {
+              if (worker.state === 'installed') {
+                // If there's an existing controller, a new version is available
+                if (navigator.serviceWorker.controller) {
+                  showUpdateToast(() => {
+                    try { worker.postMessage({ type: 'SKIP_WAITING' }); } catch (_) {}
+                  });
+                }
+              }
+            });
+          }
+
+          if (registration.installing) trackInstalling(registration.installing);
+          registration.addEventListener('updatefound', () => {
+            if (registration.installing) trackInstalling(registration.installing);
+          });
+        })
+        .catch(() => {
+          // Ignore registration failures silently
+        });
+    });
+
+    // Listen for SW messages about updates for specific resources
+    navigator.serviceWorker.addEventListener('message', (event) => {
+      if (event.data && event.data.type === 'UPDATE_AVAILABLE') {
+        showUpdateToast(() => {
+          try {
+            if (navigator.serviceWorker.controller) {
+              navigator.serviceWorker.controller.postMessage({ type: 'SKIP_WAITING' });
+            }
+          } catch (_) {}
+        });
+      }
+    });
+
+    // When the controller changes (new SW activates), reload to get fresh assets
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      window.location.reload();
+    });
+  }
+
   // --- 6. INITIALIZATION CALLS ---
   renderSidebar();
   showDashboard();
