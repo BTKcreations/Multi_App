@@ -98,20 +98,20 @@
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 transition-colors duration-300">
 
     <div class="flex h-screen overflow-hidden">
-        <aside id="sidebar" class="fixed inset-y-0 left-0 z-30 w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transform -translate-x-full md:translate-x-0 flex flex-col">
+        <aside id="sidebar" class="fixed inset-y-0 left-0 z-30 w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transform -translate-x-full md:translate-x-0 flex flex-col" role="navigation" aria-label="Sidebar navigation">
             <div class="flex items-center justify-center p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0 h-16">
                 <img src="https://placehold.co/48x48/03a9f4/ffffff?text=AD" alt="Logo" class="rounded-lg h-10 w-10 flex-shrink-0">
                 <h2 class="ml-3 text-xl font-semibold text-gray-700 dark:text-gray-200 sidebar-text whitespace-nowrap overflow-hidden transition-opacity duration-200">
                     AppDash</h2>
             </div>
             <div class="p-4 flex-shrink-0">
-                <input id="app-search-input" type="text" placeholder="Search apps..." class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                <input id="app-search-input" type="text" placeholder="Search apps..." autocomplete="off" class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" aria-label="Search apps">
             </div>
 
-            <nav id="canvas-nav" class="flex-grow overflow-y-auto space-y-1">
+            <nav id="canvas-nav" class="flex-grow overflow-y-auto space-y-1" aria-label="App list">
                 </nav>
             <div class="p-4 border-t border-gray-200 dark:border-gray-700 hidden md:block flex-shrink-0">
-                <button id="sidebar-toggle-button" class="w-full flex items-center justify-center p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <button id="sidebar-toggle-button" class="w-full flex items-center justify-center p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700" aria-label="Collapse sidebar" aria-expanded="true">
                     <svg class="w-6 h-6 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7">
                         </path>
@@ -141,6 +141,11 @@
                     <div class="relative">
                     </div>
 
+                    <!-- Install button (shown when PWA installable) -->
+                    <button id="install-button" class="hidden px-3 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700" aria-label="Install app">
+                      Install
+                    </button>
+
                     <div id="user-area" class="relative">
                         <div id="g_id_signin"></div>
 
@@ -153,10 +158,10 @@
 </button>
 
                         <div id="user-menu" class="hidden">
-                            <button id="user-menu-button" class="flex items-center space-x-2">
+                            <button id="user-menu-button" class="flex items-center space-x-2" aria-haspopup="true" aria-expanded="false">
                                 <img id="user-avatar" class="w-8 h-8 rounded-full" src="" alt="User Avatar">
                             </button>
-                            <div id="user-dropdown" class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-700 rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5 hidden">
+                            <div id="user-dropdown" class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-700 rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5 hidden" role="menu" aria-label="User menu">
                                 <div class="px-4 py-2 border-b border-gray-200 dark:border-gray-600">
                                     <p class="text-sm text-gray-700 dark:text-gray-200" id="user-name"></p>
                                     <p class="text-xs text-gray-500 dark:text-gray-400 truncate" id="user-email"></p>
@@ -175,6 +180,9 @@
 
             </header>
 
+            <!-- Offline banner (toggled by JS) -->
+            <div id="offline-banner" class="hidden bg-yellow-500 text-black text-sm px-4 py-2 text-center">You are offline. Some content may be unavailable.</div>
+
             <div class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
                 <section id="dashboard-view">
                     <div class="text-center p-8 bg-white dark:bg-gray-800 rounded-xl shadow-md">
@@ -186,6 +194,7 @@
 
                 <section id="app-viewer-view" class="hidden h-full">
                     <button onclick="toggleFullScreen();" id="close-fullscreen-button" >Fullscreen</button>
+                    <div id="app-error" class="hidden mb-3 p-3 bg-red-100 text-red-800 rounded">Unable to load app. <a id="app-open-new" class="underline" target="_blank" rel="noopener">Open in new tab</a> · <button id="app-retry" class="underline">Retry</button></div>
                     <iframe id="app-iframe" name="app-frame" class="w-full h-full border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-900"></iframe>
                 </section>
             </div>

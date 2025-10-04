@@ -1,7 +1,8 @@
 'use strict';
 
 // Cache version. Bump this to invalidate old caches when deploying updates.
-const CACHE_NAME = 'multiapp-cache-v1';
+const CACHE_NAME = 'multiapp-cache-v2';
+const OFFLINE_URL = './offline.html';
 
 // Core assets to pre-cache for offline and quick loads.
 const CORE_ASSETS = [
@@ -10,8 +11,10 @@ const CORE_ASSETS = [
   './index.js',
   './about.html',
   './manifest.json',
+  './apps.json',
   './icon-192.svg',
-  './icon-512.svg'
+  './icon-512.svg',
+  OFFLINE_URL
 ];
 
 self.addEventListener('install', (event) => {
@@ -75,7 +78,26 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(req.url);
 
-  // 1) Cache-first strategy for app pages under /Apps/
+  // 1) Handle navigations (HTML) with network-first and offline fallback
+  const isNavigation = req.mode === 'navigate' || (req.headers.get('accept') || '').includes('text/html');
+  if (isNavigation) {
+    event.respondWith(
+      fetch(req)
+        .then(async (networkResp) => {
+          const clone = networkResp.clone();
+          const cache = await caches.open(CACHE_NAME);
+          cache.put(req, clone);
+          return networkResp;
+        })
+        .catch(async () => {
+          const cached = await caches.match(req);
+          return cached || caches.match(OFFLINE_URL);
+        })
+    );
+    return;
+  }
+
+  // 2) Cache-first strategy for app pages under /Apps/
   if (url.pathname.includes('/Apps/')) {
     event.respondWith(
       caches.match(req).then((cachedResponse) => {
@@ -87,13 +109,13 @@ self.addEventListener('fetch', (event) => {
               return networkResponse;
             });
           })
-          .catch(() => cachedResponse);
+          .catch(async () => (await caches.match(req)) || caches.match(OFFLINE_URL));
       })
     );
     return;
   }
 
-  // 2) Stale-while-revalidate for same-origin core assets (HTML/JS/SVG/etc.)
+  // 3) Same-origin static assets: stale-while-revalidate
   if (url.origin === location.origin) {
     event.respondWith(
       caches.match(req).then((cached) => {
@@ -101,7 +123,6 @@ self.addEventListener('fetch', (event) => {
           .then((networkResp) => {
             caches.open(CACHE_NAME).then((cache) => cache.put(req, networkResp.clone()));
             if (cached && !responsesAreSame(cached, networkResp)) {
-              // Notify clients that a newer version of this resource is available
               notifyClientsUpdate(req.url);
             }
             return networkResp.clone();
@@ -113,10 +134,15 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 3) For cross-origin requests (e.g., CDNs), just try network, fall back to cache if available
+  // 4) Cross-origin (CDNs): try network, fall back to cache
   event.respondWith(
     fetch(req)
-      .then((networkResp) => networkResp)
+      .then((networkResp) => {
+        // Optionally cache successful CDN responses
+        const respClone = networkResp.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(req, respClone));
+        return networkResp;
+      })
       .catch(() => caches.match(req))
   );
 });

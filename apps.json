@@ -1,0 +1,146 @@
+[
+  {
+    "id": "fake-news-detection",
+    "name": "Fake News Detection",
+    "file": "Apps/Fake News Detection System.html",
+    "icon": "🔍",
+    "category": "Content Tools",
+    "keywords": "verify truth article analysis",
+    "description": "Analyze articles for potential misinformation."
+  },
+  {
+    "id": "pdf-extractor",
+    "name": "PDF Extractor",
+    "file": "Apps/PDF Extraction.html",
+    "icon": "📄",
+    "category": "Productivity",
+    "keywords": "document read text data",
+    "description": "Extract text and data from PDF files."
+  },
+  {
+    "id": "math-problem-solver",
+    "name": "Math Problem Solver",
+    "file": "Apps/Math_Problem_Solver.html",
+    "icon": "🧮",
+    "category": "Utilities",
+    "keywords": "calculate algebra calculus equation",
+    "description": "Solve algebra and calculus problems."
+  },
+  {
+    "id": "equation-grapher",
+    "name": "Equation Grapher",
+    "file": "Apps/Advanced_Equation_Grapher.html",
+    "icon": "📈",
+    "category": "Utilities",
+    "keywords": "plot chart function math",
+    "description": "Plot functions and visualize equations."
+  },
+  {
+    "id": "advanced-meeting-notes",
+    "name": "Advanced Meeting Notes",
+    "file": "Apps/Advanced_Meeting_Notes_Formater.html",
+    "icon": "📝",
+    "category": "Productivity",
+    "keywords": "minutes summary format document",
+    "description": "Format and summarize meeting notes."
+  },
+  {
+    "id": "language-translator",
+    "name": "Language Translator",
+    "file": "Apps/Language_Translator.html",
+    "icon": "🌐",
+    "category": "Content Tools",
+    "keywords": "translate dictionary language",
+    "description": "Translate text across languages."
+  },
+  {
+    "id": "image-resizer",
+    "name": "Image Resizer",
+    "file": "Apps/Image_Resizer.html",
+    "icon": "📏",
+    "category": "Utilities",
+    "keywords": "resize crop dimensions photo",
+    "description": "Resize and crop images."
+  },
+  {
+    "id": "clash-of-castles",
+    "name": "Clash of Castles",
+    "file": "Apps/Clash_of_Castles.html",
+    "icon": "🏰",
+    "category": "Games",
+    "keywords": "clash of castles strategy game",
+    "description": "Strategy castle game."
+  },
+  {
+    "id": "tap-dash",
+    "name": "Tap Dash",
+    "file": "Apps/Tap_Dash.html",
+    "icon": "🏰",
+    "category": "Games",
+    "keywords": "Jump from Obstacles Tap Dash Game",
+    "description": "Arcade tap game."
+  },
+  {
+    "id": "circle-bounce-ball",
+    "name": "Circle Bounce Ball",
+    "file": "Apps/Circle_Bounce_Ball.html",
+    "icon": "🏰",
+    "category": "Games",
+    "keywords": "Ball Bounces in the circle get the score in virtual money",
+    "description": "Bounce the ball around a circle."
+  },
+  {
+    "id": "ai-markdown-formatter",
+    "name": "AI Markdown Formatter",
+    "file": "Apps/AI_Markdown_Formatter.html",
+    "icon": "📝",
+    "category": "Productivity",
+    "keywords": "generate summarize format markdown",
+    "description": "Format and generate markdown with AI."
+  },
+  {
+    "id": "dots-and-boxes",
+    "name": "Dots & Boxes",
+    "file": "Apps/Dots_and_Boxes.html",
+    "icon": "🟦",
+    "category": "Games",
+    "keywords": "dots boxes grid strategy board game",
+    "description": "Classic dots and boxes board game."
+  },
+  {
+    "id": "ai-ppt-maker",
+    "name": "AI PPT Maker",
+    "file": "Apps/AI_PPT_Maker.html",
+    "icon": "📊",
+    "category": "Productivity",
+    "keywords": "presentation slides generate ai",
+    "description": "Generate slide decks with AI."
+  },
+  {
+    "id": "ai-data-analysis",
+    "name": "AI Data Analysis",
+    "file": "Apps/AI_Data_Analysis.html",
+    "icon": "📈",
+    "category": "Productivity",
+    "keywords": "data analysis charts graphs ai",
+    "description": "Analyze datasets with AI assistance."
+  },
+  {
+    "id": "mermaid-diagram-editor",
+    "name": "Mermaid Diagram Editor",
+    "file": "Apps/Mermaid_Diagram_Editor.html",
+    "icon": "🧩",
+    "category": "Productivity",
+    "keywords": "mermaid diagram flowchart editor",
+    "description": "Create Mermaid diagrams."
+  },
+  {
+    "id": "ratio-calculator",
+    "name": "Ratio Calculator",
+    "file": "Apps/Ratio_Calc.html",
+    "icon": "🧮",
+    "category": "Calc",
+    "keywords": "Ratio Calculator",
+    "description": "Compute ratios easily."
+  }
+]

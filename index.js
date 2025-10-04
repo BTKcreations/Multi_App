@@ -15,129 +15,30 @@ window.onload = function () {
 
 // This runs after the main HTML document is ready.
 document.addEventListener("DOMContentLoaded", () => {
-  // --- 1. APP DATA ---
-  const applicationFiles = [
-    {
-      name: "Fake News Detection",
-      file: "Apps/Fake News Detection System.html",
-      icon: "🔍",
-      category: "Content Tools",
-      keywords: "verify truth article analysis",
-    },
-    {
-      name: "PDF Extractor",
-      file: "Apps/PDF Extraction.html",
-      icon: "📄",
-      category: "Productivity",
-      keywords: "document read text data",
-    },
-    {
-      name: "Math Problem Solver",
-      file: "Apps/Math_Problem_Solver.html",
-      icon: "🧮",
-      category: "Utilities",
-      keywords: "calculate algebra calculus equation",
-    },
-    {
-      name: "Equation Grapher",
-      file: "Apps/Advanced_Equation_Grapher.html",
-      icon: "📈",
-      category: "Utilities",
-      keywords: "plot chart function math",
-    },
-    {
-      name: "Advanced Meeting Notes",
-      file: "Apps/Advanced_Meeting_Notes_Formater.html",
-      icon: "📝",
-      category: "Productivity",
-      keywords: "minutes summary format document",
-    },
-    {
-      name: "Language Translator",
-      file: "Apps/Language_Translator.html",
-      icon: "🌐",
-      category: "Content Tools",
-      keywords: "translate dictionary language",
-    },
-    {
-      name: "Image Resizer",
-      file: "Apps/Image_Resizer.html",
-      icon: "📏",
-      category: "Utilities",
-      keywords: "resize crop dimensions photo",
-    },
-    {
-      name: "Clash of Castles",
-      file: "Apps/Clash_of_Castles.html",
-      icon: "🏰",
-      category: "Games",
-      keywords: "clash of castles strategy game",
-    },
-    {
-      name: "Tap Dash",
-      file: "Apps/Tap_Dash.html",
-      icon: "🏰",
-      category: "Games",
-      keywords: "Jump from Obstacles Tap Dash Game",
-    },
-    {
-      name: "Circle Bounce Ball",
-      file: "Apps/Circle_Bounce_Ball.html",
-      icon: "🏰",
-      category: "Games",
-      keywords: "Ball Bounces in the circle get the score in virtual money",
-    },
-    {
-      name: "AI Markdown Formatter",
-      file: "Apps/AI_Markdown_Formatter.html",
-      icon: "📝",
-      category: "Productivity",
-      keywords: "generate summarize format markdown",
-    },
-    {
-      name: "Dots & Boxes",
-      file: "Apps/Dots_and_Boxes.html",
-      icon: "🟦",
-      category: "Games",
-      keywords: "dots boxes grid strategy board game",
-    },
-    // AI_PPT_Maker
-    {
-      name: "AI PPT Maker",
-      file: "Apps/AI_PPT_Maker.html",
-      icon: "📊",
-      category: "Productivity",
-      keywords: "presentation slides generate ai",
-    },
-    {
-      name: "AI Data Analysis",
-      file: "Apps/AI_Data_Analysis.html",
-      icon: "📈",
-      category: "Productivity",
-      keywords: "data analysis charts graphs ai",
-    },
-    {
-      name: "Mermaid Diagram Editor",
-      file: "Apps/Mermaid_Diagram_Editor.html",
-      icon: "🧩",
-      category: "Productivity",
-      keywords: "mermaid diagram flowchart editor",
-    },
-{
-name: " Ratio Calculator",
-file: "Apps/Ratio_Calc.html",
-icon: "🧮",
-category: "Calc",
-keywords: "Ratio Calculator",
-}
-    // Add more apps here...
-  ];
+  // --- 1. APP DATA (loaded from apps.json) ---
+  let applicationFiles = [];
+
+  async function loadRegistry() {
+    try {
+      const res = await fetch('apps.json', { cache: 'no-cache' });
+      if (!res.ok) throw new Error('Failed to load apps.json');
+      applicationFiles = await res.json();
+    } catch (e) {
+      // Fallback to minimal set if offline and no cache yet
+      applicationFiles = [
+        { id: 'image-resizer', name: 'Image Resizer', file: 'Apps/Image_Resizer.html', icon: '📏', category: 'Utilities', keywords: 'resize crop' }
+      ];
+    }
+  }
 
   // --- 2. ELEMENT REFERENCES ---
   // Views and Core App
   const dashboardView = document.getElementById("dashboard-view");
   const appView = document.getElementById("app-viewer-view");
   const appIframe = document.getElementById("app-iframe");
+  const appErrorBox = document.getElementById('app-error');
+  const appOpenNew = document.getElementById('app-open-new');
+  const appRetry = document.getElementById('app-retry');
   const backButton = document.getElementById("back-button");
   const headerTitle = document.getElementById("canvas-title");
   const nav = document.getElementById("canvas-nav");
@@ -146,6 +47,9 @@ keywords: "Ratio Calculator",
   const menuButton = document.getElementById("menu-button");
   const sidebarToggleButton = document.getElementById("sidebar-toggle-button");
   const appSearchInput = document.getElementById("app-search-input");
+  // Header
+  const installButton = document.getElementById('install-button');
+  const offlineBanner = document.getElementById('offline-banner');
   // User Authentication & Menu
   const userArea = document.getElementById("user-area");
   const userMenu = document.getElementById("user-menu");
@@ -222,11 +126,23 @@ keywords: "Ratio Calculator",
 
   // Navigation: Loads an app into the iframe
   function loadApp(app) {
-    appIframe.src = app.file;
-    showAppViewer(app.name);
-    logUserActivity("Viewed App", {
-      appName: app.name,
-    });
+    // Pre-check availability to show friendlier errors
+    appErrorBox.classList.add('hidden');
+    fetch(app.file, { method: 'HEAD', cache: 'no-cache' })
+      .then((res) => {
+        if (!res.ok) throw new Error('Not OK');
+        appIframe.src = app.file;
+        showAppViewer(app.name);
+        const p = new URLSearchParams(location.search);
+        p.set('app', app.id || app.name);
+        history.pushState({ app: app.id || app.name }, '', `?${p.toString()}`);
+        logUserActivity("Viewed App", { appName: app.name });
+      })
+      .catch(() => {
+        appOpenNew.href = app.file;
+        appRetry.onclick = () => loadApp(app);
+        appErrorBox.classList.remove('hidden');
+      });
   }
 
   // Navigation: Shows the iframe view
@@ -239,7 +155,7 @@ keywords: "Ratio Calculator",
   }
 
   // Navigation: Shows the main dashboard
-  function showDashboard() {
+  function showDashboard(pushState = true) {
     headerTitle.textContent = "Dashboard";
     appView.classList.add("hidden");
     backButton.classList.add("hidden");
@@ -248,6 +164,11 @@ keywords: "Ratio Calculator",
     appIframe.src = "about:blank";
     if (currentUser) {
       logUserActivity("Viewed Dashboard");
+    }
+    if (pushState) {
+      const p = new URLSearchParams(location.search);
+      p.delete('app');
+      history.pushState({}, '', `?${p.toString()}`);
     }
   }
 
@@ -258,8 +179,7 @@ keywords: "Ratio Calculator",
 
     const filteredApps = applicationFiles.filter((app) => {
       if (!lowerCaseSearchTerm) return true;
-      const searchableText =
-        `${app.name} ${app.category} ${app.keywords}`.toLowerCase();
+      const searchableText = `${app.name} ${app.category} ${app.keywords}`.toLowerCase();
       return searchableText.includes(lowerCaseSearchTerm);
     });
 
@@ -288,7 +208,8 @@ keywords: "Ratio Calculator",
         const link = document.createElement("a");
         link.className =
           "nav-link flex items-center px-4 py-2 text-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white transition-colors overflow-hidden";
-        link.href = "#";
+        link.href = `?app=${encodeURIComponent(app.id || app.name)}`;
+        link.setAttribute('data-app-id', app.id || app.name);
         link.innerHTML = `
                             <span class="nav-link-icon mr-3 flex-shrink-0">${app.icon}</span>
                             <span class="sidebar-text whitespace-nowrap transition-opacity duration-200">${app.name}</span>`;
@@ -302,17 +223,35 @@ keywords: "Ratio Calculator",
         nav.appendChild(link);
       });
     });
+
+    // Enhance keyboard navigation on the rendered list
+    const links = Array.from(nav.querySelectorAll('.nav-link'));
+    appSearchInput.onkeydown = (e) => {
+      if (e.key === 'ArrowDown' && links.length) { e.preventDefault(); links[0].focus(); }
+    };
+    links.forEach((lnk, idx) => {
+      lnk.tabIndex = 0;
+      lnk.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowDown') { e.preventDefault(); (links[idx + 1] || links[0]).focus(); }
+        if (e.key === 'ArrowUp') { e.preventDefault(); (links[idx - 1] || links[links.length - 1]).focus(); }
+        if (e.key === 'Enter') { e.preventDefault(); lnk.click(); }
+      });
+    });
   }
 
   // --- 5. EVENT LISTENERS ---
 
-  // Search input listener
-  appSearchInput.addEventListener("input", () =>
-    renderSidebar(appSearchInput.value)
-  );
+  // Search input listener and shortcut
+  appSearchInput.addEventListener("input", () => renderSidebar(appSearchInput.value));
+  window.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+      e.preventDefault();
+      appSearchInput.focus();
+    }
+  });
 
   // Back button to return to dashboard
-  backButton.addEventListener("click", showDashboard);
+  backButton.addEventListener("click", () => showDashboard());
 
   // Sign out button
   signoutButton.addEventListener("click", (e) => {
@@ -328,9 +267,11 @@ keywords: "Ratio Calculator",
   });
 
   // Toggle user dropdown menu
-  userMenuButton.addEventListener("click", () =>
-    userDropdown.classList.toggle("hidden")
-  );
+  userMenuButton.addEventListener("click", () => {
+    const expanded = userMenuButton.getAttribute('aria-expanded') === 'true';
+    userMenuButton.setAttribute('aria-expanded', String(!expanded));
+    userDropdown.classList.toggle("hidden");
+  });
 
   // Toggle mobile sidebar
   menuButton.addEventListener("click", () =>
@@ -356,6 +297,17 @@ keywords: "Ratio Calculator",
       sidebar.classList.add("-translate-x-full");
     }
   });
+
+  // Online/offline banner
+  function updateOfflineBanner() {
+    if (navigator.onLine) {
+      offlineBanner.classList.add('hidden');
+    } else {
+      offlineBanner.classList.remove('hidden');
+    }
+  }
+  window.addEventListener('online', updateOfflineBanner);
+  window.addEventListener('offline', updateOfflineBanner);
 
   // About link - open as modal or new tab (here: modal inside main app)
 const aboutLink = document.getElementById("about-link");
@@ -457,10 +409,47 @@ function showAboutModal() {
     });
   }
 
+  // Deep link handling
+  function openAppFromURL() {
+    const params = new URLSearchParams(location.search);
+    const id = params.get('app');
+    if (!id) return false;
+    const app = applicationFiles.find(a => (a.id || a.name) === id);
+    if (app) { loadApp(app); return true; }
+    return false;
+  }
+
+  window.addEventListener('popstate', () => {
+    const hadApp = openAppFromURL();
+    if (!hadApp) showDashboard(false);
+  });
+
+  // Install prompt
+  let deferredInstallPrompt = null;
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    installButton.classList.remove('hidden');
+  });
+  if (installButton) {
+    installButton.addEventListener('click', async () => {
+      try {
+        if (!deferredInstallPrompt) return;
+        const res = await deferredInstallPrompt.prompt();
+        deferredInstallPrompt = null;
+        installButton.classList.add('hidden');
+      } catch (_) {}
+    });
+  }
+
   // --- 6. INITIALIZATION CALLS ---
-  renderSidebar();
-  showDashboard();
-  checkSession();
+  (async () => {
+    await loadRegistry();
+    renderSidebar();
+    updateOfflineBanner();
+    if (!openAppFromURL()) showDashboard(false);
+    checkSession();
+  })();
 });
 
 function toggleFullScreen() {
