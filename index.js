@@ -1,16 +1,25 @@
 // --- Google Sign-In Initialization ---
 // This is called when the Google library finishes loading.
 window.onload = function () {
-  google.accounts.id.initialize({
-    client_id:
-      "952892249789-e2h3j0k5ffdgv2hdnuebsfv3m7ul9mr2.apps.googleusercontent.com", // Your Client ID
-    callback: handleCredentialResponse,
-  });
-  google.accounts.id.renderButton(document.getElementById("g_id_signin"), {
-    theme: "outline",
-    size: "large",
-  });
-  google.accounts.id.prompt();
+  try {
+    // Only initialize Google Sign-In in secure contexts (https, localhost)
+    if (!window.isSecureContext) return;
+    google.accounts.id.initialize({
+      client_id:
+        "952892249789-e2h3j0k5ffdgv2hdnuebsfv3m7ul9mr2.apps.googleusercontent.com", // Your Client ID
+      callback: handleCredentialResponse,
+    });
+    const signinEl = document.getElementById("g_id_signin");
+    if (signinEl) {
+      google.accounts.id.renderButton(signinEl, {
+        theme: "outline",
+        size: "large",
+      });
+      google.accounts.id.prompt();
+    }
+  } catch (_) {
+    // ignore failures (e.g., file:// origin not allowed)
+  }
 };
 
 // This runs after the main HTML document is ready.
@@ -24,9 +33,24 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!res.ok) throw new Error('Failed to load apps.json');
       applicationFiles = await res.json();
     } catch (e) {
-      // Fallback to minimal set if offline and no cache yet
+      // Fallback registry when running from file:// or offline
       applicationFiles = [
-        { id: 'image-resizer', name: 'Image Resizer', file: 'Apps/Image_Resizer.html', icon: '📏', category: 'Utilities', keywords: 'resize crop' }
+        { id: "fake-news-detection", name: "Fake News Detection", file: "Apps/Fake News Detection System.html", icon: "🔍", category: "Content Tools", keywords: "verify truth article analysis" },
+        { id: "pdf-extractor", name: "PDF Extractor", file: "Apps/PDF Extraction.html", icon: "📄", category: "Productivity", keywords: "document read text data" },
+        { id: "math-problem-solver", name: "Math Problem Solver", file: "Apps/Math_Problem_Solver.html", icon: "🧮", category: "Utilities", keywords: "calculate algebra calculus equation" },
+        { id: "equation-grapher", name: "Equation Grapher", file: "Apps/Advanced_Equation_Grapher.html", icon: "📈", category: "Utilities", keywords: "plot chart function math" },
+        { id: "advanced-meeting-notes", name: "Advanced Meeting Notes", file: "Apps/Advanced_Meeting_Notes_Formater.html", icon: "📝", category: "Productivity", keywords: "minutes summary format document" },
+        { id: "language-translator", name: "Language Translator", file: "Apps/Language_Translator.html", icon: "🌐", category: "Content Tools", keywords: "translate dictionary language" },
+        { id: "image-resizer", name: "Image Resizer", file: "Apps/Image_Resizer.html", icon: "📏", category: "Utilities", keywords: "resize crop dimensions photo" },
+        { id: "clash-of-castles", name: "Clash of Castles", file: "Apps/Clash_of_Castles.html", icon: "🏰", category: "Games", keywords: "clash of castles strategy game" },
+        { id: "tap-dash", name: "Tap Dash", file: "Apps/Tap_Dash.html", icon: "🏰", category: "Games", keywords: "Jump from Obstacles Tap Dash Game" },
+        { id: "circle-bounce-ball", name: "Circle Bounce Ball", file: "Apps/Circle_Bounce_Ball.html", icon: "🏰", category: "Games", keywords: "Ball Bounces in the circle get the score in virtual money" },
+        { id: "ai-markdown-formatter", name: "AI Markdown Formatter", file: "Apps/AI_Markdown_Formatter.html", icon: "📝", category: "Productivity", keywords: "generate summarize format markdown" },
+        { id: "dots-and-boxes", name: "Dots & Boxes", file: "Apps/Dots_and_Boxes.html", icon: "🟦", category: "Games", keywords: "dots boxes grid strategy board game" },
+        { id: "ai-ppt-maker", name: "AI PPT Maker", file: "Apps/AI_PPT_Maker.html", icon: "📊", category: "Productivity", keywords: "presentation slides generate ai" },
+        { id: "ai-data-analysis", name: "AI Data Analysis", file: "Apps/AI_Data_Analysis.html", icon: "📈", category: "Productivity", keywords: "data analysis charts graphs ai" },
+        { id: "mermaid-diagram-editor", name: "Mermaid Diagram Editor", file: "Apps/Mermaid_Diagram_Editor.html", icon: "🧩", category: "Productivity", keywords: "mermaid diagram flowchart editor" },
+        { id: "ratio-calculator", name: "Ratio Calculator", file: "Apps/Ratio_Calc.html", icon: "🧮", category: "Calc", keywords: "Ratio Calculator" }
       ];
     }
   }
@@ -523,6 +547,16 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  // Show banner if running from file:// (CORS and PWA features disabled)
+  function showFileOriginBanner() {
+    if (location.protocol !== 'file:') return;
+    const banner = document.createElement('div');
+    banner.className = 'bg-orange-500 text-white text-sm px-4 py-2 text-center';
+    banner.textContent = 'You are running from file:// — some features (Google Sign-In, PWA, apps.json) may not work. Use a local server (e.g., python -m http.server 8080).';
+    const container = document.querySelector('main') || document.body;
+    container.prepend(banner);
+  }
+
   // Command palette helpers
   function renderCommandPaletteResults(q) {
     cpResults.innerHTML = '';
@@ -749,6 +783,7 @@ function showAboutModal() {
     const cat = params.get('category');
     filterCategory = cat || null;
     renderAll();
+    showFileOriginBanner();
     updateOfflineBanner();
     if (!openAppFromURL()) showDashboard(false);
     checkSession();
