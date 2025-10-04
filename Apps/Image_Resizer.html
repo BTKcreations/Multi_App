@@ -72,9 +72,14 @@
                             <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                         </svg>
                         <span class="mt-2 block text-sm font-semibold text-slate-700">Click to upload an image</span>
-                        <span class="mt-1 block text-xs text-slate-500">PNG, JPG, GIF up to 10MB</span>
+                        <span class="mt-1 block text-xs text-slate-500">PNG, JPG, WEBP up to 10MB • You can also drag & drop or paste from clipboard</span>
+                        <button type="button" id="browse-btn" class="mt-3 px-3 py-1.5 text-sm rounded bg-indigo-600 text-white hover:bg-indigo-700">Browse…</button>
                     </label>
                     <input id="file-upload" name="file-upload" type="file" accept="image/*">
+                    <div class="mt-3 flex flex-col sm:flex-row gap-2">
+                        <input id="url-input" type="url" placeholder="Or paste image URL (must allow CORS)" class="flex-1 px-3 py-2 rounded border border-slate-300 focus:ring-indigo-500 focus:border-indigo-500 text-sm" />
+                        <button id="url-import-btn" class="px-3 py-2 text-sm rounded bg-slate-200 hover:bg-slate-300">Import from URL</button>
+                    </div>
                 </div>
 
                 <!-- Resize Controls -->
@@ -213,6 +218,9 @@
         // DOM element references
         const fileInput = document.getElementById('file-upload');
         const fileUploadLabel = document.getElementById('file-upload-label');
+        const browseBtn = document.getElementById('browse-btn');
+        const urlInput = document.getElementById('url-input');
+        const urlImportBtn = document.getElementById('url-import-btn');
         const controls = document.getElementById('controls');
         const widthInput = document.getElementById('width-input');
         const heightInput = document.getElementById('height-input');
@@ -368,19 +376,60 @@
         // --- Event Listeners ---
 
         // Drag and drop support
-        ;['dragenter','dragover'].forEach(ev => fileUploadLabel.addEventListener(ev, (e) => { e.preventDefault(); fileUploadLabel.classList.add('bg-slate-50','border-indigo-400'); }));
-        ;['dragleave','drop'].forEach(ev => fileUploadLabel.addEventListener(ev, (e) => { e.preventDefault(); fileUploadLabel.classList.remove('bg-slate-50','border-indigo-400'); }));
+        ;['dragenter','dragover'].forEach(ev => fileUploadLabel.addEventListener(ev, (e) => { e.preventDefault(); e.stopPropagation(); fileUploadLabel.classList.add('bg-slate-50','border-indigo-400'); }));
+        ;['dragleave','drop'].forEach(ev => fileUploadLabel.addEventListener(ev, (e) => { e.preventDefault(); e.stopPropagation(); fileUploadLabel.classList.remove('bg-slate-50','border-indigo-400'); }));
+        fileUploadLabel.addEventListener('click', (e) => {
+            // Ensure click reliably opens picker in all browsers
+            if (e.target.id !== 'browse-btn') fileInput.click();
+        });
+        browseBtn.addEventListener('click', () => fileInput.click());
         fileUploadLabel.addEventListener('drop', (e) => {
-            const file = e.dataTransfer.files?.[0];
+            const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
             if (file) handleFile(file);
         });
 
         fileInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
+            const file = e.target.files && e.target.files[0];
             if (file) handleFile(file);
         });
 
+        // Paste image from clipboard
+        document.addEventListener('paste', (e) => {
+            const items = e.clipboardData && e.clipboardData.items;
+            if (!items) return;
+            for (const it of items) {
+                if (it.type && it.type.startsWith('image/')) {
+                    const blob = it.getAsFile();
+                    if (blob) {
+                        const f = new File([blob], 'pasted-image.png', { type: blob.type });
+                        handleFile(f);
+                        break;
+                    }
+                }
+            }
+        });
+
+        // Import from URL
+        urlImportBtn.addEventListener('click', async () => {
+            const url = (urlInput.value || '').trim();
+            if (!url) { showModal('Enter a valid image URL.'); return; }
+            try {
+                const resp = await fetch(url, { mode: 'cors' });
+                if (!resp.ok) throw new Error('Network error');
+                const blob = await resp.blob();
+                if (!blob.type.startsWith('image/')) throw new Error('URL did not return an image');
+                const f = new File([blob], 'imported-image', { type: blob.type });
+                handleFile(f);
+            } catch (err) {
+                showModal('Failed to import image from URL. Ensure it allows cross-origin access.');
+            }
+        });
+
         function handleFile(file) {
+            if (file.size > 10 * 1024 * 1024) { // 10MB
+                showModal('File is too large (max 10MB).');
+                return;
+            }
             if (!file) return;
             if (!file.type.startsWith('image/')) {
                 showModal('Please select a valid image file (PNG, JPG, etc.).');
@@ -436,7 +485,7 @@
         });
 
         formatSelect.addEventListener('change', () => {
-            if (formatSelect.value === 'JPEG') {
+            if (formatSelect.value === 'JPEG' || formatSelect.value === 'WEBP') {
                 qualityControl.classList.remove('hidden');
                 triggerAnimation(qualityControl, 'animate-fade-in');
             } else {
@@ -486,6 +535,9 @@
         });
 
         resizeBtn.addEventListener('click', async () => {
+            // Busy indicator
+            const prev = resizedImageContainer.innerHTML;
+            resizedImageContainer.innerHTML = '<div class="flex items-center justify-center w-full h-full text-slate-500"><svg class="animate-spin h-6 w-6 mr-2" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>Processing…</div>';
             if (!originalImage) {
                 showModal('Please upload an image first.');
                 return;
@@ -541,9 +593,15 @@
             ctx.imageSmoothingQuality = 'high';
             ctx.drawImage(originalImage, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight);
 
-            const resizedImageDataUrl = (format === 'jpeg' || format === 'webp')
-                ? canvas.toDataURL(mimeType, quality)
-                : canvas.toDataURL(mimeType);
+            let resizedImageDataUrl = '';
+            try {
+                resizedImageDataUrl = (format === 'jpeg' || format === 'webp')
+                    ? canvas.toDataURL(mimeType, quality)
+                    : canvas.toDataURL(mimeType);
+            } catch (err) {
+                // Fallback if WEBP unsupported
+                resizedImageDataUrl = canvas.toDataURL('image/png');
+            }
 
             resizedImageContainer.innerHTML = '';
             const resizedImgElement = document.createElement('img');
