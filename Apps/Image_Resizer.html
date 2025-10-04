@@ -100,15 +100,48 @@
                         <select id="format-select" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                             <option>PNG</option>
                             <option>JPEG</option>
+                            <option>WEBP</option>
                         </select>
                     </div>
                     <div id="quality-control" class="hidden">
                         <label for="quality-slider" class="block text-sm font-medium text-slate-700">Quality (<span id="quality-value">0.92</span>)</label>
                         <input id="quality-slider" type="range" min="0.1" max="1" step="0.01" value="0.92" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
                     </div>
-                    <button id="resize-btn" class="w-full bg-indigo-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 transform hover:scale-105">
-                        Resize Image
-                    </button>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label for="scale-slider" class="block text-sm font-medium text-slate-700">Scale (%) <span id="scale-value" class="text-xs text-slate-500">100%</span></label>
+                            <input id="scale-slider" type="range" min="10" max="300" step="1" value="100" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700">Presets</label>
+                            <div id="preset-buttons" class="mt-1 flex flex-wrap gap-2">
+                                <button type="button" data-size="256" class="px-2 py-1 text-xs rounded bg-slate-200 hover:bg-slate-300">256</button>
+                                <button type="button" data-size="512" class="px-2 py-1 text-xs rounded bg-slate-200 hover:bg-slate-300">512</button>
+                                <button type="button" data-size="1024" class="px-2 py-1 text-xs rounded bg-slate-200 hover:bg-slate-300">1024</button>
+                                <button type="button" data-size="2048" class="px-2 py-1 text-xs rounded bg-slate-200 hover:bg-slate-300">2048</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label for="bg-color" class="block text-sm font-medium text-slate-700">Background (for JPEG/WEBP)</label>
+                            <input id="bg-color" type="color" value="#ffffff" class="mt-1 h-10 w-full rounded border border-slate-300">
+                        </div>
+                        <div>
+                            <label for="fit-mode" class="block text-sm font-medium text-slate-700">Resize Mode</label>
+                            <select id="fit-mode" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                <option value="exact">Exact</option>
+                                <option value="fit">Fit (contain)</option>
+                                <option value="fill">Fill (cover)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button id="reset-btn" type="button" class="w-1/3 bg-slate-200 text-slate-800 font-semibold py-2 px-4 rounded-md hover:bg-slate-300 transition">Reset</button>
+                        <button id="resize-btn" class="flex-1 bg-indigo-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 transform hover:scale-105">
+                            Resize Image
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -141,6 +174,19 @@
         </div>
     </div>
 
+    <!-- History Section -->
+    <div class="w-full max-w-4xl mt-6 mx-auto bg-white rounded-xl shadow p-4">
+        <div class="flex items-center justify-between">
+            <h3 class="text-lg font-semibold">History</h3>
+            <div class="flex gap-2">
+                <button id="export-history" class="px-3 py-1 text-sm rounded bg-slate-200 hover:bg-slate-300">Export</button>
+                <button id="clear-history" class="px-3 py-1 text-sm rounded bg-red-100 text-red-700 hover:bg-red-200">Clear</button>
+            </div>
+        </div>
+        <p class="text-sm text-slate-500 mb-3">Last 20 items. Stores a small preview and settings (not the full image) to keep storage light.</p>
+        <div id="history-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    </div>
+
     <!-- Custom Modal -->
     <div id="modal" class="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 opacity-0 pointer-events-none">
         <div id="modal-content" class="modal-content bg-white rounded-lg shadow-xl p-6 w-full max-w-sm text-center opacity-0 transform scale-95">
@@ -166,6 +212,12 @@
         const qualityControl = document.getElementById('quality-control');
         const qualitySlider = document.getElementById('quality-slider');
         const qualityValue = document.getElementById('quality-value');
+        const scaleSlider = document.getElementById('scale-slider');
+        const scaleValue = document.getElementById('scale-value');
+        const presetButtons = document.getElementById('preset-buttons');
+        const bgColorInput = document.getElementById('bg-color');
+        const fitModeSelect = document.getElementById('fit-mode');
+        const resetBtn = document.getElementById('reset-btn');
         const resizeBtn = document.getElementById('resize-btn');
         const downloadBtn = document.getElementById('download-btn');
         const originalImageContainer = document.getElementById('original-image-container');
@@ -175,6 +227,9 @@
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         const modal = document.getElementById('modal');
+        const historyList = document.getElementById('history-list');
+        const exportHistoryBtn = document.getElementById('export-history');
+        const clearHistoryBtn = document.getElementById('clear-history');
         const modalContent = document.getElementById('modal-content');
         const modalMessage = document.getElementById('modal-message');
         const modalCloseBtn = document.getElementById('modal-close-btn');
@@ -182,6 +237,8 @@
         let originalImage = null;
         let originalAspectRatio = 1;
         let originalFilename = 'resized-image.png';
+
+        const HISTORY_KEY = 'imageResizerHistory';
 
         // --- Helper Functions ---
 
@@ -198,6 +255,72 @@
             const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
             const i = Math.floor(Math.log(bytes) / Math.log(k));
             return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+        }
+
+        // History functions
+        function loadHistory() {
+            try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); } catch { return []; }
+        }
+        function saveHistory(list) { localStorage.setItem(HISTORY_KEY, JSON.stringify(list)); }
+        async function createThumbnail(dataUrl, maxSize = 200) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => {
+                    const r = img.width / img.height;
+                    let w = maxSize, h = Math.round(maxSize / r);
+                    if (img.height > img.width) { h = maxSize; w = Math.round(maxSize * r); }
+                    const c = document.createElement('canvas');
+                    c.width = w; c.height = h;
+                    const cx = c.getContext('2d');
+                    cx.drawImage(img, 0, 0, w, h);
+                    resolve(c.toDataURL('image/jpeg', 0.6));
+                };
+                img.src = dataUrl;
+            });
+        }
+        function renderHistory() {
+            const items = loadHistory();
+            historyList.innerHTML = '';
+            if (!items.length) {
+                const empty = document.createElement('div');
+                empty.className = 'text-sm text-slate-500';
+                empty.textContent = 'No history yet. Resize an image to see it here.';
+                historyList.appendChild(empty);
+                return;
+            }
+            items.forEach((it, idx) => {
+                const card = document.createElement('div');
+                card.className = 'border rounded-lg p-3 flex items-start gap-3';
+                card.innerHTML = `
+                    <img src="${it.thumb}" alt="thumb" class="w-16 h-16 object-cover rounded border"/>
+                    <div class="flex-1">
+                        <div class="text-sm font-medium">${it.name} <span class="text-xs text-slate-500">${new Date(it.time).toLocaleString()}</span></div>
+                        <div class="text-xs text-slate-500">${it.width}x${it.height} · ${it.format.toUpperCase()}${it.sizeBytes? ' · ' + (it.sizeHuman||'') : ''}</div>
+                        <div class="mt-1 flex gap-2">
+                            <button class="use-settings px-2 py-0.5 text-xs rounded bg-slate-200 hover:bg-slate-300">Use settings</button>
+                            ${it.dataUrl ? '<a class="download-thumb px-2 py-0.5 text-xs rounded bg-green-600 text-white hover:bg-green-700" download="'+it.name+'" href="'+it.dataUrl+'">Download</a>' : ''}
+                            <button class="remove-item px-2 py-0.5 text-xs rounded bg-red-100 text-red-700 hover:bg-red-200">Remove</button>
+                        </div>
+                    </div>
+                `;
+                card.querySelector('.use-settings').onclick = () => {
+                    widthInput.value = it.width;
+                    heightInput.value = it.height;
+                    formatSelect.value = it.format.toUpperCase();
+                    if (it.quality && formatSelect.value === 'JPEG') {
+                        qualityControl.classList.remove('hidden');
+                        qualitySlider.value = it.quality;
+                        qualityValue.textContent = parseFloat(it.quality).toFixed(2);
+                    }
+                    triggerAnimation(controls, 'animate-slide-up');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                };
+                card.querySelector('.remove-item').onclick = () => {
+                    const arr = loadHistory();
+                    arr.splice(idx, 1); saveHistory(arr); renderHistory();
+                };
+                historyList.appendChild(card);
+            });
         }
 
         // --- Modal Functions ---
@@ -222,10 +345,21 @@
 
         // --- Event Listeners ---
 
+        // Drag and drop support
+        ;['dragenter','dragover'].forEach(ev => fileUploadLabel.addEventListener(ev, (e) => { e.preventDefault(); fileUploadLabel.classList.add('bg-slate-50','border-indigo-400'); }));
+        ;['dragleave','drop'].forEach(ev => fileUploadLabel.addEventListener(ev, (e) => { e.preventDefault(); fileUploadLabel.classList.remove('bg-slate-50','border-indigo-400'); }));
+        fileUploadLabel.addEventListener('drop', (e) => {
+            const file = e.dataTransfer.files?.[0];
+            if (file) handleFile(file);
+        });
+
         fileInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
+            if (file) handleFile(file);
+        });
+
+        function handleFile(file) {
             if (!file) return;
-            
             if (!file.type.startsWith('image/')) {
                 showModal('Please select a valid image file (PNG, JPG, etc.).');
                 return;
@@ -257,6 +391,7 @@
                     resizedDetails.innerHTML = '';
                     downloadBtn.classList.add('hidden');
                     fileUploadLabel.querySelector('span.font-semibold').textContent = 'Change image';
+                    scaleSlider.value = 100; scaleValue.textContent = '100%';
                 };
                 originalImage.src = event.target.result;
             };
@@ -291,7 +426,44 @@
             qualityValue.textContent = parseFloat(qualitySlider.value).toFixed(2);
         });
 
-        resizeBtn.addEventListener('click', () => {
+        // Presets
+        presetButtons.addEventListener('click', (e) => {
+            const btn = e.target.closest('button[data-size]');
+            if (!btn || !originalImage) return;
+            const size = parseInt(btn.getAttribute('data-size'));
+            if (originalImage.width >= originalImage.height) {
+                widthInput.value = size;
+                heightInput.value = aspectRatioCheckbox.checked ? Math.round(size / originalAspectRatio) : heightInput.value;
+            } else {
+                heightInput.value = size;
+                widthInput.value = aspectRatioCheckbox.checked ? Math.round(size * originalAspectRatio) : widthInput.value;
+            }
+            const scale = Math.round((parseInt(widthInput.value) / originalImage.width) * 100);
+            scaleSlider.value = Math.max(10, Math.min(300, scale));
+            scaleValue.textContent = `${scaleSlider.value}%`;
+        });
+
+        // Scale slider
+        scaleSlider.addEventListener('input', () => {
+            if (!originalImage) return;
+            const pct = parseInt(scaleSlider.value);
+            scaleValue.textContent = `${pct}%`;
+            widthInput.value = Math.max(1, Math.round(originalImage.width * (pct / 100)));
+            heightInput.value = aspectRatioCheckbox.checked ? Math.max(1, Math.round(widthInput.value / originalAspectRatio)) : heightInput.value;
+        });
+
+        resetBtn.addEventListener('click', () => {
+            if (!originalImage) return;
+            widthInput.value = originalImage.width;
+            heightInput.value = originalImage.height;
+            scaleSlider.value = 100; scaleValue.textContent = '100%';
+            aspectRatioCheckbox.checked = true;
+            formatSelect.value = 'PNG';
+            qualityControl.classList.add('hidden');
+            fitModeSelect.value = 'exact';
+        });
+
+        resizeBtn.addEventListener('click', async () => {
             if (!originalImage) {
                 showModal('Please upload an image first.');
                 return;
@@ -305,15 +477,49 @@
                 return;
             }
 
+            // Compute drawing dimensions based on fit mode
             canvas.width = width;
             canvas.height = height;
-            ctx.drawImage(originalImage, 0, 0, width, height);
+            ctx.clearRect(0,0,width,height);
 
             const format = formatSelect.value.toLowerCase();
             const quality = parseFloat(qualitySlider.value);
             const mimeType = `image/${format}`;
             
-            const resizedImageDataUrl = (format === 'jpeg') 
+            // Fill background if exporting to lossy without alpha
+            if (format === 'jpeg' || format === 'webp') {
+                ctx.fillStyle = bgColorInput.value || '#ffffff';
+                ctx.fillRect(0,0,width,height);
+            }
+
+            const mode = fitModeSelect.value;
+            let sx = 0, sy = 0, sWidth = originalImage.width, sHeight = originalImage.height;
+            let dx = 0, dy = 0, dWidth = width, dHeight = height;
+            const srcRatio = originalImage.width / originalImage.height;
+            const dstRatio = width / height;
+
+            if (mode === 'fit') { // contain
+                if (srcRatio > dstRatio) {
+                    dHeight = Math.round(width / srcRatio);
+                    dy = Math.round((height - dHeight) / 2);
+                } else {
+                    dWidth = Math.round(height * srcRatio);
+                    dx = Math.round((width - dWidth) / 2);
+                }
+            } else if (mode === 'fill') { // cover
+                if (srcRatio > dstRatio) {
+                    sWidth = Math.round(originalImage.height * dstRatio);
+                    sx = Math.round((originalImage.width - sWidth) / 2);
+                } else {
+                    sHeight = Math.round(originalImage.width / dstRatio);
+                    sy = Math.round((originalImage.height - sHeight) / 2);
+                }
+            }
+
+            ctx.imageSmoothingQuality = 'high';
+            ctx.drawImage(originalImage, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight);
+
+            const resizedImageDataUrl = (format === 'jpeg' || format === 'webp')
                 ? canvas.toDataURL(mimeType, quality)
                 : canvas.toDataURL(mimeType);
 
@@ -328,15 +534,47 @@
             resizedDetails.innerHTML = `<p>${width} x ${height}px &nbsp;&bull;&nbsp; Est. ${formatBytes(imageSizeInBytes)}</p>`;
             triggerAnimation(resizedDetails, 'animate-fade-in');
 
-            const fileExtension = format === 'jpeg' ? 'jpg' : 'png';
+            const fileExtension = format === 'jpeg' ? 'jpg' : (format === 'webp' ? 'webp' : 'png');
             const newFilename = originalFilename.replace(/\.[^/.]+$/, "") + `.${fileExtension}`;
             
             downloadBtn.href = resizedImageDataUrl;
             downloadBtn.download = `resized-${newFilename}`;
             downloadBtn.classList.remove('hidden');
             triggerAnimation(downloadBtn, 'animate-slide-up');
+
+            // History entry (store small preview + settings, optionally dataUrl if small)
+            const thumb = await createThumbnail(resizedImageDataUrl, 160);
+            const entry = {
+                time: Date.now(),
+                name: `resized-${newFilename}`,
+                width, height,
+                format,
+                quality: (format === 'jpeg' || format === 'webp') ? quality : undefined,
+                sizeBytes: imageSizeInBytes,
+                sizeHuman: formatBytes(imageSizeInBytes),
+                thumb,
+            };
+            // Store dataUrl only if small to avoid exceeding localStorage limits
+            if (resizedImageDataUrl.length < 450000) entry.dataUrl = resizedImageDataUrl;
+            const list = loadHistory();
+            list.unshift(entry);
+            while (list.length > 20) list.pop();
+            saveHistory(list);
+            renderHistory();
         });
 
+        exportHistoryBtn.addEventListener('click', () => {
+            const data = JSON.stringify(loadHistory(), null, 2);
+            const blob = new Blob([data], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = 'image-resizer-history.json'; a.click();
+            URL.revokeObjectURL(url);
+        });
+        clearHistoryBtn.addEventListener('click', () => { saveHistory([]); renderHistory(); });
+
+        // Initial render
+        renderHistory();
     </script>
 </body>
 </html>
