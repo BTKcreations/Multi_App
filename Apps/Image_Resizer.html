@@ -376,10 +376,13 @@
         // --- Event Listeners ---
 
         // Drag and drop support
+        ;['dragenter','dragover'].forEach(ev => document.addEventListener(ev, (e) => { e.preventDefault(); }));
+        ;['drop'].forEach(ev => document.addEventListener(ev, (e) => { e.preventDefault(); }));
         ;['dragenter','dragover'].forEach(ev => fileUploadLabel.addEventListener(ev, (e) => { e.preventDefault(); e.stopPropagation(); fileUploadLabel.classList.add('bg-slate-50','border-indigo-400'); }));
         ;['dragleave','drop'].forEach(ev => fileUploadLabel.addEventListener(ev, (e) => { e.preventDefault(); e.stopPropagation(); fileUploadLabel.classList.remove('bg-slate-50','border-indigo-400'); }));
         fileUploadLabel.addEventListener('click', (e) => {
             // Ensure click reliably opens picker in all browsers
+            e.preventDefault();
             if (e.target.id !== 'browse-btn') {
                 try { fileInput.value = ''; } catch(_) {}
                 fileInput.click();
@@ -387,6 +390,12 @@
         });
         browseBtn.addEventListener('click', () => { try { fileInput.value = ''; } catch(_) {} fileInput.click(); });
         fileUploadLabel.addEventListener('drop', (e) => {
+            const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+            if (file) handleFile(file);
+        });
+        // Also allow dropping anywhere in the window
+        window.addEventListener('drop', (e) => {
+            if (e.target.closest && e.target.closest('#file-upload-label')) return; // handled above
             const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
             if (file) handleFile(file);
         });
@@ -444,6 +453,9 @@
             originalFilename = file.name;
             const reader = new FileReader();
 
+            reader.onloadstart = () => {
+                resizedImageContainer.innerHTML = '<div class="flex items-center justify-center w-full h-full text-slate-500"><svg class="animate-spin h-6 w-6 mr-2" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>Loading…</div>';
+            };
             reader.onload = (event) => {
                 originalImage = new Image();
                 originalImage.onload = () => {
