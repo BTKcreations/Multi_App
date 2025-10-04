@@ -142,5 +142,68 @@
     "category": "Calc",
     "keywords": "Ratio Calculator",
     "description": "Compute ratios easily."
+  },
+  {
+    "id": "ai-logo-generator",
+    "name": "AI Logo Generator",
+    "file": "Apps/AI_Logo_Generator.html",
+    "icon": "🎨",
+    "category": "Design",
+    "keywords": "logo design ai generator branding",
+    "description": "Create stunning logos with AI-powered design tools."
+  },
+  {
+    "id": "color-palette-generator",
+    "name": "Color Palette Generator",
+    "file": "Apps/Color_Palette_Generator.html",
+    "icon": "🎨",
+    "category": "Design",
+    "keywords": "color palette harmony schemes design",
+    "description": "Create harmonious color schemes for your projects."
+  },
+  {
+    "id": "qr-code-designer",
+    "name": "QR Code Designer",
+    "file": "Apps/QR_Code_Designer.html",
+    "icon": "📱",
+    "category": "Utilities",
+    "keywords": "qr code generator custom design wifi contact",
+    "description": "Create beautiful, customizable QR codes for any purpose."
+  },
+  {
+    "id": "personal-finance-tracker",
+    "name": "Personal Finance Tracker",
+    "file": "Apps/Personal_Finance_Tracker.html",
+    "icon": "💰",
+    "category": "Finance",
+    "keywords": "finance budget expense income tracker analytics",
+    "description": "Take control of your financial future with comprehensive tracking."
+  },
+  {
+    "id": "json-xml-formatter",
+    "name": "JSON/XML/YAML Formatter",
+    "file": "Apps/JSON_XML_Formatter.html",
+    "icon": "🔧",
+    "category": "Developer Tools",
+    "keywords": "json xml yaml formatter validator syntax highlighting",
+    "description": "Format, validate, and convert between data formats."
+  },
+  {
+    "id": "password-strength-checker",
+    "name": "Password Strength Checker",
+    "file": "Apps/Password_Strength_Checker.html",
+    "icon": "🛡️",
+    "category": "Security",
+    "keywords": "password security strength generator analyzer",
+    "description": "Analyze and improve your password security."
+  },
+  {
+    "id": "unit-converter",
+    "name": "Unit Converter",
+    "file": "Apps/Unit_Converter.html",
+    "icon": "⚖️",
+    "category": "Utilities",
+    "keywords": "unit conversion length weight temperature volume",
+    "description": "Convert between various units of measurement."
   }
 ]

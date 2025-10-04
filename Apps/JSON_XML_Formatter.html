@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON/XML/YAML Formatter & Validator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prismjs/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prismjs/1.29.0/components/prism-json.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prismjs/1.29.0/components/prism-xml-doc.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prismjs/1.29.0/components/prism-yaml.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prismjs/1.29.0/themes/prism-tomorrow.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .code-area { 
+            font-family: 'JetBrains Mono', monospace; 
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .format-btn {
+            transition: all 0.2s ease;
+        }
+        .format-btn.active {
+            background-color: #3b82f6;
+            color: white;
+            transform: scale(1.02);
+        }
+        .error-highlight {
+            background-color: rgba(239, 68, 68, 0.1);
+            border-left: 3px solid #ef4444;
+            padding: 8px 12px;
+            margin: 4px 0;
+            border-radius: 4px;
+        }
+        .success-highlight {
+            background-color: rgba(34, 197, 94, 0.1);
+            border-left: 3px solid #22c55e;
+            padding: 8px 12px;
+            margin: 4px 0;
+            border-radius: 4px;
+        }
+        pre[class*="language-"] {
+            margin: 0;
+            border-radius: 8px;
+            background: #2d3748 !important;
+        }
+        .token.property { color: #90cdf4; }
+        .token.string { color: #68d391; }
+        .token.number { color: #f6ad55; }
+        .token.boolean { color: #fc8181; }
+        .token.null { color: #cbd5e0; }
+        .stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .file-drop-area {
+            border: 2px dashed #cbd5e0;
+            transition: all 0.3s ease;
+        }
+        .file-drop-area.dragover {
+            border-color: #3b82f6;
+            background-color: rgba(59, 130, 246, 0.1);
+        }
+        .dark .file-drop-area {
+            border-color: #4b5563;
+        }
+        .dark .file-drop-area.dragover {
+            border-color: #60a5fa;
+            background-color: rgba(96, 165, 250, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
+    <div class="min-h-screen p-4">
+        <div class="max-w-7xl mx-auto">
+            <!-- Header -->
+            <header class="text-center mb-8">
+                <h1 class="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                    JSON/XML/YAML Formatter
+                </h1>
+                <p class="text-gray-600 dark:text-gray-400 mt-2">Format, validate, and convert between data formats</p>
+            </header>
+
+            <!-- Format Selection -->
+            <div class="flex justify-center mb-6">
+                <div class="inline-flex bg-white dark:bg-gray-800 rounded-lg p-1 shadow-lg">
+                    <button onclick="setFormat('json')" id="btn-json" class="format-btn active px-6 py-3 rounded-lg font-medium transition-all">
+                        JSON
+                    </button>
+                    <button onclick="setFormat('xml')" id="btn-xml" class="format-btn px-6 py-3 rounded-lg font-medium transition-all">
+                        XML
+                    </button>
+                    <button onclick="setFormat('yaml')" id="btn-yaml" class="format-btn px-6 py-3 rounded-lg font-medium transition-all">
+                        YAML
+                    </button>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="grid lg:grid-cols-2 gap-8">
+                <!-- Input Panel -->
+                <div class="space-y-6">
+                    <!-- File Upload -->
+                    <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
+                        <h3 class="text-xl font-semibold mb-4">Input</h3>
+                        
+                        <!-- File Drop Area -->
+                        <div id="fileDropArea" class="file-drop-area p-6 rounded-lg text-center mb-4">
+                            <svg class="w-12 h-12 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            <p class="text-gray-600 dark:text-gray-400 mb-2">Drop files here or click to upload</p>
+                            <input type="file" id="fileInput" class="hidden" accept=".json,.xml,.yaml,.yml,.txt">
+                            <button onclick="document.getElementById('fileInput').click()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                                Choose File
+                            </button>
+                        </div>
+
+                        <!-- Text Input -->
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Or paste your code:</label>
+                            <textarea 
+                                id="inputText" 
+                                placeholder="Paste your JSON, XML, or YAML here..."
+                                class="code-area w-full h-64 p-4 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 resize-none"
+                            ></textarea>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="grid grid-cols-2 gap-3 mt-4">
+                            <button onclick="formatCode()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                                Format & Validate
+                            </button>
+                            <button onclick="minifyCode()" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                                Minify
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
+                        <h3 class="text-xl font-semibold mb-4">Quick Actions</h3>
+                        <div class="grid grid-cols-2 gap-3">
+                            <button onclick="clearAll()" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
+                                Clear All
+                            </button>
+                            <button onclick="copyOutput()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                                Copy Output
+                            </button>
+                            <button onclick="downloadOutput()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                                Download
+                            </button>
+                            <button onclick="swapInputOutput()" class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors">
+                                Swap ⇄
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Conversion Tools -->
+                    <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
+                        <h3 class="text-xl font-semibold mb-4">Convert To</h3>
+                        <div class="grid grid-cols-1 gap-3">
+                            <button onclick="convertToFormat('json')" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
+                                Convert to JSON
+                            </button>
+                            <button onclick="convertToFormat('xml')" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
+                                Convert to XML
+                            </button>
+                            <button onclick="convertToFormat('yaml')" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
+                                Convert to YAML
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Statistics -->
+                    <div class="stats-card text-white p-6 rounded-xl shadow-lg">
+                        <h3 class="text-xl font-semibold mb-4">Statistics</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <p class="text-sm text-blue-100">Characters</p>
+                                <p class="text-2xl font-bold" id="charCount">0</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-blue-100">Lines</p>
+                                <p class="text-2xl font-bold" id="lineCount">0</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-blue-100">Size</p>
+                                <p class="text-2xl font-bold" id="sizeCount">0 B</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-blue-100">Valid</p>
+                                <p class="text-2xl font-bold" id="validStatus">-</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Output Panel -->
+                <div class="space-y-6">
+                    <!-- Validation Status -->
+                    <div id="validationStatus" class="hidden">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+
+                    <!-- Formatted Output -->
+                    <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-xl font-semibold">Formatted Output</h3>
+                            <select id="outputFormat" class="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-sm">
+                                <option value="formatted">Formatted</option>
+                                <option value="minified">Minified</option>
+                                <option value="raw">Raw</option>
+                            </select>
+                        </div>
+                        
+                        <div class="border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
+                            <pre id="outputCode" class="code-area h-96 p-4 bg-gray-50 dark:bg-gray-900 overflow-auto"><code>Formatted output will appear here...</code></pre>
+                        </div>
+                    </div>
+
+                    <!-- JSON Tree View (for JSON only) -->
+                    <div id="treeView" class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg hidden">
+                        <h3 class="text-xl font-semibold mb-4">Tree View</h3>
+                        <div id="treeContainer" class="border border-gray-300 dark:border-gray-600 rounded-lg p-4 bg-gray-50 dark:bg-gray-900 h-64 overflow-auto">
+                            <!-- Tree structure will be generated here -->
+                        </div>
+                    </div>
+
+                    <!-- JSON Path Explorer -->
+                    <div id="pathExplorer" class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg hidden">
+                        <h3 class="text-xl font-semibold mb-4">Path Explorer</h3>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-sm font-medium mb-2">JSON Path Query</label>
+                                <input 
+                                    id="jsonPathInput" 
+                                    type="text" 
+                                    placeholder="$.store.book[0].title"
+                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700"
+                                >
+                            </div>
+                            <button onclick="executeJsonPath()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                                Execute Query
+                            </button>
+                            <div id="pathResult" class="mt-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hidden">
+                                <!-- Query result will appear here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Error Details -->
+                    <div id="errorDetails" class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg hidden">
+                        <h3 class="text-xl font-semibold mb-4 text-red-600">Error Details</h3>
+                        <div id="errorContent" class="space-y-3">
+                            <!-- Error information will be displayed here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentFormat = 'json';
+        let currentData = null;
+        let formattedData = '';
+        let minifiedData = '';
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            setupEventListeners();
+            updateStats();
+        });
+
+        function setupEventListeners() {
+            // File input
+            document.getElementById('fileInput').addEventListener('change', handleFileUpload);
+            
+            // Text input
+            document.getElementById('inputText').addEventListener('input', updateStats);
+            
+            // Drag and drop
+            const dropArea = document.getElementById('fileDropArea');
+            
+            dropArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                dropArea.classList.add('dragover');
+            });
+            
+            dropArea.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                dropArea.classList.remove('dragover');
+            });
+            
+            dropArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                dropArea.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleFileUpload({ target: { files: files } });
+                }
+            });
+
+            // Output format change
+            document.getElementById('outputFormat').addEventListener('change', updateOutput);
+        }
+
+        function setFormat(format) {
+            currentFormat = format;
+            
+            // Update button states
+            document.querySelectorAll('.format-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.getElementById(`btn-${format}`).classList.add('active');
+            
+            // Show/hide format-specific features
+            const treeView = document.getElementById('treeView');
+            const pathExplorer = document.getElementById('pathExplorer');
+            
+            if (format === 'json') {
+                treeView.classList.remove('hidden');
+                pathExplorer.classList.remove('hidden');
+            } else {
+                treeView.classList.add('hidden');
+                pathExplorer.classList.add('hidden');
+            }
+            
+            // Re-validate if there's input
+            const inputText = document.getElementById('inputText').value.trim();
+            if (inputText) {
+                formatCode();
+            }
+        }
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('inputText').value = e.target.result;
+                
+                // Auto-detect format based on file extension
+                const extension = file.name.split('.').pop().toLowerCase();
+                if (['json'].includes(extension)) {
+                    setFormat('json');
+                } else if (['xml', 'xsd', 'xsl'].includes(extension)) {
+                    setFormat('xml');
+                } else if (['yaml', 'yml'].includes(extension)) {
+                    setFormat('yaml');
+                }
+                
+                updateStats();
+                formatCode();
+            };
+            reader.readAsText(file);
+        }
+
+        function formatCode() {
+            const input = document.getElementById('inputText').value.trim();
+            if (!input) {
+                showError('Please enter some content to format');
+                return;
+            }
+
+            hideError();
+            
+            try {
+                switch (currentFormat) {
+                    case 'json':
+                        formatJSON(input);
+                        break;
+                    case 'xml':
+                        formatXML(input);
+                        break;
+                    case 'yaml':
+                        formatYAML(input);
+                        break;
+                }
+                updateStats();
+            } catch (error) {
+                showError(error.message, error);
+            }
+        }
+
+        function formatJSON(input) {
+            try {
+                const parsed = JSON.parse(input);
+                currentData = parsed;
+                formattedData = JSON.stringify(parsed, null, 2);
+                minifiedData = JSON.stringify(parsed);
+                
+                updateOutput();
+                showSuccess('Valid JSON');
+                
+                if (currentFormat === 'json') {
+                    generateTreeView(parsed);
+                }
+            } catch (error) {
+                throw new Error(`JSON Parse Error: ${error.message}`);
+            }
+        }
+
+        function formatXML(input) {
+            try {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(input, 'text/xml');
+                
+                const errors = doc.getElementsByTagName('parsererror');
+                if (errors.length > 0) {
+                    throw new Error(`XML Parse Error: ${errors[0].textContent}`);
+                }
+                
+                currentData = input;
+                formattedData = formatXMLString(input);
+                minifiedData = input.replace(/>\s+</g, '><').replace(/\s+/g, ' ').trim();
+                
+                updateOutput();
+                showSuccess('Valid XML');
+            } catch (error) {
+                throw new Error(`XML Error: ${error.message}`);
+            }
+        }
+
+        function formatYAML(input) {
+            try {
+                // Basic YAML validation and formatting
+                // Note: This is a simplified implementation
+                const lines = input.split('\n');
+                let formatted = '';
+                let indent = 0;
+                
+                for (let line of lines) {
+                    const trimmed = line.trim();
+                    if (trimmed === '') {
+                        formatted += '\n';
+                        continue;
+                    }
+                    
+                    if (trimmed.startsWith('-')) {
+                        formatted += '  '.repeat(indent) + trimmed + '\n';
+                    } else if (trimmed.includes(':')) {
+                        formatted += '  '.repeat(indent) + trimmed + '\n';
+                    } else {
+                        formatted += '  '.repeat(indent) + trimmed + '\n';
+                    }
+                }
+                
+                currentData = input;
+                formattedData = formatted;
+                minifiedData = input.replace(/\n\s*\n/g, '\n').trim();
+                
+                updateOutput();
+                showSuccess('YAML formatted');
+            } catch (error) {
+                throw new Error(`YAML Error: ${error.message}`);
+            }
+        }
+
+        function formatXMLString(xml) {
+            const PADDING = ' '.repeat(2);
+            const reg = /(>)(<)(\/*)/g;
+            let formatted = '';
+            let pad = 0;
+
+            xml = xml.replace(reg, '$1\n$2$3');
+            xml.split('\n').forEach(line => {
+                let indent = 0;
+                if (line.match(/.+<\/\w[^>]*>$/)) {
+                    indent = 0;
+                } else if (line.match(/^<\/\w/) && pad > 0) {
+                    pad -= 1;
+                } else if (line.match(/^<\w[^>]*[^\/]>.*$/)) {
+                    indent = 1;
+                } else {
+                    indent = 0;
+                }
+
+                formatted += PADDING.repeat(pad) + line + '\n';
+                pad += indent;
+            });
+
+            return formatted.trim();
+        }
+
+        function minifyCode() {
+            const input = document.getElementById('inputText').value.trim();
+            if (!input) {
+                showError('Please enter some content to minify');
+                return;
+            }
+
+            try {
+                formatCode(); // This will set minifiedData
+                document.getElementById('outputFormat').value = 'minified';
+                updateOutput();
+            } catch (error) {
+                showError(error.message, error);
+            }
+        }
+
+        function updateOutput() {
+            const outputFormat = document.getElementById('outputFormat').value;
+            const outputCode = document.getElementById('outputCode');
+            let content = '';
+
+            switch (outputFormat) {
+                case 'formatted':
+                    content = formattedData;
+                    break;
+                case 'minified':
+                    content = minifiedData;
+                    break;
+                case 'raw':
+                    content = document.getElementById('inputText').value;
+                    break;
+            }
+
+            // Apply syntax highlighting
+            let language = currentFormat;
+            if (currentFormat === 'yaml') language = 'yaml';
+            else if (currentFormat === 'xml') language = 'markup';
+
+            outputCode.innerHTML = `<code class="language-${language}">${escapeHtml(content)}</code>`;
+            Prism.highlightElement(outputCode.querySelector('code'));
+        }
+
+        function generateTreeView(data, container = null, level = 0) {
+            if (container === null) {
+                container = document.getElementById('treeContainer');
+                container.innerHTML = '';
+            }
+
+            if (typeof data === 'object' && data !== null) {
+                if (Array.isArray(data)) {
+                    const arrayDiv = document.createElement('div');
+                    arrayDiv.className = 'ml-4';
+                    arrayDiv.innerHTML = `<span class="text-blue-600 font-medium">Array[${data.length}]</span>`;
+                    
+                    data.forEach((item, index) => {
+                        const itemDiv = document.createElement('div');
+                        itemDiv.className = 'ml-4 border-l border-gray-300 dark:border-gray-600 pl-2';
+                        itemDiv.innerHTML = `<span class="text-gray-600">[${index}]:</span>`;
+                        
+                        if (typeof item === 'object') {
+                            generateTreeView(item, itemDiv, level + 1);
+                        } else {
+                            itemDiv.innerHTML += ` <span class="text-green-600">${JSON.stringify(item)}</span>`;
+                        }
+                        
+                        arrayDiv.appendChild(itemDiv);
+                    });
+                    
+                    container.appendChild(arrayDiv);
+                } else {
+                    Object.keys(data).forEach(key => {
+                        const keyDiv = document.createElement('div');
+                        keyDiv.className = 'ml-4';
+                        
+                        if (typeof data[key] === 'object' && data[key] !== null) {
+                            keyDiv.innerHTML = `<span class="text-purple-600 font-medium cursor-pointer">${key}:</span>`;
+                            keyDiv.onclick = () => {
+                                const childDiv = keyDiv.querySelector('.child-content');
+                                if (childDiv) {
+                                    childDiv.style.display = childDiv.style.display === 'none' ? 'block' : 'none';
+                                }
+                            };
+                            
+                            const childDiv = document.createElement('div');
+                            childDiv.className = 'child-content border-l border-gray-300 dark:border-gray-600 pl-2';
+                            generateTreeView(data[key], childDiv, level + 1);
+                            keyDiv.appendChild(childDiv);
+                        } else {
+                            keyDiv.innerHTML = `<span class="text-purple-600 font-medium">${key}:</span> <span class="text-green-600">${JSON.stringify(data[key])}</span>`;
+                        }
+                        
+                        container.appendChild(keyDiv);
+                    });
+                }
+            } else {
+                container.innerHTML = `<span class="text-green-600">${JSON.stringify(data)}</span>`;
+            }
+        }
+
+        function executeJsonPath() {
+            if (currentFormat !== 'json' || !currentData) {
+                showError('Please load valid JSON data first');
+                return;
+            }
+
+            const path = document.getElementById('jsonPathInput').value.trim();
+            const resultDiv = document.getElementById('pathResult');
+            
+            if (!path) {
+                resultDiv.classList.add('hidden');
+                return;
+            }
+
+            try {
+                // Simple JSON path implementation (subset of JSONPath)
+                const result = evaluateJsonPath(currentData, path);
+                resultDiv.innerHTML = `<pre class="text-sm"><code>${JSON.stringify(result, null, 2)}</code></pre>`;
+                resultDiv.classList.remove('hidden');
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="text-red-600">Error: ${error.message}</div>`;
+                resultDiv.classList.remove('hidden');
+            }
+        }
+
+        function evaluateJsonPath(data, path) {
+            // Simplified JSONPath evaluator
+            if (path === '$') return data;
+            
+            const parts = path.replace('$', '').split(/[.\[\]]+/).filter(p => p);
+            let result = data;
+            
+            for (let part of parts) {
+                if (part === '') continue;
+                
+                if (Array.isArray(result) && !isNaN(part)) {
+                    result = result[parseInt(part)];
+                } else if (typeof result === 'object' && result !== null) {
+                    result = result[part];
+                } else {
+                    throw new Error(`Cannot access property '${part}' of ${typeof result}`);
+                }
+                
+                if (result === undefined) {
+                    throw new Error(`Path not found: ${path}`);
+                }
+            }
+            
+            return result;
+        }
+
+        function convertToFormat(targetFormat) {
+            if (!currentData) {
+                showError('Please load and validate data first');
+                return;
+            }
+
+            try {
+                let converted = '';
+                
+                if (currentFormat === 'json' && targetFormat === 'xml') {
+                    converted = jsonToXml(currentData);
+                } else if (currentFormat === 'json' && targetFormat === 'yaml') {
+                    converted = jsonToYaml(currentData);
+                } else if (currentFormat === 'xml' && targetFormat === 'json') {
+                    // Simplified XML to JSON conversion
+                    showError('XML to JSON conversion not fully implemented in this demo');
+                    return;
+                } else if (currentFormat === targetFormat) {
+                    showError('Source and target formats are the same');
+                    return;
+                } else {
+                    showError(`Conversion from ${currentFormat.toUpperCase()} to ${targetFormat.toUpperCase()} not supported`);
+                    return;
+                }
+
+                document.getElementById('inputText').value = converted;
+                setFormat(targetFormat);
+                formatCode();
+                showSuccess(`Converted to ${targetFormat.toUpperCase()}`);
+            } catch (error) {
+                showError(`Conversion failed: ${error.message}`);
+            }
+        }
+
+        function jsonToXml(obj, rootName = 'root') {
+            let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<${rootName}>`;
+            
+            function objectToXml(obj, indent = '') {
+                let result = '';
+                for (let key in obj) {
+                    const value = obj[key];
+                    if (Array.isArray(value)) {
+                        for (let item of value) {
+                            result += `\n${indent}  <${key}>`;
+                            if (typeof item === 'object') {
+                                result += objectToXml(item, indent + '    ');
+                                result += `\n${indent}  `;
+                            } else {
+                                result += escapeXml(item);
+                            }
+                            result += `</${key}>`;
+                        }
+                    } else if (typeof value === 'object' && value !== null) {
+                        result += `\n${indent}  <${key}>`;
+                        result += objectToXml(value, indent + '    ');
+                        result += `\n${indent}  </${key}>`;
+                    } else {
+                        result += `\n${indent}  <${key}>${escapeXml(value)}</${key}>`;
+                    }
+                }
+                return result;
+            }
+            
+            xml += objectToXml(obj);
+            xml += `\n</${rootName}>`;
+            return xml;
+        }
+
+        function jsonToYaml(obj, indent = 0) {
+            const spaces = '  ';
+            let yaml = '';
+            
+            if (Array.isArray(obj)) {
+                for (let item of obj) {
+                    yaml += spaces.repeat(indent) + '-';
+                    if (typeof item === 'object' && item !== null) {
+                        yaml += '\n' + jsonToYaml(item, indent + 1);
+                    } else {
+                        yaml += ' ' + (typeof item === 'string' ? item : JSON.stringify(item)) + '\n';
+                    }
+                }
+            } else if (typeof obj === 'object' && obj !== null) {
+                for (let key in obj) {
+                    yaml += spaces.repeat(indent) + key + ':';
+                    const value = obj[key];
+                    if (typeof value === 'object' && value !== null) {
+                        yaml += '\n' + jsonToYaml(value, indent + 1);
+                    } else {
+                        yaml += ' ' + (typeof value === 'string' ? value : JSON.stringify(value)) + '\n';
+                    }
+                }
+            }
+            
+            return yaml;
+        }
+
+        function updateStats() {
+            const input = document.getElementById('inputText').value;
+            const charCount = input.length;
+            const lineCount = input ? input.split('\n').length : 0;
+            const sizeCount = new TextEncoder().encode(input).length;
+            
+            document.getElementById('charCount').textContent = charCount.toLocaleString();
+            document.getElementById('lineCount').textContent = lineCount.toLocaleString();
+            document.getElementById('sizeCount').textContent = formatBytes(sizeCount);
+        }
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+
+        function clearAll() {
+            document.getElementById('inputText').value = '';
+            document.getElementById('outputCode').innerHTML = '<code>Formatted output will appear here...</code>';
+            document.getElementById('treeContainer').innerHTML = '';
+            document.getElementById('pathResult').classList.add('hidden');
+            hideError();
+            updateStats();
+            currentData = null;
+            formattedData = '';
+            minifiedData = '';
+        }
+
+        function copyOutput() {
+            const outputCode = document.getElementById('outputCode');
+            const text = outputCode.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('Output copied to clipboard!');
+            }).catch(() => {
+                showToast('Failed to copy to clipboard');
+            });
+        }
+
+        function downloadOutput() {
+            const outputCode = document.getElementById('outputCode');
+            const text = outputCode.textContent;
+            
+            if (!text || text === 'Formatted output will appear here...') {
+                showError('No output to download');
+                return;
+            }
+            
+            const extension = currentFormat === 'xml' ? 'xml' : currentFormat === 'yaml' ? 'yaml' : 'json';
+            const filename = `formatted_output.${extension}`;
+            
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            showToast('File downloaded!');
+        }
+
+        function swapInputOutput() {
+            const input = document.getElementById('inputText');
+            const output = document.getElementById('outputCode');
+            
+            const inputText = input.value;
+            const outputText = output.textContent;
+            
+            if (outputText && outputText !== 'Formatted output will appear here...') {
+                input.value = outputText;
+                updateStats();
+                formatCode();
+                showToast('Input and output swapped!');
+            }
+        }
+
+        function showSuccess(message) {
+            const statusDiv = document.getElementById('validationStatus');
+            statusDiv.innerHTML = `<div class="success-highlight"><strong>✓ Success:</strong> ${message}</div>`;
+            statusDiv.classList.remove('hidden');
+            
+            document.getElementById('validStatus').textContent = '✓';
+            document.getElementById('validStatus').className = 'text-2xl font-bold text-green-400';
+            
+            hideError();
+        }
+
+        function showError(message, error = null) {
+            const statusDiv = document.getElementById('validationStatus');
+            statusDiv.innerHTML = `<div class="error-highlight"><strong>✗ Error:</strong> ${message}</div>`;
+            statusDiv.classList.remove('hidden');
+            
+            document.getElementById('validStatus').textContent = '✗';
+            document.getElementById('validStatus').className = 'text-2xl font-bold text-red-400';
+            
+            // Show detailed error information
+            if (error) {
+                const errorDetails = document.getElementById('errorDetails');
+                const errorContent = document.getElementById('errorContent');
+                
+                errorContent.innerHTML = `
+                    <div><strong>Message:</strong> ${error.message}</div>
+                    <div><strong>Type:</strong> ${error.name || 'Error'}</div>
+                    ${error.stack ? `<div><strong>Stack:</strong><pre class="text-xs mt-2 bg-gray-100 dark:bg-gray-800 p-2 rounded">${error.stack}</pre></div>` : ''}
+                `;
+                
+                errorDetails.classList.remove('hidden');
+            }
+        }
+
+        function hideError() {
+            document.getElementById('validationStatus').classList.add('hidden');
+            document.getElementById('errorDetails').classList.add('hidden');
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function escapeXml(text) {
+            return String(text)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&apos;');
+        }
+
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-4 right-4 bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.remove();
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
