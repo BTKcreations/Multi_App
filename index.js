@@ -50,6 +50,23 @@ document.addEventListener("DOMContentLoaded", () => {
   // Header
   const installButton = document.getElementById('install-button');
   const offlineBanner = document.getElementById('offline-banner');
+  // Dashboard grids and controls
+  const pinnedSection = document.getElementById('pinned-section');
+  const pinnedGrid = document.getElementById('pinned-grid');
+  const recentSection = document.getElementById('recent-section');
+  const recentGrid = document.getElementById('recent-grid');
+  const allGrid = document.getElementById('all-grid');
+  const viewToggle = document.getElementById('view-toggle');
+  const categoryChips = document.getElementById('category-chips');
+  // Command palette
+  const cpModal = document.getElementById('command-palette-modal');
+  const cpInput = document.getElementById('command-palette-input');
+  const cpResults = document.getElementById('command-palette-results');
+  // Context menu
+  const ctxMenu = document.getElementById('app-context-menu');
+  const ctxOpenNew = document.getElementById('ctx-open-new');
+  const ctxTogglePin = document.getElementById('ctx-toggle-pin');
+  const ctxCacheOffline = document.getElementById('ctx-cache-offline');
   // User Authentication & Menu
   const userArea = document.getElementById("user-area");
   const userMenu = document.getElementById("user-menu");
@@ -60,6 +77,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --- 3. STATE VARIABLES ---
   let currentUser = null;
+  let filterCategory = null;
+  let viewMode = (localStorage.getItem('viewMode') || 'grid');
+  let ctxAppId = null;
 
   // --- 4. FUNCTIONS ---
 
@@ -172,7 +192,166 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Renders sidebar with categories and search filtering
+  // Pinned apps management
+  const PINNED_KEY = 'pinnedApps';
+  function getPinned() { return JSON.parse(localStorage.getItem(PINNED_KEY) || '[]'); }
+  function setPinned(ids) { localStorage.setItem(PINNED_KEY, JSON.stringify(ids)); }
+  function isPinned(id) { return getPinned().includes(id); }
+  function togglePin(id) {
+    const pins = new Set(getPinned());
+    if (pins.has(id)) pins.delete(id); else pins.add(id);
+    setPinned([...pins]);
+  }
+
+  async function isCached(url) {
+    try {
+      if (!('caches' in window)) return false;
+      const names = await caches.keys();
+      for (const n of names) {
+        const match = await caches.open(n).then(c => c.match(url));
+        if (match) return true;
+      }
+    } catch(_) {}
+    return false;
+  }
+
+  async function markOfflineBadges() {
+    const links = Array.from(nav.querySelectorAll('.nav-link'));
+    for (const link of links) {
+      const id = link.getAttribute('data-app-id');
+      const app = applicationFiles.find(a => (a.id || a.name) === id);
+      if (!app) continue;
+      const cached = await isCached(app.file);
+      let badge = link.querySelector('.badge-offline');
+      if (cached && !badge) {
+        badge = document.createElement('span');
+        badge.className = 'badge-offline ml-auto text-xs px-2 py-0.5 rounded bg-green-100 text-green-800';
+        badge.textContent = 'Offline';
+        link.appendChild(badge);
+      }
+      if (!cached && badge) badge.remove();
+    }
+  }
+
+  // Recent apps for current user
+  function getRecent(limit = 6) {
+    if (!currentUser) return [];
+    const hist = JSON.parse(localStorage.getItem('userHistory') || '{}');
+    const items = hist[currentUser.id] || [];
+    const names = [];
+    const out = [];
+    for (const h of items) {
+      if (h.action !== 'Viewed App' || !h.details?.appName) continue;
+      const app = applicationFiles.find(a => a.name === h.details.appName);
+      if (!app) continue;
+      const id = app.id || app.name;
+      if (names.includes(id)) continue;
+      names.push(id);
+      out.push(app);
+      if (out.length >= limit) break;
+    }
+    return out;
+  }
+
+  // Render dashboards
+  function appCard(app) {
+    const card = document.createElement('div');
+    card.className = 'app-card cursor-pointer p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow transition flex items-start space-x-3';
+    card.setAttribute('data-app-id', app.id || app.name);
+    card.innerHTML = `
+      <div class="text-2xl">${app.icon || '📦'}</div>
+      <div class="flex-1">
+        <div class="font-semibold">${app.name}</div>
+        <div class="text-sm text-gray-500 dark:text-gray-400">${app.description || ''}</div>
+        <div class="mt-1 text-xs text-gray-400">${app.category || ''}</div>
+      </div>
+      <div class="ml-2"><button class="pin-btn text-xs px-2 py-1 rounded bg-gray-100 dark:bg-gray-700">${isPinned(app.id || app.name) ? 'Unpin' : 'Pin'}</button></div>
+    `;
+    card.addEventListener('click', (e) => {
+      // Avoid clicks on pin button
+      if (e.target && e.target.classList.contains('pin-btn')) return;
+      loadApp(app);
+    });
+    card.querySelector('.pin-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      togglePin(app.id || app.name);
+      renderAll();
+    });
+    // Context menu on card
+    card.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      showContextMenu(e.clientX, e.clientY, app);
+    });
+    // Offline badge (async)
+    isCached(app.file).then((cached) => {
+      if (cached) {
+        const badge = document.createElement('span');
+        badge.className = 'ml-2 text-xs px-2 py-0.5 rounded bg-green-100 text-green-800 self-start';
+        badge.textContent = 'Offline';
+        card.appendChild(badge);
+      }
+    });
+    return card;
+  }
+
+  function renderCategoryChips() {
+    const cats = Array.from(new Set(applicationFiles.map(a => a.category || 'Uncategorized'))).sort();
+    categoryChips.innerHTML = '';
+    const allChip = document.createElement('button');
+    allChip.className = `px-3 py-1 rounded text-sm ${!filterCategory ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-gray-700'}`;
+    allChip.textContent = 'All';
+    allChip.onclick = () => { filterCategory = null; updateURLCategory(); renderAll(); };
+    categoryChips.appendChild(allChip);
+    cats.forEach(c => {
+      const btn = document.createElement('button');
+      btn.className = `px-3 py-1 rounded text-sm ${filterCategory===c ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-gray-700'}`;
+      btn.textContent = c;
+      btn.onclick = () => { filterCategory = c; updateURLCategory(); renderAll(); };
+      categoryChips.appendChild(btn);
+    });
+  }
+
+  function renderDashboardGrids() {
+    // Pinned
+    const pins = getPinned();
+    const pinnedApps = applicationFiles.filter(a => pins.includes(a.id || a.name)).filter(a => !filterCategory || (a.category===filterCategory));
+    if (pinnedApps.length) {
+      pinnedSection.classList.remove('hidden');
+      pinnedGrid.innerHTML = '';
+      pinnedApps.forEach(app => pinnedGrid.appendChild(appCard(app)));
+    } else {
+      pinnedSection.classList.add('hidden');
+    }
+
+    // Recent
+    const recents = getRecent().filter(a => !filterCategory || (a.category===filterCategory));
+    if (recents.length) {
+      recentSection.classList.remove('hidden');
+      recentGrid.innerHTML = '';
+      recents.forEach(app => recentGrid.appendChild(appCard(app)));
+    } else {
+      recentSection.classList.add('hidden');
+    }
+
+    // All
+    const all = applicationFiles.filter(a => !filterCategory || (a.category===filterCategory));
+    allGrid.innerHTML = '';
+    all.forEach(app => allGrid.appendChild(appCard(app)));
+
+    // View mode styling
+    const asList = (viewMode === 'list');
+    [pinnedGrid, recentGrid, allGrid].forEach(grid => {
+      if (!grid) return;
+      if (asList) {
+        grid.className = 'flex flex-col gap-2';
+      } else {
+        grid.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4';
+      }
+    });
+    if (viewToggle) viewToggle.textContent = asList ? 'List' : 'Grid';
+  }
+
+  function renderSidebar(searchTerm = "") {
   function renderSidebar(searchTerm = "") {
     nav.innerHTML = "";
     const lowerCaseSearchTerm = searchTerm.toLowerCase().trim();
@@ -183,7 +362,36 @@ document.addEventListener("DOMContentLoaded", () => {
       return searchableText.includes(lowerCaseSearchTerm);
     });
 
-    const groupedApps = filteredApps.reduce((acc, app) => {
+    // Split pinned and others
+    const pins = new Set(getPinned());
+
+    // Render pinned at top
+    const pinnedList = filteredApps.filter(a => pins.has(a.id || a.name));
+    if (pinnedList.length) {
+      const pinnedHeader = document.createElement('div');
+      pinnedHeader.className = "px-4 pt-4 pb-1 text-xs font-bold uppercase text-gray-400 dark:text-gray-500 sidebar-text whitespace-nowrap";
+      pinnedHeader.textContent = 'Pinned';
+      nav.appendChild(pinnedHeader);
+
+      pinnedList.forEach((app) => {
+        const link = document.createElement('a');
+        link.className = "nav-link flex items-center px-4 py-2 text-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white transition-colors overflow-hidden";
+        link.href = `?app=${encodeURIComponent(app.id || app.name)}`;
+        link.setAttribute('data-app-id', app.id || app.name);
+        link.innerHTML = `
+                            <span class="nav-link-icon mr-3 flex-shrink-0">${app.icon}</span>
+                            <span class="sidebar-text whitespace-nowrap transition-opacity duration-200">${app.name}</span>`;
+        link.onclick = (e) => { e.preventDefault(); loadApp(app); if (window.innerWidth < 768) { sidebar.classList.add("-translate-x-full"); } };
+        link.addEventListener('contextmenu', (e) => { e.preventDefault(); showContextMenu(e.clientX, e.clientY, app); });
+        nav.appendChild(link);
+      });
+
+      const sep = document.createElement('div');
+      sep.className = 'border-t border-gray-200 dark:border-gray-700 my-2';
+      nav.appendChild(sep);
+    }
+
+    const groupedApps = filteredApps.filter(a => !pins.has(a.id || a.name)).reduce((acc, app) => {
       const category = app.category || "Uncategorized";
       if (!acc[category]) acc[category] = [];
       acc[category].push(app);
@@ -220,11 +428,13 @@ document.addEventListener("DOMContentLoaded", () => {
             sidebar.classList.add("-translate-x-full");
           }
         };
+        link.addEventListener('contextmenu', (e) => { e.preventDefault(); showContextMenu(e.clientX, e.clientY, app); });
         nav.appendChild(link);
       });
     });
 
     // Enhance keyboard navigation on the rendered list
+    markOfflineBadges();
     const links = Array.from(nav.querySelectorAll('.nav-link'));
     appSearchInput.onkeydown = (e) => {
       if (e.key === 'ArrowDown' && links.length) { e.preventDefault(); links[0].focus(); }
@@ -241,14 +451,30 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --- 5. EVENT LISTENERS ---
 
-  // Search input listener and shortcut
+  // Search input listener
   appSearchInput.addEventListener("input", () => renderSidebar(appSearchInput.value));
+
+  // Command palette open/close
+  function openCommandPalette() {
+    cpModal.classList.remove('hidden');
+    cpInput.value = '';
+    renderCommandPaletteResults('');
+    setTimeout(() => cpInput.focus(), 0);
+  }
+  function closeCommandPalette() {
+    cpModal.classList.add('hidden');
+  }
   window.addEventListener('keydown', (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
       e.preventDefault();
-      appSearchInput.focus();
+      openCommandPalette();
+    } else if (e.key === 'Escape' && !cpModal.classList.contains('hidden')) {
+      closeCommandPalette();
     }
   });
+  cpModal.addEventListener('click', (e) => { if (e.target === cpModal) closeCommandPalette(); });
+  cpInput.addEventListener('input', () => renderCommandPaletteResults(cpInput.value));
+  cpResults.addEventListener('keydown', (e) => handleCommandPaletteKeys(e));
 
   // Back button to return to dashboard
   backButton.addEventListener("click", () => showDashboard());
@@ -298,6 +524,34 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  // Command palette helpers
+  function renderCommandPaletteResults(q) {
+    cpResults.innerHTML = '';
+    const query = (q || '').toLowerCase().trim();
+    let items = applicationFiles;
+    if (query) {
+      items = applicationFiles.filter(a => (`${a.name} ${a.category} ${a.keywords || ''}`).toLowerCase().includes(query));
+    }
+    items.slice(0, 50).forEach((app, i) => {
+      const li = document.createElement('li');
+      li.className = 'px-3 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-between';
+      li.setAttribute('data-app-id', app.id || app.name);
+      li.tabIndex = 0;
+      li.innerHTML = `<span><span class="mr-2">${app.icon}</span>${app.name}</span><span class="text-xs text-gray-500">${app.category || ''}</span>`;
+      li.addEventListener('click', () => { closeCommandPalette(); loadApp(app); });
+      li.addEventListener('keydown', (e) => { if (e.key === 'Enter') { closeCommandPalette(); loadApp(app); } });
+      cpResults.appendChild(li);
+      if (i === 0) li.focus();
+    });
+  }
+  function handleCommandPaletteKeys(e) {
+    const items = Array.from(cpResults.querySelectorAll('li'));
+    const idx = items.findIndex(el => el === document.activeElement);
+    if (e.key === 'ArrowDown') { e.preventDefault(); (items[idx + 1] || items[0])?.focus(); }
+    if (e.key === 'ArrowUp') { e.preventDefault(); (items[idx - 1] || items[items.length - 1])?.focus(); }
+    if (e.key === 'Enter') { e.preventDefault(); document.activeElement?.click(); }
+  }
+
   // Online/offline banner
   function updateOfflineBanner() {
     if (navigator.onLine) {
@@ -308,6 +562,29 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   window.addEventListener('online', updateOfflineBanner);
   window.addEventListener('offline', updateOfflineBanner);
+
+  // Context menu logic
+  function showContextMenu(x, y, app) {
+    ctxAppId = app.id || app.name;
+    ctxOpenNew.onclick = () => { window.open(app.file, '_blank', 'noopener'); hideContextMenu(); };
+    ctxTogglePin.textContent = isPinned(ctxAppId) ? 'Unpin' : 'Pin';
+    ctxTogglePin.onclick = () => { togglePin(ctxAppId); hideContextMenu(); renderAll(); };
+    ctxCacheOffline.onclick = () => { cacheForOffline(app.file); hideContextMenu(); };
+    ctxMenu.style.left = `${x}px`;
+    ctxMenu.style.top = `${y}px`;
+    ctxMenu.classList.remove('hidden');
+  }
+  function hideContextMenu() { ctxMenu.classList.add('hidden'); ctxAppId = null; }
+  document.addEventListener('click', () => hideContextMenu());
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideContextMenu(); });
+
+  function cacheForOffline(url) {
+    try {
+      if (navigator.serviceWorker?.controller) {
+        navigator.serviceWorker.controller.postMessage({ type: 'PREFETCH', url });
+      }
+    } catch(_) {}
+  }
 
   // About link - open as modal or new tab (here: modal inside main app)
 const aboutLink = document.getElementById("about-link");
@@ -421,7 +698,13 @@ function showAboutModal() {
 
   window.addEventListener('popstate', () => {
     const hadApp = openAppFromURL();
-    if (!hadApp) showDashboard(false);
+    if (!hadApp) {
+      const params = new URLSearchParams(location.search);
+      const cat = params.get('category');
+      filterCategory = cat || null;
+      renderAll();
+      showDashboard(false);
+    }
   });
 
   // Install prompt
@@ -442,10 +725,31 @@ function showAboutModal() {
     });
   }
 
+  function updateURLCategory() {
+    const p = new URLSearchParams(location.search);
+    if (filterCategory) p.set('category', filterCategory); else p.delete('category');
+    history.replaceState(history.state, '', `?${p.toString()}`);
+  }
+
+  function renderAll() {
+    renderSidebar(appSearchInput.value || '');
+    renderCategoryChips();
+    renderDashboardGrids();
+  }
+
+  if (viewToggle) viewToggle.addEventListener('click', () => {
+    viewMode = (viewMode === 'grid') ? 'list' : 'grid';
+    localStorage.setItem('viewMode', viewMode);
+    renderDashboardGrids();
+  });
+
   // --- 6. INITIALIZATION CALLS ---
   (async () => {
     await loadRegistry();
-    renderSidebar();
+    const params = new URLSearchParams(location.search);
+    const cat = params.get('category');
+    filterCategory = cat || null;
+    renderAll();
     updateOfflineBanner();
     if (!openAppFromURL()) showDashboard(false);
     checkSession();

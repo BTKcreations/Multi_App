@@ -69,6 +69,16 @@ async function notifyClientsUpdate(url) {
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
+    return;
+  }
+  if (event.data && event.data.type === 'PREFETCH' && event.data.url) {
+    event.waitUntil((async () => {
+      try {
+        const resp = await fetch(event.data.url, { cache: 'no-cache' });
+        const cache = await caches.open(CACHE_NAME);
+        await cache.put(event.data.url, resp.clone());
+      } catch (_) {}
+    })());
   }
 });
 
