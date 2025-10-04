@@ -90,7 +90,8 @@
 
         // Apply sidebar collapsed state from localStorage
         if (localStorage.getItem('sidebarCollapsed') === 'true') {
-            document.body.classList.add('sidebar-collapsed');
+            // Use documentElement here because <body> may not exist yet in <head>
+            document.documentElement.classList.add('sidebar-collapsed');
         }
     </script>
 </head>

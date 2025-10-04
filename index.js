@@ -505,10 +505,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Toggle desktop sidebar (collapsed/expanded)
   sidebarToggleButton.addEventListener("click", () => {
-    document.body.classList.toggle("sidebar-collapsed");
+    document.documentElement.classList.toggle("sidebar-collapsed");
     localStorage.setItem(
       "sidebarCollapsed",
-      document.body.classList.contains("sidebar-collapsed")
+      document.documentElement.classList.contains("sidebar-collapsed")
     );
   });
 
