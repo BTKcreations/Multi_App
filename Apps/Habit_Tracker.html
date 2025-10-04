@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Habit Tracker Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .habit-card {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            transition: all 0.3s ease;
+        }
+        .dark .habit-card {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+        }
+        .habit-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        .streak-day {
+            width: 28px;
+            height: 28px;
+            border-radius: 4px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 500;
+            margin: 1px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .streak-day.completed {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+        }
+        .streak-day.partial {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+        }
+        .streak-day.missed {
+            background: #f1f5f9;
+            color: #64748b;
+        }
+        .dark .streak-day.missed {
+            background: #334155;
+            color: #94a3b8;
+        }
+        .streak-day.today {
+            border: 2px solid #3b82f6;
+        }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 2px;
+        }
+        .progress-ring {
+            transition: stroke-dashoffset 0.35s;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
+    <div class="min-h-screen p-4">
+        <div class="max-w-7xl mx-auto">
+            <!-- Header -->
+            <header class="text-center mb-8">
+                <h1 class="text-4xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+                    Habit Tracker Pro
+                </h1>
+                <p class="text-gray-600 dark:text-gray-400 mt-2">Build better habits, track your progress</p>
+            </header>
+
+            <!-- Quick Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                <div class="bg-white dark:bg-gray-800 rounded-xl p-6 text-center shadow-lg">
+                    <h3 class="text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wide">Active Habits</h3>
+                    <p class="text-3xl font-bold text-blue-600 dark:text-blue-400" id="activeHabits">0</p>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-xl p-6 text-center shadow-lg">
+                    <h3 class="text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wide">Today's Progress</h3>
+                    <p class="text-3xl font-bold text-green-600 dark:text-green-400" id="todaysProgress">0%</p>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-xl p-6 text-center shadow-lg">
+                    <h3 class="text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wide">Best Streak</h3>
+                    <p class="text-3xl font-bold text-purple-600 dark:text-purple-400" id="bestStreak">0</p>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-xl p-6 text-center shadow-lg">
+                    <h3 class="text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wide">Total Completed</h3>
+                    <p class="text-3xl font-bold text-orange-600 dark:text-orange-400" id="totalCompleted">0</p>
+                </div>
+            </div>
+
+            <div class="grid lg:grid-cols-3 gap-8">
+                <!-- Habits List -->
+                <div class="lg:col-span-2">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold">My Habits</h2>
+                        <button onclick="openAddHabitModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                            Add Habit
+                        </button>
+                    </div>
+                    
+                    <div id="habitsList" class="space-y-4">
+                        <!-- Habits will be populated here -->
+                    </div>
+                </div>
+
+                <!-- Analytics -->
+                <div class="space-y-6">
+                    <!-- Calendar View -->
+                    <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
+                        <h3 class="text-xl font-semibold mb-4">This Month</h3>
+                        <div class="mb-4">
+                            <div class="flex justify-between items-center mb-2">
+                                <button onclick="previousMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                                    </svg>
+                                </button>
+                                <h4 class="font-semibold" id="currentMonth"></h4>
+                                <button onclick="nextMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="calendar-grid text-xs text-center text-gray-500 dark:text-gray-400 mb-2">
+                                <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+                            </div>
+                            <div id="calendarGrid" class="calendar-grid">
+                                <!-- Calendar days will be populated here -->
+                            </div>
+                        </div>
+                        
+                        <!-- Legend -->
+                        <div class="flex justify-between text-xs">
+                            <div class="flex items-center">
+                                <div class="w-3 h-3 bg-green-500 rounded mr-1"></div>
+                                <span>Completed</span>
+                            </div>
+                            <div class="flex items-center">
+                                <div class="w-3 h-3 bg-orange-500 rounded mr-1"></div>
+                                <span>Partial</span>
+                            </div>
+                            <div class="flex items-center">
+                                <div class="w-3 h-3 bg-gray-300 rounded mr-1"></div>
+                                <span>Missed</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Progress Chart -->
+                    <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
+                        <h3 class="text-xl font-semibold mb-4">Progress Overview</h3>
+                        <canvas id="progressChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Habit Modal -->
+    <div id="addHabitModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 w-full max-w-md mx-4">
+            <h3 class="text-xl font-semibold mb-4">Add New Habit</h3>
+            <form onsubmit="addHabit(event)">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Habit Name</label>
+                        <input id="habitName" type="text" required placeholder="e.g., Drink 8 glasses of water" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Category</label>
+                        <select id="habitCategory" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500">
+                            <option value="health">🏃 Health & Fitness</option>
+                            <option value="productivity">💼 Productivity</option>
+                            <option value="learning">📚 Learning</option>
+                            <option value="mindfulness">🧘 Mindfulness</option>
+                            <option value="social">👥 Social</option>
+                            <option value="creative">🎨 Creative</option>
+                            <option value="other">📌 Other</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Target Frequency</label>
+                        <select id="habitFrequency" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500">
+                            <option value="daily">Daily</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                    </div>
+                    <div id="customFrequencyDiv" class="hidden">
+                        <label class="block text-sm font-medium mb-2">Times per week</label>
+                        <input id="customFrequency" type="number" min="1" max="7" value="3" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Goal</label>
+                        <textarea id="habitGoal" placeholder="Why is this habit important to you?" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 h-20"></textarea>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button type="button" onclick="closeAddHabitModal()" class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                        Add Habit
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Habit Modal -->
+    <div id="editHabitModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 w-full max-w-md mx-4">
+            <h3 class="text-xl font-semibold mb-4">Edit Habit</h3>
+            <form onsubmit="updateHabit(event)">
+                <input type="hidden" id="editHabitId">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Habit Name</label>
+                        <input id="editHabitName" type="text" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Category</label>
+                        <select id="editHabitCategory" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500">
+                            <option value="health">🏃 Health & Fitness</option>
+                            <option value="productivity">💼 Productivity</option>
+                            <option value="learning">📚 Learning</option>
+                            <option value="mindfulness">🧘 Mindfulness</option>
+                            <option value="social">👥 Social</option>
+                            <option value="creative">🎨 Creative</option>
+                            <option value="other">📌 Other</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Goal</label>
+                        <textarea id="editHabitGoal" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 h-20"></textarea>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button type="button" onclick="closeEditHabitModal()" class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                        Update Habit
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let habits = JSON.parse(localStorage.getItem('habits') || '[]');
+        let currentDate = new Date();
+        let viewingDate = new Date();
+        let progressChart = null;
+
+        const categoryIcons = {
+            health: '🏃',
+            productivity: '💼',
+            learning: '📚',
+            mindfulness: '🧘',
+            social: '👥',
+            creative: '🎨',
+            other: '📌'
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            setupEventListeners();
+            renderHabits();
+            renderCalendar();
+            updateStats();
+            initChart();
+        });
+
+        function setupEventListeners() {
+            document.getElementById('habitFrequency').addEventListener('change', function() {
+                const customDiv = document.getElementById('customFrequencyDiv');
+                if (this.value === 'custom') {
+                    customDiv.classList.remove('hidden');
+                } else {
+                    customDiv.classList.add('hidden');
+                }
+            });
+        }
+
+        function openAddHabitModal() {
+            document.getElementById('addHabitModal').classList.remove('hidden');
+            document.getElementById('addHabitModal').classList.add('flex');
+        }
+
+        function closeAddHabitModal() {
+            document.getElementById('addHabitModal').classList.add('hidden');
+            document.getElementById('addHabitModal').classList.remove('flex');
+            document.getElementById('habitName').value = '';
+            document.getElementById('habitGoal').value = '';
+        }
+
+        function addHabit(event) {
+            event.preventDefault();
+            
+            const name = document.getElementById('habitName').value;
+            const category = document.getElementById('habitCategory').value;
+            const frequency = document.getElementById('habitFrequency').value;
+            const customFreq = document.getElementById('customFrequency').value;
+            const goal = document.getElementById('habitGoal').value;
+
+            const habit = {
+                id: Date.now().toString(),
+                name: name,
+                category: category,
+                frequency: frequency,
+                customFrequency: frequency === 'custom' ? parseInt(customFreq) : null,
+                goal: goal,
+                createdAt: new Date().toISOString(),
+                completions: [],
+                streak: 0,
+                bestStreak: 0
+            };
+
+            habits.push(habit);
+            localStorage.setItem('habits', JSON.stringify(habits));
+            
+            closeAddHabitModal();
+            renderHabits();
+            updateStats();
+            updateChart();
+        }
+
+        function deleteHabit(habitId) {
+            if (confirm('Are you sure you want to delete this habit?')) {
+                habits = habits.filter(h => h.id !== habitId);
+                localStorage.setItem('habits', JSON.stringify(habits));
+                renderHabits();
+                updateStats();
+                updateChart();
+            }
+        }
+
+        function openEditHabitModal(habitId) {
+            const habit = habits.find(h => h.id === habitId);
+            if (!habit) return;
+
+            document.getElementById('editHabitId').value = habitId;
+            document.getElementById('editHabitName').value = habit.name;
+            document.getElementById('editHabitCategory').value = habit.category;
+            document.getElementById('editHabitGoal').value = habit.goal;
+
+            document.getElementById('editHabitModal').classList.remove('hidden');
+            document.getElementById('editHabitModal').classList.add('flex');
+        }
+
+        function closeEditHabitModal() {
+            document.getElementById('editHabitModal').classList.add('hidden');
+            document.getElementById('editHabitModal').classList.remove('flex');
+        }
+
+        function updateHabit(event) {
+            event.preventDefault();
+            
+            const habitId = document.getElementById('editHabitId').value;
+            const name = document.getElementById('editHabitName').value;
+            const category = document.getElementById('editHabitCategory').value;
+            const goal = document.getElementById('editHabitGoal').value;
+
+            const habitIndex = habits.findIndex(h => h.id === habitId);
+            if (habitIndex !== -1) {
+                habits[habitIndex].name = name;
+                habits[habitIndex].category = category;
+                habits[habitIndex].goal = goal;
+                
+                localStorage.setItem('habits', JSON.stringify(habits));
+                closeEditHabitModal();
+                renderHabits();
+            }
+        }
+
+        function toggleHabit(habitId, date = null) {
+            const dateStr = date || new Date().toISOString().split('T')[0];
+            const habitIndex = habits.findIndex(h => h.id === habitId);
+            
+            if (habitIndex === -1) return;
+
+            const habit = habits[habitIndex];
+            const completionIndex = habit.completions.findIndex(c => c.date === dateStr);
+
+            if (completionIndex === -1) {
+                // Add completion
+                habit.completions.push({ date: dateStr, completed: true });
+            } else {
+                // Remove completion
+                habit.completions.splice(completionIndex, 1);
+            }
+
+            // Update streak
+            updateHabitStreak(habit);
+            
+            localStorage.setItem('habits', JSON.stringify(habits));
+            renderHabits();
+            renderCalendar();
+            updateStats();
+            updateChart();
+        }
+
+        function updateHabitStreak(habit) {
+            const sortedCompletions = habit.completions
+                .map(c => new Date(c.date))
+                .sort((a, b) => b - a);
+
+            let streak = 0;
+            let currentDate = new Date();
+            currentDate.setHours(0, 0, 0, 0);
+
+            // Check if today is completed (for ongoing streak)
+            const todayStr = currentDate.toISOString().split('T')[0];
+            const todayCompleted = habit.completions.some(c => c.date === todayStr);
+
+            if (todayCompleted) {
+                streak = 1;
+                currentDate.setDate(currentDate.getDate() - 1);
+
+                while (true) {
+                    const dateStr = currentDate.toISOString().split('T')[0];
+                    const isCompleted = habit.completions.some(c => c.date === dateStr);
+                    
+                    if (isCompleted) {
+                        streak++;
+                        currentDate.setDate(currentDate.getDate() - 1);
+                    } else {
+                        break;
+                    }
+                }
+            }
+
+            habit.streak = streak;
+            habit.bestStreak = Math.max(habit.bestStreak, streak);
+        }
+
+        function renderHabits() {
+            const container = document.getElementById('habitsList');
+            const todayStr = new Date().toISOString().split('T')[0];
+
+            if (habits.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-12">
+                        <div class="text-6xl mb-4">🎯</div>
+                        <h3 class="text-xl font-semibold mb-2">No habits yet</h3>
+                        <p class="text-gray-500 dark:text-gray-400 mb-4">Start building better habits today</p>
+                        <button onclick="openAddHabitModal()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                            Add Your First Habit
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = habits.map(habit => {
+                const isCompletedToday = habit.completions.some(c => c.date === todayStr);
+                const completionRate = calculateCompletionRate(habit);
+                const recentDays = getRecentDays(habit, 7);
+
+                return `
+                    <div class="habit-card rounded-xl p-6 shadow-lg">
+                        <div class="flex items-start justify-between mb-4">
+                            <div class="flex items-start space-x-3">
+                                <div class="text-2xl">${categoryIcons[habit.category]}</div>
+                                <div>
+                                    <h3 class="font-semibold text-lg">${habit.name}</h3>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">${habit.goal || 'No goal set'}</p>
+                                    <div class="flex items-center space-x-4 mt-2 text-sm">
+                                        <span class="flex items-center">
+                                            <svg class="w-4 h-4 mr-1 text-orange-500" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z" clip-rule="evenodd"></path>
+                                            </svg>
+                                            ${habit.streak} day streak
+                                        </span>
+                                        <span class="text-gray-400">•</span>
+                                        <span>${completionRate}% this month</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <button onclick="openEditHabitModal('${habit.id}')" class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                    </svg>
+                                </button>
+                                <button onclick="deleteHabit('${habit.id}')" class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900 rounded-lg transition-colors">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between">
+                            <div class="flex-1">
+                                <div class="flex items-center space-x-1 mb-2">
+                                    ${recentDays.map(day => `
+                                        <div class="streak-day ${day.status} ${day.isToday ? 'today' : ''}" 
+                                             onclick="toggleHabit('${habit.id}', '${day.date}')"
+                                             title="${day.dateStr} - ${day.status}">
+                                            ${day.day}
+                                        </div>
+                                    `).join('')}
+                                </div>
+                                <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                    <div class="bg-gradient-to-r from-green-400 to-green-600 h-2 rounded-full transition-all duration-300" style="width: ${completionRate}%"></div>
+                                </div>
+                            </div>
+                            
+                            <button onclick="toggleHabit('${habit.id}')" class="ml-4 w-12 h-12 rounded-full border-2 transition-all duration-200 ${isCompletedToday 
+                                ? 'bg-green-500 border-green-500 text-white' 
+                                : 'border-gray-300 dark:border-gray-600 hover:border-green-500'
+                            }">
+                                ${isCompletedToday ? '✓' : ''}
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function getRecentDays(habit, days) {
+            const result = [];
+            const today = new Date();
+            
+            for (let i = days - 1; i >= 0; i--) {
+                const date = new Date(today);
+                date.setDate(date.getDate() - i);
+                const dateStr = date.toISOString().split('T')[0];
+                const isCompleted = habit.completions.some(c => c.date === dateStr);
+                const isToday = i === 0;
+                
+                result.push({
+                    date: dateStr,
+                    dateStr: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                    day: date.getDate(),
+                    status: isCompleted ? 'completed' : 'missed',
+                    isToday: isToday
+                });
+            }
+            
+            return result;
+        }
+
+        function calculateCompletionRate(habit) {
+            const now = new Date();
+            const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+            const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+            const daysSinceStart = Math.min(now.getDate(), daysInMonth);
+            
+            const completionsThisMonth = habit.completions.filter(c => {
+                const completionDate = new Date(c.date);
+                return completionDate >= startOfMonth && completionDate <= now;
+            }).length;
+            
+            return Math.round((completionsThisMonth / daysSinceStart) * 100);
+        }
+
+        function renderCalendar() {
+            const container = document.getElementById('calendarGrid');
+            const monthHeader = document.getElementById('currentMonth');
+            
+            const firstDay = new Date(viewingDate.getFullYear(), viewingDate.getMonth(), 1);
+            const lastDay = new Date(viewingDate.getFullYear(), viewingDate.getMonth() + 1, 0);
+            const startDate = new Date(firstDay);
+            startDate.setDate(startDate.getDate() - firstDay.getDay());
+            
+            monthHeader.textContent = viewingDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            
+            let calendarHTML = '';
+            let currentDate = new Date(startDate);
+            
+            for (let i = 0; i < 42; i++) {
+                const dateStr = currentDate.toISOString().split('T')[0];
+                const isCurrentMonth = currentDate.getMonth() === viewingDate.getMonth();
+                const isToday = dateStr === new Date().toISOString().split('T')[0];
+                
+                const dayCompletions = habits.reduce((acc, habit) => {
+                    const isCompleted = habit.completions.some(c => c.date === dateStr);
+                    if (isCompleted) acc.completed++;
+                    return acc;
+                }, { completed: 0, total: habits.length });
+                
+                let dayClass = 'streak-day';
+                if (dayCompletions.total === 0) {
+                    dayClass += ' missed';
+                } else if (dayCompletions.completed === dayCompletions.total) {
+                    dayClass += ' completed';
+                } else if (dayCompletions.completed > 0) {
+                    dayClass += ' partial';
+                } else {
+                    dayClass += ' missed';
+                }
+                
+                if (isToday) dayClass += ' today';
+                if (!isCurrentMonth) dayClass += ' opacity-30';
+                
+                calendarHTML += `
+                    <div class="${dayClass}" title="${dateStr}: ${dayCompletions.completed}/${dayCompletions.total} habits completed">
+                        ${currentDate.getDate()}
+                    </div>
+                `;
+                
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+            
+            container.innerHTML = calendarHTML;
+        }
+
+        function previousMonth() {
+            viewingDate.setMonth(viewingDate.getMonth() - 1);
+            renderCalendar();
+        }
+
+        function nextMonth() {
+            viewingDate.setMonth(viewingDate.getMonth() + 1);
+            renderCalendar();
+        }
+
+        function updateStats() {
+            const activeHabits = habits.length;
+            const todayStr = new Date().toISOString().split('T')[0];
+            
+            const todayCompletions = habits.filter(h => 
+                h.completions.some(c => c.date === todayStr)
+            ).length;
+            
+            const todaysProgress = activeHabits > 0 ? Math.round((todayCompletions / activeHabits) * 100) : 0;
+            
+            const bestStreak = Math.max(0, ...habits.map(h => h.bestStreak));
+            
+            const totalCompleted = habits.reduce((acc, habit) => acc + habit.completions.length, 0);
+            
+            document.getElementById('activeHabits').textContent = activeHabits;
+            document.getElementById('todaysProgress').textContent = todaysProgress + '%';
+            document.getElementById('bestStreak').textContent = bestStreak;
+            document.getElementById('totalCompleted').textContent = totalCompleted;
+        }
+
+        function initChart() {
+            const ctx = document.getElementById('progressChart').getContext('2d');
+            
+            const last7Days = [];
+            const completionData = [];
+            
+            for (let i = 6; i >= 0; i--) {
+                const date = new Date();
+                date.setDate(date.getDate() - i);
+                const dateStr = date.toISOString().split('T')[0];
+                
+                last7Days.push(date.toLocaleDateString('en-US', { weekday: 'short' }));
+                
+                const dayCompletions = habits.filter(h => 
+                    h.completions.some(c => c.date === dateStr)
+                ).length;
+                
+                const completionRate = habits.length > 0 ? (dayCompletions / habits.length) * 100 : 0;
+                completionData.push(completionRate);
+            }
+
+            progressChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: last7Days,
+                    datasets: [{
+                        label: 'Completion Rate %',
+                        data: completionData,
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#10b981',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointRadius: 6,
+                        pointHoverRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(156, 163, 175, 0.2)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateChart() {
+            if (!progressChart) return;
+            
+            const last7Days = [];
+            const completionData = [];
+            
+            for (let i = 6; i >= 0; i--) {
+                const date = new Date();
+                date.setDate(date.getDate() - i);
+                const dateStr = date.toISOString().split('T')[0];
+                
+                last7Days.push(date.toLocaleDateString('en-US', { weekday: 'short' }));
+                
+                const dayCompletions = habits.filter(h => 
+                    h.completions.some(c => c.date === dateStr)
+                ).length;
+                
+                const completionRate = habits.length > 0 ? (dayCompletions / habits.length) * 100 : 0;
+                completionData.push(completionRate);
+            }
+            
+            progressChart.data.labels = last7Days;
+            progressChart.data.datasets[0].data = completionData;
+            progressChart.update();
+        }
+    </script>
+</body>
+</html>

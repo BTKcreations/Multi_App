@@ -200,10 +200,37 @@
   {
     "id": "unit-converter",
     "name": "Unit Converter",
-    "file": "Apps/Unit_Converter.html",
+    "file": "Apps/Unit_Converter_Pro.html",
     "icon": "⚖️",
     "category": "Utilities",
     "keywords": "unit conversion length weight temperature volume",
     "description": "Convert between various units of measurement."
+  },
+  {
+    "id": "habit-tracker",
+    "name": "Habit Tracker Pro",
+    "file": "Apps/Habit_Tracker.html",
+    "icon": "🎯",
+    "category": "Productivity",
+    "keywords": "habit tracking streaks analytics calendar progress",
+    "description": "Build better habits with visual tracking and analytics."
+  },
+  {
+    "id": "project-timeline",
+    "name": "Project Timeline Creator",
+    "file": "Apps/Project_Timeline_Creator.html",
+    "icon": "📅",
+    "category": "Project Management",
+    "keywords": "gantt chart timeline project management milestones",
+    "description": "Create Gantt charts and manage project timelines."
+  },
+  {
+    "id": "regex-tester",
+    "name": "Regex Tester",
+    "file": "Apps/Regex_Tester.html",
+    "icon": "🔍",
+    "category": "Developer Tools",
+    "keywords": "regex tester validator",
+    "description": "Test and validate your regular expressions."
   }
 ]
