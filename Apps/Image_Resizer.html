@@ -380,9 +380,12 @@
         ;['dragleave','drop'].forEach(ev => fileUploadLabel.addEventListener(ev, (e) => { e.preventDefault(); e.stopPropagation(); fileUploadLabel.classList.remove('bg-slate-50','border-indigo-400'); }));
         fileUploadLabel.addEventListener('click', (e) => {
             // Ensure click reliably opens picker in all browsers
-            if (e.target.id !== 'browse-btn') fileInput.click();
+            if (e.target.id !== 'browse-btn') {
+                try { fileInput.value = ''; } catch(_) {}
+                fileInput.click();
+            }
         });
-        browseBtn.addEventListener('click', () => fileInput.click());
+        browseBtn.addEventListener('click', () => { try { fileInput.value = ''; } catch(_) {} fileInput.click(); });
         fileUploadLabel.addEventListener('drop', (e) => {
             const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
             if (file) handleFile(file);
@@ -391,6 +394,8 @@
         fileInput.addEventListener('change', (e) => {
             const file = e.target.files && e.target.files[0];
             if (file) handleFile(file);
+            // allow selecting the same file again next time
+            try { fileInput.value = ''; } catch(_) {}
         });
 
         // Paste image from clipboard
@@ -463,6 +468,10 @@
                     downloadBtn.classList.add('hidden');
                     fileUploadLabel.querySelector('span.font-semibold').textContent = 'Change image';
                     scaleSlider.value = 100; scaleValue.textContent = '100%';
+                };
+                originalImage.onerror = () => {
+                    showModal('This image format is not supported by your browser. Please try a PNG or JPEG.');
+                    originalImage = null;
                 };
                 originalImage.src = event.target.result;
             };
