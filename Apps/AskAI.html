@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini Chat Agent (GCA)</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Prism.js for syntax highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+    <style>
+        /* Custom scrollbar for aesthetics */
+        .chat-history-list::-webkit-scrollbar,
+        .chat-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        .chat-history-list::-webkit-scrollbar-thumb,
+        .chat-container::-webkit-scrollbar-thumb {
+            background-color: #6b7280; /* Gray-500 */
+            border-radius: 3px;
+        }
+        .chat-history-list::-webkit-scrollbar-track,
+        .chat-container::-webkit-scrollbar-track {
+            background-color: #1f2937; /* Gray-800 */
+        }
+
+        /* Styling for Agent chips */
+        .agent-chip {
+            transition: all 0.2s;
+        }
+        .agent-chip.selected {
+            background-color: #3b82f6; /* Blue-500 */
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        }
+        .agent-chip:not(.selected):hover {
+            background-color: #374151; /* Gray-700 */
+        }
+
+        /* Styling for Code Blocks */
+        .code-block {
+            position: relative;
+            margin: 10px 0;
+        }
+        .code-block pre {
+            background-color: #1f2937; /* Gray-800 */
+            border: 1px solid #374151; /* Gray-700 */
+            border-radius: 6px;
+            padding: 16px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        .code-block code {
+            color: #e5e7eb; /* Gray-200 */
+        }
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background-color: #3b82f6; /* Blue-500 */
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .copy-btn:hover {
+            background-color: #2563eb; /* Blue-600 */
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 flex h-screen overflow-hidden font-sans">
+
+    <!-- Global API Key and App ID Setup (Mandatory for Canvas Environment) -->
+    <script>
+        // These global variables are expected to be available in the Canvas environment
+        let apiKey = localStorage.getItem('gca_api_key') || (typeof __api_key !== 'undefined' ? __api_key : '');
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-gca-app';
+
+        // Set a default model
+        const MODEL_NAME = 'gemini-2.5-flash-preview-05-20';
+
+        // --- STATE MANAGEMENT (In-memory) ---
+        let agents = [];
+        let chatHistory = {}; // Stores all chats: { chatId: [{ role, parts }] }
+        let currentChatId = null;
+        let selectedAgentId = null;
+        let settings = {
+            memoryEnabled: true,
+            selectedAgentId: null,
+            sidebarOpen: true
+        };
+
+        const STORAGE_KEY = `${appId}_gca_data`;
+
+        // --- LOCAL STORAGE FUNCTIONS ---
+
+        function loadData() {
+            try {
+                const storedData = localStorage.getItem(STORAGE_KEY);
+                if (storedData) {
+                    const data = JSON.parse(storedData);
+                    agents = data.agents || [];
+                    chatHistory = data.chatHistory || {};
+                    settings = { ...settings, ...data.settings };
+
+                    // Restore the current chat ID and selected agent
+                    const chatIds = Object.keys(chatHistory);
+                    if (chatIds.length > 0) {
+                        currentChatId = chatIds[0];
+                    }
+
+                    // Select the chat specified in settings, or the first one
+                    if (settings.lastChatId && chatHistory[settings.lastChatId]) {
+                        currentChatId = settings.lastChatId;
+                    } else if (chatIds.length > 0) {
+                        currentChatId = chatIds[0];
+                    }
+
+                    selectedAgentId = settings.selectedAgentId;
+                    if (selectedAgentId && !agents.find(a => a.id === selectedAgentId)) {
+                        selectedAgentId = null; // Clear if agent was deleted
+                    }
+                }
+            } catch (e) {
+                console.error("Error loading data from localStorage:", e);
+                // Reset state to empty if parsing fails
+                agents = [];
+                chatHistory = {};
+                settings = { memoryEnabled: true, selectedAgentId: null, sidebarOpen: true };
+            }
+        }
+
+        function saveData() {
+            settings.lastChatId = currentChatId;
+            settings.selectedAgentId = selectedAgentId;
+
+            const dataToStore = {
+                agents,
+                chatHistory,
+                settings
+            };
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToStore));
+            } catch (e) {
+                console.error("Error saving data to localStorage:", e);
+            }
+        }
+
+        // --- CHAT FUNCTIONS ---
+
+        function createNewChat(title = 'New Chat') {
+            const newId = crypto.randomUUID();
+            chatHistory[newId] = [{
+                role: "user",
+                parts: [{ text: title }]
+            }];
+            currentChatId = newId;
+            saveData();
+            renderUI();
+        }
+
+        function switchChat(chatId) {
+            currentChatId = chatId;
+            saveData();
+            renderUI();
+        }
+
+        function deleteChat(chatId) {
+            if (confirmMessage("Are you sure you want to delete this chat history?")) {
+                delete chatHistory[chatId];
+                const chatIds = Object.keys(chatHistory);
+
+                if (currentChatId === chatId) {
+                    currentChatId = chatIds.length > 0 ? chatIds[0] : null;
+                }
+                saveData();
+                renderUI();
+            }
+        }
+
+        function updateChatTitle(chatId, newTitle) {
+            if (chatHistory[chatId]) {
+                // Update the first message (user prompt) which acts as the title
+                if (chatHistory[chatId][0].role === 'user') {
+                    chatHistory[chatId][0].parts[0].text = newTitle;
+                }
+                saveData();
+                renderHistorySidebar();
+            }
+        }
+
+        // --- AGENT MANAGEMENT (System Instructions) ---
+
+        function createAgent(name, instruction) {
+            const newAgent = {
+                id: crypto.randomUUID(),
+                name: name.trim(),
+                instruction: instruction.trim()
+            };
+            agents.push(newAgent);
+            saveData();
+            renderAgentList();
+        }
+
+        function selectAgent(agentId) {
+            if (selectedAgentId === agentId) {
+                selectedAgentId = null; // Deselect
+            } else {
+                selectedAgentId = agentId;
+            }
+            saveData();
+            renderAgentList();
+            renderActiveAgentChip();
+        }
+
+        function updateAgent(agentId, name, instruction) {
+            const agent = agents.find(a => a.id === agentId);
+            if (agent) {
+                agent.name = name.trim();
+                agent.instruction = instruction.trim();
+                saveData();
+                renderAgentList();
+                renderActiveAgentChip();
+            }
+        }
+
+        function deleteAgent(agentId) {
+            if (confirmMessage("Are you sure you want to delete this agent?")) {
+                agents = agents.filter(a => a.id !== agentId);
+                if (selectedAgentId === agentId) {
+                    selectedAgentId = null;
+                }
+                saveData();
+                renderAgentList();
+                renderActiveAgentChip();
+            }
+        }
+
+        // --- CODE BLOCK PARSING ---
+
+        function parseCodeBlocks(text) {
+            return text.replace(/```(\w+)?\n?([\s\S]*?)```/g, (match, lang, code) => {
+                return `<div class="code-block"><button onclick="copyCode(this.nextElementSibling.textContent)" class="copy-btn">Copy</button><pre class="line-numbers"><code class="${lang ? 'language-' + lang : ''}">${code}</code></pre></div>`;
+            });
+        }
+
+        function copyCode(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                statusMessage("Code copied to clipboard!");
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+            });
+        }
+
+        // --- UI RENDER FUNCTIONS ---
+
+        function renderActiveAgentChip() {
+            const agentChipContainer = document.getElementById('active-agent-chip');
+            const agent = agents.find(a => a.id === selectedAgentId);
+
+            if (agent) {
+                agentChipContainer.innerHTML = `
+                    <button onclick="openSettingsModal()" class="flex items-center space-x-2 px-3 py-1 bg-blue-600 text-white rounded-full text-sm shadow-lg hover:bg-blue-500 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                        </svg>
+                        <span>Agent: ${agent.name}</span>
+                    </button>
+                `;
+            } else {
+                agentChipContainer.innerHTML = `
+                    <button onclick="openSettingsModal()" class="flex items-center space-x-2 px-3 py-1 bg-gray-700 text-gray-300 rounded-full text-sm shadow-lg hover:bg-gray-600 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8 11V7a4 4 0 118 0v4m-5 4h2m-7 4h14a2 2 0 002-2v-3a2 2 0 00-2-2H5a2 2 0 00-2 2v3a2 2 0 002 2z" />
+                        </svg>
+                        <span>No Agent Selected</span>
+                    </button>
+                `;
+            }
+        }
+
+        function renderAgentList() {
+            const list = document.getElementById('agent-list');
+            if (!list) return;
+
+            list.innerHTML = agents.map(agent => `
+                <div class="agent-chip flex justify-between items-center p-3 rounded-lg border border-gray-700 mb-2 cursor-pointer ${agent.id === selectedAgentId ? 'selected' : 'bg-gray-800'}"
+                     onclick="selectAgent('${agent.id}')">
+                    <div class="flex-1">
+                        <h4 class="font-semibold">${agent.name}</h4>
+                        <p class="text-xs text-gray-400 truncate">${agent.instruction}</p>
+                    </div>
+                    <button class="ml-4 text-gray-400 hover:text-yellow-400 p-1 rounded-full"
+                            onclick="event.stopPropagation(); editAgentModal('${agent.id}')">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                        </svg>
+                    </button>
+                    <button class="ml-2 text-gray-400 hover:text-red-400 p-1 rounded-full"
+                            onclick="event.stopPropagation(); deleteAgent('${agent.id}')">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function renderHistorySidebar() {
+            const list = document.getElementById('chat-history-list');
+            if (!list) return;
+
+            const chatIds = Object.keys(chatHistory).sort().reverse(); // Show latest first
+            list.innerHTML = chatIds.map(id => {
+                const chat = chatHistory[id];
+                const title = chat && chat[0] && chat[0].parts[0].text ? chat[0].parts[0].text.substring(0, 30) + '...' : 'Untitled Chat';
+                const isActive = id === currentChatId;
+
+                return `
+                    <div class="flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${isActive ? 'bg-blue-700' : 'hover:bg-gray-700'}"
+                         onclick="switchChat('${id}')">
+                        <span class="truncate text-sm mr-2">${title}</span>
+                        <div class="flex space-x-1">
+                            <button class="text-gray-300 hover:text-yellow-400 p-1" onclick="event.stopPropagation(); promptForTitleEdit('${id}', '${title.replace(/'/g, "\\'")}')">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                </svg>
+                            </button>
+                            <button class="text-gray-300 hover:text-red-400 p-1" onclick="event.stopPropagation(); deleteChat('${id}')">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Adjust sidebar state
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('w-0', !settings.sidebarOpen);
+            sidebar.classList.toggle('w-64', settings.sidebarOpen);
+            document.getElementById('main-content').classList.toggle('ml-0', !settings.sidebarOpen);
+            document.getElementById('main-content').classList.toggle('lg:ml-64', settings.sidebarOpen);
+        }
+
+        function renderChatContainer() {
+            const container = document.getElementById('chat-container');
+            if (!container) return;
+
+            container.innerHTML = ''; // Clear existing content
+
+            const messages = chatHistory[currentChatId] || [];
+
+            if (messages.length === 0) {
+                container.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-full p-8 text-center text-gray-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                        </svg>
+                        <h2 class="text-2xl font-semibold">Start a New Conversation</h2>
+                        <p class="mt-2">Type your message below. The chat will save automatically.</p>
+                        ${selectedAgentId ? `<p class="mt-2 text-blue-400">Current Agent: ${agents.find(a => a.id === selectedAgentId).name}</p>` : ''}
+                    </div>
+                `;
+                return;
+            }
+
+            messages.forEach((message, index) => {
+                const isUser = message.role === 'user';
+                const content = message.parts[0].text;
+                const messageId = `${currentChatId}-msg-${index}`; // Unique ID for each message element
+
+                // Parse markdown, handling code blocks with placeholders to avoid parsing inside them
+                let codeBlocks = [];
+                let tempContent = content.replace(/```(\w+)?\n?([\s\S]*?)```/g, (match, lang, code) => {
+                    const placeholder = `__CODE_BLOCK_${codeBlocks.length}__`;
+                    codeBlocks.push({ lang: lang || '', code });
+                    return placeholder;
+                });
+
+                // Apply other markdown parsing
+                tempContent = tempContent
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // **bold**
+                    .replace(/\*(.*?)\*/g, '<em>$1</em>')           // *italics*
+                    .replace(/`([^`]+)`/g, '<code>$1</code>')        // `inline code`
+                    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>') // [text](url)
+                    .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>') // > blockquote
+                    .replace(/\n/g, '<br>');                          // newlines
+
+                // Replace placeholders with code block HTML
+                let formattedContent = tempContent.replace(/__CODE_BLOCK_(\d+)__/g, (match, index) => {
+                    const { lang, code } = codeBlocks[parseInt(index)];
+                    return `<div class="code-block"><button onclick="copyCode(this.nextElementSibling.textContent)" class="copy-btn">Copy</button><pre class="line-numbers"><code class="${lang ? 'language-' + lang : ''}">${code}</code></pre></div>`;
+                });
+
+                container.innerHTML += `
+                    <div id="${messageId}" class="flex ${isUser ? 'justify-end' : 'justify-start'} mb-6">
+                        <div class="max-w-4xl p-4 rounded-xl shadow-lg ${isUser
+                            ? 'bg-blue-600 text-white rounded-tr-none'
+                            : 'bg-gray-800 text-gray-100 rounded-tl-none'}">
+                            <div class="font-semibold text-sm mb-1">
+                                ${isUser ? 'You' : 'Gemini'}
+                            </div>
+                            <div class="text-base break-words">${formattedContent}</div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            Prism.highlightAll(); // Enable syntax highlighting for code blocks
+
+            container.scrollTop = container.scrollHeight; // Scroll to bottom
+        }
+
+        function renderSettingsModal() {
+            const modal = document.getElementById('settings-modal');
+            const memoryToggle = document.getElementById('memory-toggle');
+            if (memoryToggle) {
+                memoryToggle.checked = settings.memoryEnabled;
+            }
+            renderAgentList(); // Render the agent list inside the modal
+        }
+
+        function renderUI() {
+            renderHistorySidebar();
+            renderChatContainer();
+            renderSettingsModal();
+            renderActiveAgentChip();
+        }
+
+        // --- UTILITY UI FUNCTIONS ---
+
+        function toggleSidebar() {
+            settings.sidebarOpen = !settings.sidebarOpen;
+            saveData();
+            renderHistorySidebar();
+        }
+
+        function openSettingsModal() {
+            document.getElementById('settings-modal').classList.remove('hidden');
+            renderSettingsModal(); // Ensure latest data is rendered
+        }
+
+        function closeSettingsModal() {
+            document.getElementById('settings-modal').classList.add('hidden');
+        }
+
+        function openAgentModal(mode, agentId = null) {
+            const modal = document.getElementById('agent-crud-modal');
+            const titleElement = document.getElementById('agent-modal-title');
+            const nameInput = document.getElementById('agent-name-input');
+            const instructionInput = document.getElementById('agent-instruction-input');
+            const form = document.getElementById('agent-crud-form');
+
+            form.dataset.mode = mode;
+            form.dataset.agentId = agentId || '';
+
+            if (mode === 'create') {
+                titleElement.textContent = 'Create New Agent';
+                nameInput.value = '';
+                instructionInput.value = '';
+            } else if (mode === 'edit') {
+                const agent = agents.find(a => a.id === agentId);
+                if (!agent) {
+                    console.error("Agent not found for editing.");
+                    return;
+                }
+                titleElement.textContent = `Edit Agent: ${agent.name}`;
+                nameInput.value = agent.name;
+                instructionInput.value = agent.instruction;
+            }
+
+            modal.classList.remove('hidden');
+            closeSettingsModal(); // Close settings modal when opening agent modal
+        }
+
+        function closeAgentModal() {
+            document.getElementById('agent-crud-modal').classList.add('hidden');
+            openSettingsModal(); // Reopen settings modal
+        }
+
+        function handleAgentFormSubmit(event) {
+            event.preventDefault();
+            const form = event.target;
+            const mode = form.dataset.mode;
+            const agentId = form.dataset.agentId;
+            const name = document.getElementById('agent-name-input').value;
+            const instruction = document.getElementById('agent-instruction-input').value;
+
+            if (!name.trim() || !instruction.trim()) {
+                errorMessage("Agent name and instructions are required.");
+                return;
+            }
+
+            if (mode === 'create') {
+                createAgent(name, instruction);
+            } else if (mode === 'edit') {
+                updateAgent(agentId, name, instruction);
+            }
+
+            closeAgentModal();
+        }
+
+        function editAgentModal(agentId) {
+            openAgentModal('edit', agentId);
+        }
+
+        function promptForTitleEdit(chatId, currentTitle) {
+            const newTitle = promptMessage(`Edit title for: ${currentTitle.substring(0, 20)}...`, currentTitle);
+            if (newTitle && newTitle.trim()) {
+                updateChatTitle(chatId, newTitle.trim());
+            }
+        }
+
+        function toggleMemory() {
+            settings.memoryEnabled = document.getElementById('memory-toggle').checked;
+            saveData();
+            statusMessage(`Chat memory is now ${settings.memoryEnabled ? 'ON' : 'OFF'}.`);
+        }
+
+        // Custom modal implementation (required instead of alert/confirm)
+        function statusMessage(message) {
+            const msgBox = document.getElementById('message-box');
+            msgBox.textContent = message;
+            msgBox.classList.remove('hidden', 'bg-red-500', 'bg-yellow-500');
+            msgBox.classList.add('bg-green-500');
+            setTimeout(() => msgBox.classList.add('hidden'), 3000);
+        }
+
+        function errorMessage(message) {
+            const msgBox = document.getElementById('message-box');
+            msgBox.textContent = message;
+            msgBox.classList.remove('hidden', 'bg-green-500', 'bg-yellow-500');
+            msgBox.classList.add('bg-red-500');
+            setTimeout(() => msgBox.classList.add('hidden'), 5000);
+        }
+
+        function promptMessage(message, defaultValue = '') {
+            const value = window.prompt(message, defaultValue);
+            return value;
+        }
+
+        function confirmMessage(message) {
+            return window.confirm(message);
+        }
+
+        // --- GEMINI API INTEGRATION ---
+
+        /**
+         * Fetches response from Gemini and simulates streaming via a typewriter effect.
+         * @param {string} userPrompt The user's latest prompt.
+         * @param {string} botMessageElementId The ID of the DOM element to write the response into.
+         * @returns {Promise<string>} The full, final response text.
+         */
+        async function fetchGeminiResponse(userPrompt, botMessageElementId) {
+            const sendButton = document.getElementById('send-button');
+            const chatInput = document.getElementById('chat-input');
+            const loadingIndicator = document.getElementById('loading-indicator');
+
+            // Find the element for streaming
+            const botElement = document.getElementById(botMessageElementId);
+            const contentDiv = botElement ? botElement.querySelector('.text-base') : null;
+
+            sendButton.disabled = true;
+            chatInput.disabled = true;
+            loadingIndicator.classList.remove('hidden');
+
+            const currentChat = chatHistory[currentChatId] || [];
+
+            // 1. Prepare history for API (context)
+            let contents = [];
+            if (settings.memoryEnabled) {
+                // If memory is enabled, use the full chat history
+                // Exclude the first message (title) and the new empty bot placeholder
+                const historyToInclude = currentChat.length > 2 ? currentChat.slice(1, -1) : [];
+                contents = historyToInclude;
+            }
+
+            // 2. Add the new user prompt
+            contents.push({ role: "user", parts: [{ text: userPrompt }] });
+
+            // 3. Get the selected system instruction (Agent)
+            const agent = agents.find(a => a.id === selectedAgentId);
+            const systemInstruction = agent ? agent.instruction : 'You are a helpful and friendly assistant.';
+
+            const payload = {
+                contents: contents,
+                tools: [{ "google_search": {} }],
+                systemInstruction: {
+                    parts: [{ text: systemInstruction }]
+                }
+            };
+
+            // 4. Exponential Backoff for API call
+            const MAX_RETRIES = 5;
+            let response = null;
+            let lastError = null;
+
+            const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${apiKey}`;
+
+            for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+                try {
+                    const fetchResponse = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (fetchResponse.ok) {
+                        response = await fetchResponse.json();
+                        break; // Success
+                    } else if (fetchResponse.status === 429) {
+                        // Too Many Requests (Rate limit)
+                        lastError = `Rate limit exceeded. Retrying in ${Math.pow(2, attempt)}s.`;
+                        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+                    } else {
+                        // Other non-retriable error
+                        const errorBody = await fetchResponse.json();
+                        throw new Error(`API error: ${fetchResponse.status} - ${errorBody.error?.message || fetchResponse.statusText}`);
+                    }
+                } catch (error) {
+                    lastError = error.message;
+                    // If it's a network error or a retriable error, we continue the loop, otherwise we break.
+                    if (attempt === MAX_RETRIES - 1) break; // Final attempt failed
+                    await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+                }
+            }
+
+            // 5. Final processing and cleanup
+            sendButton.disabled = false;
+            chatInput.disabled = false;
+            loadingIndicator.classList.add('hidden');
+            chatInput.focus();
+
+            if (!response || !response.candidates || response.candidates.length === 0) {
+                errorMessage(`Failed to get response: ${lastError || "Unknown API error."}`);
+                return "Error: Could not retrieve a response.";
+            }
+
+            const candidate = response.candidates[0];
+            const botResponse = candidate.content?.parts?.[0]?.text || "I'm sorry, I couldn't process that request.";
+
+            // --- Typewriter Simulation (The "Streaming" effect) ---
+            if (contentDiv) {
+                contentDiv.innerHTML = ''; // Clear placeholder '...'
+
+                // Split the response by newline to handle line breaks correctly during typing
+                const lines = botResponse.split('\n');
+                const delay = 15; // ms per character
+
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i];
+                    for (let j = 0; j < line.length; j++) {
+                        contentDiv.innerHTML += line[j];
+
+                        // Scroll container to bottom
+                        const container = document.getElementById('chat-container');
+                        container.scrollTop = container.scrollHeight;
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                    }
+                    if (i < lines.length - 1) {
+                        contentDiv.innerHTML += '<br>'; // Add newline break
+                        // Add a slightly longer pause for line breaks
+                        await new Promise(resolve => setTimeout(resolve, delay * 3));
+                    }
+                }
+            } else {
+                 console.error("Bot message element not found for streaming simulation:", botMessageElementId);
+            }
+            
+            // REMOVED THE PREMATURE renderChatContainer() call here.
+            // The history update and subsequent renders (when switching chats) will now use the correct final text.
+            
+            return botResponse;
+        }
+
+        async function handleChatFormSubmit(event) {
+            event.preventDefault();
+            const inputElement = document.getElementById('chat-input');
+            const userPrompt = inputElement.value.trim();
+
+            if (!userPrompt) return;
+
+            // If this is the first message in a new chat, use the prompt as the title
+            if (!currentChatId || chatHistory[currentChatId].length <= 1) {
+                if (!currentChatId) createNewChat(userPrompt);
+                else updateChatTitle(currentChatId, userPrompt);
+            }
+
+            // 1. Add user message to history
+            const userMessage = { role: "user", parts: [{ text: userPrompt }] };
+            chatHistory[currentChatId].push(userMessage);
+
+            // 2. Add an EMPTY bot message placeholder to history and get its ID
+            // The placeholder text "..." ensures the message bubble is visible while waiting.
+            const botMessagePlaceholder = { role: "model", parts: [{ text: "..." }] };
+            chatHistory[currentChatId].push(botMessagePlaceholder);
+            const botMessageIndex = chatHistory[currentChatId].length - 1;
+            const botMessageElementId = `${currentChatId}-msg-${botMessageIndex}`; // ID for the element
+
+            // Clear input and re-render to show user message and empty bot placeholder
+            inputElement.value = '';
+            renderChatContainer(); // Renders the new user message and the placeholder
+            saveData();
+
+            // 3. Get AI response and "stream" it into the placeholder element
+            const botResponseText = await fetchGeminiResponse(userPrompt, botMessageElementId);
+
+            // 4. Update the history with the final, complete text
+            // Use the full markdown content here so it's saved correctly
+            chatHistory[currentChatId][botMessageIndex].parts[0].text = botResponseText;
+
+            saveData();
+            renderHistorySidebar(); // In case the title was updated
+        }
+
+        // --- INITIALIZATION ---
+
+        // --- API KEY MODAL FUNCTIONS ---
+
+        function openApiKeyModal() {
+            document.getElementById('api-key-modal').classList.remove('hidden');
+        }
+
+        function closeApiKeyModal() {
+            document.getElementById('api-key-modal').classList.add('hidden');
+        }
+
+        function handleApiKeySubmit(event) {
+            event.preventDefault();
+            const key = document.getElementById('api-key-input').value.trim();
+            if (!key) {
+                errorMessage("API Key is required.");
+                return;
+            }
+            apiKey = key;
+            localStorage.setItem('gca_api_key', apiKey);
+            closeApiKeyModal();
+            statusMessage("API Key saved successfully.");
+        }
+
+        function init() {
+            loadData();
+
+            // Check for API key
+            if (!apiKey) {
+                openApiKeyModal();
+            }
+
+            // If no chat history exists, create a default one
+            if (Object.keys(chatHistory).length === 0) {
+                createNewChat('Welcome to GCA');
+            }
+
+            // If no current chat is selected (only happens if all chats were deleted)
+            if (!currentChatId && Object.keys(chatHistory).length > 0) {
+                currentChatId = Object.keys(chatHistory)[0];
+            } else if (!currentChatId) {
+                 createNewChat('Welcome to GCA');
+            }
+
+            // Set up event listeners
+            document.getElementById('chat-form').addEventListener('submit', handleChatFormSubmit);
+            document.getElementById('agent-crud-form').addEventListener('submit', handleAgentFormSubmit);
+            document.getElementById('api-key-form').addEventListener('submit', handleApiKeySubmit);
+            document.getElementById('new-chat-btn').addEventListener('click', () => createNewChat());
+            document.getElementById('open-settings-btn').addEventListener('click', openSettingsModal);
+            document.getElementById('close-settings-btn').addEventListener('click', closeSettingsModal);
+            document.getElementById('close-api-key-modal').addEventListener('click', closeApiKeyModal);
+            document.getElementById('add-agent-btn').addEventListener('click', () => openAgentModal('create'));
+            document.getElementById('close-agent-modal').addEventListener('click', closeAgentModal);
+            document.getElementById('sidebar-toggle-btn').addEventListener('click', toggleSidebar);
+
+            renderUI();
+        }
+
+        window.onload = init;
+    </script>
+
+    <!-- Global Message Box (for status/error messages) -->
+    <div id="message-box" class="fixed top-4 right-4 z-50 p-3 rounded-lg shadow-xl text-white font-semibold hidden transition-all duration-300">
+        <!-- Messages appear here -->
+    </div>
+
+    <!-- Sidebar (History) -->
+    <aside id="sidebar" class="bg-gray-800 text-gray-200 flex-shrink-0 transform transition-all duration-300 ease-in-out w-64 lg:static z-20 h-full flex flex-col border-r border-gray-700">
+        <!-- Header -->
+        <div class="p-4 flex items-center justify-between border-b border-gray-700">
+            <h2 class="text-xl font-bold text-blue-400">GCA</h2>
+            <button id="sidebar-toggle-btn" class="text-gray-400 hover:text-white lg:hidden">
+                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16m-7 6h7" />
+                </svg>
+            </button>
+        </div>
+
+        <!-- Controls -->
+        <div class="p-4 border-b border-gray-700 space-y-2">
+            <button id="new-chat-btn" class="w-full flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors shadow-md">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+                <span>New Chat</span>
+            </button>
+            <button id="open-settings-btn" class="w-full flex items-center justify-center space-x-2 bg-gray-700 hover:bg-gray-600 text-gray-200 font-semibold py-2 px-4 rounded-lg transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.228.07 2.573-1.065z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span>Settings / Agents</span>
+            </button>
+        </div>
+
+        <!-- History List -->
+        <div class="p-4 flex-1 overflow-y-auto chat-history-list">
+            <h3 class="text-xs uppercase font-semibold text-gray-500 mb-2">History</h3>
+            <div id="chat-history-list" class="space-y-1">
+                <!-- Chat items rendered here -->
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Chat Area -->
+    <main id="main-content" class="flex-1 flex flex-col ml-0 lg:ml-64 transition-all duration-300">
+        <!-- Chat Header -->
+        <header class="p-4 bg-gray-800 border-b border-gray-700 flex justify-between items-center shadow-lg">
+            <h1 class="text-xl font-semibold">Gemini Chat</h1>
+            <div id="active-agent-chip">
+                <!-- Active Agent Chip Renders Here -->
+            </div>
+        </header>
+
+        <!-- Chat Messages Container -->
+        <section id="chat-container" class="flex-1 p-6 overflow-y-auto chat-container space-y-4"></section>
+
+        <!-- Input Area -->
+        <footer class="p-4 bg-gray-800 border-t border-gray-700 shadow-xl">
+            <form id="chat-form" class="flex items-center space-x-3">
+                <input type="text" id="chat-input" placeholder="Type your message..."
+                       class="flex-1 p-3 bg-gray-700 text-white rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none transition-shadow"
+                       autocomplete="off">
+                <button type="submit" id="send-button"
+                        class="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-xl transition-colors shadow-md disabled:bg-gray-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                </button>
+            </form>
+            <div id="loading-indicator" class="mt-2 text-center text-sm text-blue-400 hidden">
+                <span class="animate-pulse">Gemini is thinking...</span>
+            </div>
+        </footer>
+    </main>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-75 z-40 hidden flex items-center justify-center transition-opacity duration-300">
+        <div class="bg-gray-800 rounded-xl shadow-2xl w-full max-w-lg m-4 transform transition-transform duration-300 scale-100 border border-gray-700">
+            <!-- Modal Header -->
+            <div class="p-5 border-b border-gray-700 flex justify-between items-center">
+                <h3 class="text-2xl font-bold text-blue-400">Application Settings</h3>
+                <button id="close-settings-btn" class="text-gray-400 hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Modal Content -->
+            <div class="p-5 space-y-8 overflow-y-auto max-h-[80vh]">
+
+                <!-- Memory Setting -->
+                <div>
+                    <h4 class="text-xl font-semibold mb-3 text-gray-200 flex items-center space-x-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                        </svg>
+                        <span>Chat Memory</span>
+                    </h4>
+                    <div class="flex items-center justify-between bg-gray-700 p-4 rounded-lg">
+                        <label for="memory-toggle" class="text-lg font-medium">Enable Contextual Memory</label>
+                        <input type="checkbox" id="memory-toggle" onchange="toggleMemory()" class="form-checkbox h-6 w-6 text-blue-600 bg-gray-600 border-gray-500 rounded focus:ring-blue-500">
+                    </div>
+                    <p class="text-sm text-gray-400 mt-2">When enabled, the full chat history is sent with every new prompt, allowing the AI to remember previous context. Disable for isolated, single-turn responses.</p>
+                </div>
+
+                <!-- Agent Management (System Instructions) -->
+                <div>
+                    <h4 class="text-xl font-semibold mb-3 text-gray-200 flex items-center space-x-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 13.255A23.513 23.513 0 0112 15c-3.18 0-6.23-.742-9-2.261m18 0V21m-9-1h9V7" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 10a5 5 0 00-5 5v2m10-7h-2.316a5 5 0 00-1.884 3.736m0 0a5 5 0 00-1.884-3.736m0 0H9.316" />
+                        </svg>
+                        <span>Custom Agents (System Instructions)</span>
+                    </h4>
+                    <p class="text-sm text-gray-400 mb-4">Define custom personas or instruction sets for the AI. The selected agent's instructions are sent with every API call.</p>
+
+                    <button id="add-agent-btn" class="w-full flex items-center justify-center space-x-2 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors shadow-md mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>Create New Agent</span>
+                    </button>
+
+                    <div id="agent-list" class="space-y-2 max-h-60 overflow-y-auto pr-2">
+                        <!-- Agent items rendered here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-5 border-t border-gray-700 text-right">
+                <button onclick="closeSettingsModal()" class="bg-gray-600 hover:bg-gray-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors">
+                    Done
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Agent CRUD Modal -->
+    <div id="agent-crud-modal" class="fixed inset-0 bg-black bg-opacity-75 z-50 hidden flex items-center justify-center transition-opacity duration-300">
+        <div class="bg-gray-800 rounded-xl shadow-2xl w-full max-w-md m-4 transform transition-transform duration-300 scale-100 border border-gray-700">
+            <!-- Modal Header -->
+            <div class="p-5 border-b border-gray-700 flex justify-between items-center">
+                <h3 id="agent-modal-title" class="text-xl font-bold text-green-400">Create New Agent</h3>
+                <button id="close-agent-modal" class="text-gray-400 hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Modal Content -->
+            <form id="agent-crud-form" data-mode="create" data-agent-id="" class="p-5 space-y-4">
+                <div>
+                    <label for="agent-name-input" class="block text-sm font-medium text-gray-300 mb-1">Agent Name (e.g., 'Stoic Philosopher')</label>
+                    <input type="text" id="agent-name-input" required class="w-full p-3 bg-gray-700 text-white rounded-lg border border-gray-600 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                    <label for="agent-instruction-input" class="block text-sm font-medium text-gray-300 mb-1">System Instructions (The Agent's Persona/Rules)</label>
+                    <textarea id="agent-instruction-input" rows="6" required placeholder="Example: You are a concise, witty, and slightly cynical programmer. Respond in rhyming couplets."
+                        class="w-full p-3 bg-gray-700 text-white rounded-lg border border-gray-600 focus:ring-blue-500 focus:border-blue-500 resize-none"></textarea>
+                </div>
+                <div class="pt-2 text-right">
+                    <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors shadow-md">
+                        Save Agent
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- API Key Modal -->
+    <div id="api-key-modal" class="fixed inset-0 bg-black bg-opacity-75 z-50 hidden flex items-center justify-center transition-opacity duration-300">
+        <div class="bg-gray-800 rounded-xl shadow-2xl w-full max-w-md m-4 transform transition-transform duration-300 scale-100 border border-gray-700">
+            <!-- Modal Header -->
+            <div class="p-5 border-b border-gray-700 flex justify-between items-center">
+                <h3 class="text-xl font-bold text-blue-400">Enter API Key</h3>
+                <button id="close-api-key-modal" class="text-gray-400 hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Modal Content -->
+            <form id="api-key-form" class="p-5 space-y-4">
+                <div>
+                    <label for="api-key-input" class="block text-sm font-medium text-gray-300 mb-1">Gemini API Key</label>
+                    <input type="password" id="api-key-input" required placeholder="Enter your Gemini API key"
+                        class="w-full p-3 bg-gray-700 text-white rounded-lg border border-gray-600 focus:ring-blue-500 focus:border-blue-500">
+                    <p class="text-xs text-gray-400 mt-1">Your API key is stored locally and never sent anywhere else.</p>
+                </div>
+                <div class="pt-2 text-right">
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors shadow-md">
+                        Save API Key
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</body>
+</html>

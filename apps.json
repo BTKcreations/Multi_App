@@ -232,5 +232,14 @@
     "category": "Developer Tools",
     "keywords": "regex tester validator",
     "description": "Test and validate your regular expressions."
+  },
+  {
+    "id": "AI Chatbot",
+    "name": "AI Chatbot",
+    "file": "App/AskAI.html",
+    "icon": "🤖",
+    "category": "Productivity",
+    "keywords": "chatbot ai assistant productivity",
+    "description": "AI-powered chatbot for productivity and assistance."
   }
 ]
