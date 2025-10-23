@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#3b82f6">
     <title>Multi App Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/tailwindcss@3.x/dist/tailwind.min.css">
     <style>
         .sr-only {
             position: absolute;
@@ -35,130 +35,125 @@
                         </button>
                     </li>
                     <li>
-                        <button id="nav-about" class="w-full text-left px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700" role="menuitem" tabindex="0">
-                            About
+                        <button id="nav-notes" class="w-full text-left px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700" role="menuitem">
+                            Notes
+                        </button>
+                    </li>
+                    <li>
+                        <button id="nav-calendar" class="w-full text-left px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700" role="menuitem">
+                            Calendar
+                        </button>
+                    </li>
+                    <li>
+                        <button id="nav-budget" class="w-full text-left px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700" role="menuitem">
+                            Budget
+                        </button>
+                    </li>
+                    <li>
+                        <button id="nav-tasks" class="w-full text-left px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700" role="menuitem">
+                            Tasks
+                        </button>
+                    </li>
+                    <li>
+                        <button id="nav-weather" class="w-full text-left px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700" role="menuitem">
+                            Weather
                         </button>
                     </li>
                 </ul>
             </nav>
             <div class="p-4 border-t border-gray-200 dark:border-gray-700">
-                <button id="theme-toggle" class="w-full flex items-center justify-center gap-2 px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700" aria-label="Toggle dark mode" tabindex="0">
-                    <span id="theme-icon">🌙</span>
-                    <span id="theme-text">Dark Mode</span>
+                <button id="dark-mode-toggle" class="w-full px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600" aria-label="Toggle dark mode">
+                    <span id="dark-mode-icon">🌙</span> Toggle Dark Mode
                 </button>
             </div>
         </aside>
 
         <!-- Main Content -->
         <main id="main-content" class="flex-1 overflow-auto" role="main" aria-label="Main content">
-            <div class="max-w-7xl mx-auto p-6">
-                <!-- Header with Search -->
-                <header class="mb-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <h2 class="text-2xl font-bold">Dashboard</h2>
-                        <button id="command-palette-trigger" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" aria-label="Open command palette" aria-keyshortcuts="Control+k" tabindex="0">
-                            Quick Search (Ctrl+K)
-                        </button>
+            <!-- Dashboard View -->
+            <div id="dashboard-view" class="p-8">
+                <h2 class="text-3xl font-bold mb-8">Dashboard</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+                        <h3 class="text-xl font-bold mb-2">Notes</h3>
+                        <p class="text-gray-600 dark:text-gray-400">Quick access to your notes</p>
                     </div>
-                    <div class="relative">
-                        <label for="search" class="sr-only">Search apps</label>
-                        <input
-                            id="search"
-                            type="text"
-                            placeholder="Search apps..."
-                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            aria-label="Search apps"
-                            tabindex="0"
-                        />
+                    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+                        <h3 class="text-xl font-bold mb-2">Calendar</h3>
+                        <p class="text-gray-600 dark:text-gray-400">Manage your schedule</p>
                     </div>
-                </header>
-
-                <!-- Category Filters -->
-                <section class="mb-6" role="region" aria-label="Category filters">
-                    <h3 class="sr-only">Filter by category</h3>
-                    <div id="category-chips" class="flex flex-wrap gap-2" role="group" aria-label="Category filter buttons"></div>
-                </section>
-
-                <!-- Pinned Apps Section -->
-                <section id="pinned-section" class="hidden bg-white dark:bg-gray-800 rounded-xl shadow p-4 mb-6" role="region" aria-label="Pinned apps">
-                    <div class="flex items-center justify-between mb-3">
-                        <h3 class="text-lg font-semibold">Pinned</h3>
+                    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+                        <h3 class="text-xl font-bold mb-2">Budget</h3>
+                        <p class="text-gray-600 dark:text-gray-400">Track your finances</p>
                     </div>
-                    <div id="pinned-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" role="list"></div>
-                </section>
-
-                <!-- Recent Apps Section -->
-                <section id="recent-section" class="hidden bg-white dark:bg-gray-800 rounded-xl shadow p-4 mb-6" role="region" aria-label="Recent apps">
-                    <div class="flex items-center justify-between mb-3">
-                        <h3 class="text-lg font-semibold">Recent</h3>
+                    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+                        <h3 class="text-xl font-bold mb-2">Tasks</h3>
+                        <p class="text-gray-600 dark:text-gray-400">Keep track of your to-dos</p>
                     </div>
-                    <div id="recent-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" role="list"></div>
-                </section>
-
-                <!-- All Apps Section -->
-                <section id="all-section" class="bg-white dark:bg-gray-800 rounded-xl shadow p-4" role="region" aria-label="All apps">
-                    <div class="flex items-center justify-between mb-3">
-                        <h3 class="text-lg font-semibold">All Apps</h3>
+                    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+                        <h3 class="text-xl font-bold mb-2">Weather</h3>
+                        <p class="text-gray-600 dark:text-gray-400">Check the forecast</p>
                     </div>
-                    <div id="all-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" role="list"></div>
-                </section>
+                </div>
             </div>
 
-            <!-- App Viewer -->
-            <section id="app-viewer-view" class="hidden h-full" role="region" aria-label="App viewer">
-                <button onclick="toggleFullScreen();" id="close-fullscreen-button" class="fixed top-4 right-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 z-50" aria-label="Toggle fullscreen mode" tabindex="0">
-                    Fullscreen
-                </button>
-                <div id="app-error" class="hidden mb-3 p-3 bg-red-100 text-red-800 rounded" role="alert" aria-live="polite">
-                    Unable to load app. 
-                    <a id="app-open-new" class="underline" target="_blank" rel="noopener" aria-label="Open app in new tab" tabindex="0">Open in new tab</a>
-                     · 
-                    <button id="app-retry" class="underline" aria-label="Retry loading app" tabindex="0">Retry</button>
+            <!-- Notes View -->
+            <div id="notes-view" class="p-8 hidden">
+                <h2 class="text-3xl font-bold mb-8">Notes</h2>
+                <div class="mb-6">
+                    <button id="add-note-btn" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                        Add Note
+                    </button>
                 </div>
-                <iframe 
-                    id="app-iframe" 
-                    name="app-frame" 
-                    class="w-full h-full border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-900"
-                    title="Application content"
-                    aria-label="Application frame"
-                ></iframe>
-            </section>
+                <div id="notes-container" class="space-y-4" role="region" aria-label="Notes list">
+                    <!-- Notes will be added dynamically -->
+                </div>
+            </div>
+
+            <!-- Calendar View -->
+            <div id="calendar-view" class="p-8 hidden">
+                <h2 class="text-3xl font-bold mb-8">Calendar</h2>
+                <div id="calendar-container" class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow" role="region" aria-label="Calendar">
+                    <!-- Calendar will be rendered here -->
+                </div>
+            </div>
+
+            <!-- Budget View -->
+            <div id="budget-view" class="p-8 hidden">
+                <h2 class="text-3xl font-bold mb-8">Budget Tracker</h2>
+                <div class="mb-6">
+                    <button id="add-expense-btn" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                        Add Expense
+                    </button>
+                </div>
+                <div id="expenses-container" class="space-y-4" role="region" aria-label="Expenses list">
+                    <!-- Expenses will be added dynamically -->
+                </div>
+            </div>
+
+            <!-- Tasks View -->
+            <div id="tasks-view" class="p-8 hidden">
+                <h2 class="text-3xl font-bold mb-8">Tasks</h2>
+                <div class="mb-6">
+                    <button id="add-task-btn" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                        Add Task
+                    </button>
+                </div>
+                <div id="tasks-container" class="space-y-4" role="region" aria-label="Tasks list">
+                    <!-- Tasks will be added dynamically -->
+                </div>
+            </div>
+
+            <!-- Weather View -->
+            <div id="weather-view" class="p-8 hidden">
+                <h2 class="text-3xl font-bold mb-8">Weather</h2>
+                <div id="weather-container" class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow" role="region" aria-label="Weather information">
+                    <!-- Weather info will be displayed here -->
+                </div>
+            </div>
         </main>
     </div>
 
-    <!-- Command Palette Modal -->
-    <div id="command-palette-modal" class="hidden fixed inset-0 z-50 bg-black bg-opacity-50 flex items-start justify-center p-8" role="dialog" aria-modal="true" aria-labelledby="command-palette-title">
-        <div class="w-full max-w-2xl bg-white dark:bg-gray-800 rounded-xl shadow-xl overflow-hidden">
-            <div class="p-3 border-b border-gray-200 dark:border-gray-700">
-                <h2 id="command-palette-title" class="sr-only">Command Palette</h2>
-                <label for="command-palette-input" class="sr-only">Search apps</label>
-                <input 
-                    id="command-palette-input" 
-                    type="text" 
-                    placeholder="Search apps..." 
-                    class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" 
-                    autocomplete="off"
-                    aria-label="Search for apps in command palette"
-                    tabindex="0"
-                />
-            </div>
-            <ul id="command-palette-results" class="max-h-80 overflow-y-auto divide-y divide-gray-200 dark:divide-gray-700" role="listbox" aria-label="Search results"></ul>
-        </div>
-    </div>
-
-    <!-- App Context Menu -->
-    <div id="app-context-menu" class="hidden fixed z-50 w-48 bg-white dark:bg-gray-800 shadow-lg rounded-md border border-gray-200 dark:border-gray-700 py-1" role="menu" aria-label="App actions">
-        <button id="ctx-open-new" class="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700" role="menuitem" tabindex="0" aria-label="Open in new tab">
-            Open in new tab
-        </button>
-        <button id="ctx-toggle-pin" class="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700" role="menuitem" tabindex="0" aria-label="Pin or unpin app">
-            Pin
-        </button>
-        <button id="ctx-cache-offline" class="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700" role="menuitem" tabindex="0" aria-label="Cache for offline use">
-            Cache for offline
-        </button>
-    </div>
-
-    <script src="./index.js"></script>
+    <script src="index.js"></script>
 </body>
 </html>
