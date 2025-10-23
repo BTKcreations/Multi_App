@@ -1,256 +1,164 @@
 <!DOCTYPE html>
-<html lang="en" class="system">
-
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Application Dashboard</title>
+    <meta name="theme-color" content="#3b82f6">
+    <title>Multi App Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="manifest" href="manifest.json">
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
-
     <style>
-        /* Custom scrollbar for a cleaner look */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: #4a5568;
-            border-radius: 4px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: #718096;
-        }
-
-        /* Using Inter as the default font */
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        }
-
-        /* Custom transition for sidebar width and main content margin */
-        #sidebar,
-        main {
-            transition: all 0.3s ease-in-out;
-        }
-
-        /* Styling for collapsed sidebar state */
-        .sidebar-collapsed #sidebar {
-            width: 5rem;
-            /* 80px */
-        }
-
-        .sidebar-collapsed main {
-            margin-left: 5rem;
-            /* 80px */
-        }
-
-        /* Hide text and adjust padding when collapsed */
-        .sidebar-collapsed .sidebar-text {
-            opacity: 0;
-            width: 0;
-            visibility: hidden;
-        }
-
-        .sidebar-collapsed .nav-link {
-            justify-content: center;
-        }
-
-        .sidebar-collapsed .nav-link-icon {
-            margin-right: 0;
-        }
-
-        .sidebar-collapsed #sidebar-toggle-button svg {
-            transform: rotate(180deg);
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
         }
     </style>
-    <script>
-        // This script is placed in the head to prevent Flash of Unstyled Content (FOUC)
-        // It immediately applies the theme and sidebar state based on localStorage.
-        const getTheme = () => {
-            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                return 'dark';
-            }
-            return 'light';
-        };
-
-        if (getTheme() === 'dark') {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
-
-        // Apply sidebar collapsed state from localStorage
-        if (localStorage.getItem('sidebarCollapsed') === 'true') {
-            // Use documentElement here because <body> may not exist yet in <head>
-            document.documentElement.classList.add('sidebar-collapsed');
-        }
-    </script>
 </head>
-
-<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 transition-colors duration-300">
-
-    <div class="flex h-screen overflow-hidden">
-        <aside id="sidebar" class="fixed inset-y-0 left-0 z-30 w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transform -translate-x-full md:translate-x-0 flex flex-col" role="navigation" aria-label="Sidebar navigation">
-            <div class="flex items-center justify-center p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0 h-16">
-                <img src="https://placehold.co/48x48/03a9f4/ffffff?text=AD" alt="Logo" class="rounded-lg h-10 w-10 flex-shrink-0">
-                <h2 class="ml-3 text-xl font-semibold text-gray-700 dark:text-gray-200 sidebar-text whitespace-nowrap overflow-hidden transition-opacity duration-200">
-                    AppDash</h2>
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+    <div class="min-h-screen flex">
+        <!-- Sidebar -->
+        <aside id="sidebar" class="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col" role="navigation" aria-label="Main navigation">
+            <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+                <h1 class="text-xl font-bold">Multi App</h1>
             </div>
-            <div class="p-4 flex-shrink-0">
-                <input id="app-search-input" type="text" placeholder="Search apps..." autocomplete="off" class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" aria-label="Search apps">
-            </div>
-
-            <nav id="canvas-nav" class="flex-grow overflow-y-auto space-y-1" aria-label="App list">
-                </nav>
-            <div class="p-4 border-t border-gray-200 dark:border-gray-700 hidden md:block flex-shrink-0">
-                <button id="sidebar-toggle-button" class="w-full flex items-center justify-center p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700" aria-label="Collapse sidebar" aria-expanded="true">
-                    <svg class="w-6 h-6 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7">
-                        </path>
-                    </svg>
+            <nav class="flex-1 p-4" role="navigation" aria-label="App navigation">
+                <ul class="space-y-2" role="list">
+                    <li>
+                        <button id="nav-dashboard" class="w-full text-left px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 bg-blue-500 text-white" aria-current="page" role="menuitem" tabindex="0">
+                            Dashboard
+                        </button>
+                    </li>
+                    <li>
+                        <button id="nav-about" class="w-full text-left px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700" role="menuitem" tabindex="0">
+                            About
+                        </button>
+                    </li>
+                </ul>
+            </nav>
+            <div class="p-4 border-t border-gray-200 dark:border-gray-700">
+                <button id="theme-toggle" class="w-full flex items-center justify-center gap-2 px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700" aria-label="Toggle dark mode" tabindex="0">
+                    <span id="theme-icon">🌙</span>
+                    <span id="theme-text">Dark Mode</span>
                 </button>
             </div>
         </aside>
 
-        <main class="flex-1 flex flex-col overflow-hidden md:ml-64">
-            <header class="flex items-center justify-between p-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm flex-shrink-0 h-16">
-                <div class="flex items-center">
-                    <button id="menu-button" class="md:hidden mr-4 p-2 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
-                        </svg>
-                    </button>
-                    <button id="back-button" class="hidden items-center px-4 py-2 bg-blue-500 text-white rounded-lg shadow hover:bg-blue-600 transition-colors">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                        </svg>
-                        Back
-                    </button>
-                    <h1 id="canvas-title" class="text-2xl font-bold text-gray-800 dark:text-white ml-4">Dashboard</h1>
-                </div>
-
-                <div class="flex items-center space-x-4">
+        <!-- Main Content -->
+        <main id="main-content" class="flex-1 overflow-auto" role="main" aria-label="Main content">
+            <div class="max-w-7xl mx-auto p-6">
+                <!-- Header with Search -->
+                <header class="mb-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-2xl font-bold">Dashboard</h2>
+                        <button id="command-palette-trigger" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" aria-label="Open command palette" aria-keyshortcuts="Control+k" tabindex="0">
+                            Quick Search (Ctrl+K)
+                        </button>
+                    </div>
                     <div class="relative">
+                        <label for="search" class="sr-only">Search apps</label>
+                        <input
+                            id="search"
+                            type="text"
+                            placeholder="Search apps..."
+                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            aria-label="Search apps"
+                            tabindex="0"
+                        />
                     </div>
+                </header>
 
-                    <!-- Install button (shown when PWA installable) -->
-                    <button id="install-button" class="hidden px-3 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700" aria-label="Install app">
-                      Install
-                    </button>
-
-                    <div id="user-area" class="relative">
-                        <div id="g_id_signin"></div>
-
-                        <!-- Theme toggle in header -->
-<button id="theme-toggle-button" aria-label="Switch theme" class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none">
-  <!-- Icons appear here via JS -->
-  <span id="theme-icon-light" class="hidden">🌞</span>
-  <span id="theme-icon-dark" class="hidden">🌙</span>
-  <span id="theme-icon-system" class="hidden">💻</span>
-</button>
-
-                        <div id="user-menu" class="hidden">
-                            <button id="user-menu-button" class="flex items-center space-x-2" aria-haspopup="true" aria-expanded="false">
-                                <img id="user-avatar" class="w-8 h-8 rounded-full" src="" alt="User Avatar">
-                            </button>
-                            <div id="user-dropdown" class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-700 rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5 hidden" role="menu" aria-label="User menu">
-                                <div class="px-4 py-2 border-b border-gray-200 dark:border-gray-600">
-                                    <p class="text-sm text-gray-700 dark:text-gray-200" id="user-name"></p>
-                                    <p class="text-xs text-gray-500 dark:text-gray-400 truncate" id="user-email"></p>
-                                </div>
-                                <!-- Inside #user-dropdown -->
-                                <a href="#" id="about-link" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600">
-                                  About
-                                </a>
-                                <a href="#" id="signout-button" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600">Sign
-                                    Out
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-            </header>
-
-            <!-- Offline banner (toggled by JS) -->
-            <div id="offline-banner" class="hidden bg-yellow-500 text-black text-sm px-4 py-2 text-center">You are offline. Some content may be unavailable.</div>
-
-            <div class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
-                <section id="dashboard-view">
-                    <div class="space-y-6">
-                      <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-4">
-                        <div class="flex items-center justify-between mb-3">
-                          <h2 class="text-xl font-semibold">Explore</h2>
-                          <div class="flex items-center space-x-2">
-                            <button id="view-toggle" class="px-3 py-1 text-sm bg-gray-200 dark:bg-gray-700 rounded">Grid</button>
-                          </div>
-                        </div>
-                        <div id="category-chips" class="flex flex-wrap gap-2"></div>
-                      </div>
-
-                      <div id="pinned-section" class="hidden bg-white dark:bg-gray-800 rounded-xl shadow p-4">
-                        <div class="flex items-center justify-between mb-3">
-                          <h3 class="text-lg font-semibold">Pinned</h3>
-                        </div>
-                        <div id="pinned-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-                      </div>
-
-                      <div id="recent-section" class="hidden bg-white dark:bg-gray-800 rounded-xl shadow p-4">
-                        <div class="flex items-center justify-between mb-3">
-                          <h3 class="text-lg font-semibold">Recent</h3>
-                        </div>
-                        <div id="recent-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-                      </div>
-
-                      <div id="all-section" class="bg-white dark:bg-gray-800 rounded-xl shadow p-4">
-                        <div class="flex items-center justify-between mb-3">
-                          <h3 class="text-lg font-semibold">All Apps</h3>
-                        </div>
-                        <div id="all-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-                      </div>
-                    </div>
+                <!-- Category Filters -->
+                <section class="mb-6" role="region" aria-label="Category filters">
+                    <h3 class="sr-only">Filter by category</h3>
+                    <div id="category-chips" class="flex flex-wrap gap-2" role="group" aria-label="Category filter buttons"></div>
                 </section>
 
-                <section id="app-viewer-view" class="hidden h-full">
-                    <button onclick="toggleFullScreen();" id="close-fullscreen-button" >Fullscreen</button>
-                    <div id="app-error" class="hidden mb-3 p-3 bg-red-100 text-red-800 rounded">Unable to load app. <a id="app-open-new" class="underline" target="_blank" rel="noopener">Open in new tab</a> · <button id="app-retry" class="underline">Retry</button></div>
-                    <iframe id="app-iframe" name="app-frame" class="w-full h-full border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-900"></iframe>
+                <!-- Pinned Apps Section -->
+                <section id="pinned-section" class="hidden bg-white dark:bg-gray-800 rounded-xl shadow p-4 mb-6" role="region" aria-label="Pinned apps">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-lg font-semibold">Pinned</h3>
+                    </div>
+                    <div id="pinned-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" role="list"></div>
+                </section>
+
+                <!-- Recent Apps Section -->
+                <section id="recent-section" class="hidden bg-white dark:bg-gray-800 rounded-xl shadow p-4 mb-6" role="region" aria-label="Recent apps">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-lg font-semibold">Recent</h3>
+                    </div>
+                    <div id="recent-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" role="list"></div>
+                </section>
+
+                <!-- All Apps Section -->
+                <section id="all-section" class="bg-white dark:bg-gray-800 rounded-xl shadow p-4" role="region" aria-label="All apps">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-lg font-semibold">All Apps</h3>
+                    </div>
+                    <div id="all-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" role="list"></div>
                 </section>
             </div>
+
+            <!-- App Viewer -->
+            <section id="app-viewer-view" class="hidden h-full" role="region" aria-label="App viewer">
+                <button onclick="toggleFullScreen();" id="close-fullscreen-button" class="fixed top-4 right-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 z-50" aria-label="Toggle fullscreen mode" tabindex="0">
+                    Fullscreen
+                </button>
+                <div id="app-error" class="hidden mb-3 p-3 bg-red-100 text-red-800 rounded" role="alert" aria-live="polite">
+                    Unable to load app. 
+                    <a id="app-open-new" class="underline" target="_blank" rel="noopener" aria-label="Open app in new tab" tabindex="0">Open in new tab</a>
+                     · 
+                    <button id="app-retry" class="underline" aria-label="Retry loading app" tabindex="0">Retry</button>
+                </div>
+                <iframe 
+                    id="app-iframe" 
+                    name="app-frame" 
+                    class="w-full h-full border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-900"
+                    title="Application content"
+                    aria-label="Application frame"
+                ></iframe>
+            </section>
         </main>
     </div>
 
     <!-- Command Palette Modal -->
     <div id="command-palette-modal" class="hidden fixed inset-0 z-50 bg-black bg-opacity-50 flex items-start justify-center p-8" role="dialog" aria-modal="true" aria-labelledby="command-palette-title">
-      <div class="w-full max-w-2xl bg-white dark:bg-gray-800 rounded-xl shadow-xl overflow-hidden">
-        <div class="p-3 border-b border-gray-200 dark:border-gray-700">
-          <h2 id="command-palette-title" class="sr-only">Command Palette</h2>
-          <input id="command-palette-input" type="text" placeholder="Search apps..." class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded focus:outline-none" autocomplete="off" />
+        <div class="w-full max-w-2xl bg-white dark:bg-gray-800 rounded-xl shadow-xl overflow-hidden">
+            <div class="p-3 border-b border-gray-200 dark:border-gray-700">
+                <h2 id="command-palette-title" class="sr-only">Command Palette</h2>
+                <label for="command-palette-input" class="sr-only">Search apps</label>
+                <input 
+                    id="command-palette-input" 
+                    type="text" 
+                    placeholder="Search apps..." 
+                    class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                    autocomplete="off"
+                    aria-label="Search for apps in command palette"
+                    tabindex="0"
+                />
+            </div>
+            <ul id="command-palette-results" class="max-h-80 overflow-y-auto divide-y divide-gray-200 dark:divide-gray-700" role="listbox" aria-label="Search results"></ul>
         </div>
-        <ul id="command-palette-results" class="max-h-80 overflow-y-auto divide-y divide-gray-200 dark:divide-gray-700"></ul>
-      </div>
     </div>
 
     <!-- App Context Menu -->
-    <div id="app-context-menu" class="hidden fixed z-50 w-48 bg-white dark:bg-gray-800 shadow-lg rounded-md border border-gray-200 dark:border-gray-700 py-1">
-      <button id="ctx-open-new" class="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700">Open in new tab</button>
-      <button id="ctx-toggle-pin" class="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700">Pin</button>
-      <button id="ctx-cache-offline" class="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700">Cache for offline</button>
+    <div id="app-context-menu" class="hidden fixed z-50 w-48 bg-white dark:bg-gray-800 shadow-lg rounded-md border border-gray-200 dark:border-gray-700 py-1" role="menu" aria-label="App actions">
+        <button id="ctx-open-new" class="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700" role="menuitem" tabindex="0" aria-label="Open in new tab">
+            Open in new tab
+        </button>
+        <button id="ctx-toggle-pin" class="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700" role="menuitem" tabindex="0" aria-label="Pin or unpin app">
+            Pin
+        </button>
+        <button id="ctx-cache-offline" class="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700" role="menuitem" tabindex="0" aria-label="Cache for offline use">
+            Cache for offline
+        </button>
     </div>
 
     <script src="./index.js"></script>
-
 </body>
-
-
 </html>
-
