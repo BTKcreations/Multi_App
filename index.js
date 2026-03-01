@@ -12,6 +12,16 @@ function $$(selector) {
   return document.querySelectorAll(selector);
 }
 
+const VIEWS = ['dashboard', 'notes', 'calendar', 'budget', 'tasks', 'weather'];
+const NAVIGATION_MAP = {
+  'nav-dashboard': 'dashboard',
+  'nav-notes': 'notes',
+  'nav-calendar': 'calendar',
+  'nav-budget': 'budget',
+  'nav-tasks': 'tasks',
+  'nav-weather': 'weather'
+};
+
 // Application state
 const state = {
   currentView: 'dashboard',
@@ -49,6 +59,10 @@ function init() {
   setupBudget();
   setupTasks();
   setupWeather();
+
+  // Restore the active view after all handlers and content are initialized
+  switchView(VIEWS.includes(state.currentView) ? state.currentView : 'dashboard');
+  updateThemeButton();
   
   console.log('Multi App Dashboard - Initialization complete!');
 }
@@ -89,26 +103,27 @@ function setupDarkModeToggle() {
       document.documentElement.classList.toggle('dark');
       state.darkMode = !state.darkMode;
       localStorage.setItem('theme', state.darkMode ? 'dark' : 'light');
+      updateThemeButton();
     });
   }
 }
 
+function updateThemeButton() {
+  const toggle = $('#dark-mode-toggle');
+  const icon = $('#dark-mode-icon');
+  if (!toggle || !icon) return;
+
+  icon.textContent = state.darkMode ? '☀️' : '🌙';
+  toggle.setAttribute('aria-pressed', String(state.darkMode));
+}
+
 // Navigation
 function setupNavigation() {
-  const navButtons = {
-    'nav-dashboard': 'dashboard',
-    'nav-notes': 'notes',
-    'nav-calendar': 'calendar',
-    'nav-budget': 'budget',
-    'nav-tasks': 'tasks',
-    'nav-weather': 'weather'
-  };
-  
-  Object.keys(navButtons).forEach(id => {
+  Object.keys(NAVIGATION_MAP).forEach(id => {
     const btn = $(`#${id}`);
     if (btn) {
       btn.addEventListener('click', () => {
-        switchView(navButtons[id]);
+        switchView(NAVIGATION_MAP[id]);
       });
     }
   });
@@ -116,8 +131,7 @@ function setupNavigation() {
 
 function switchView(viewName) {
   // Hide all views
-  const views = ['dashboard', 'notes', 'calendar', 'budget', 'tasks', 'weather'];
-  views.forEach(view => {
+  VIEWS.forEach(view => {
     const el = $(`#${view}-view`);
     if (el) el.classList.add('hidden');
   });
@@ -129,10 +143,12 @@ function switchView(viewName) {
   // Update navigation buttons
   $$('aside button').forEach(btn => {
     btn.classList.remove('bg-blue-500', 'text-white');
+    btn.removeAttribute('aria-current');
   });
   const activeBtn = $(`#nav-${viewName}`);
   if (activeBtn) {
     activeBtn.classList.add('bg-blue-500', 'text-white');
+    activeBtn.setAttribute('aria-current', 'page');
   }
   
   state.currentView = viewName;
@@ -142,9 +158,24 @@ function switchView(viewName) {
 // Notes functionality
 function setupNotes() {
   const addBtn = $('#add-note-btn');
+  const container = $('#notes-container');
+
   if (addBtn) {
     addBtn.addEventListener('click', addNote);
   }
+
+  if (container) {
+    container.addEventListener('click', (event) => {
+      const deleteButton = event.target.closest('[data-delete-note-id]');
+      if (!deleteButton) return;
+
+      const noteId = Number(deleteButton.dataset.deleteNoteId);
+      if (Number.isFinite(noteId)) {
+        deleteNote(noteId);
+      }
+    });
+  }
+
   renderNotes();
 }
 
@@ -169,13 +200,18 @@ function addNote() {
 function renderNotes() {
   const container = $('#notes-container');
   if (!container) return;
+
+  if (state.notes.length === 0) {
+    container.innerHTML = createEmptyState('No notes yet. Add your first note to get started.');
+    return;
+  }
   
   container.innerHTML = state.notes.map(note => `
-    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow" data-note-id="${note.id}">
       <h3 class="text-lg font-bold mb-2">${escapeHtml(note.title)}</h3>
       <p class="text-gray-600 dark:text-gray-400 mb-2">${escapeHtml(note.content)}</p>
       <small class="text-gray-500">${new Date(note.date).toLocaleDateString()}</small>
-      <button onclick="deleteNote(${note.id})" class="ml-4 text-red-500 hover:text-red-700">Delete</button>
+      <button data-delete-note-id="${note.id}" class="ml-4 text-red-500 hover:text-red-700">Delete</button>
     </div>
   `).join('');
 }
@@ -203,9 +239,24 @@ function setupCalendar() {
 // Budget functionality
 function setupBudget() {
   const addBtn = $('#add-expense-btn');
+  const container = $('#expenses-container');
+
   if (addBtn) {
     addBtn.addEventListener('click', addExpense);
   }
+
+  if (container) {
+    container.addEventListener('click', (event) => {
+      const deleteButton = event.target.closest('[data-delete-expense-id]');
+      if (!deleteButton) return;
+
+      const expenseId = Number(deleteButton.dataset.deleteExpenseId);
+      if (Number.isFinite(expenseId)) {
+        deleteExpense(expenseId);
+      }
+    });
+  }
+
   renderExpenses();
 }
 
@@ -215,11 +266,17 @@ function addExpense() {
   
   const amount = prompt('Enter amount:');
   if (!amount) return;
+
+  const normalizedAmount = parseFloat(amount);
+  if (!Number.isFinite(normalizedAmount) || normalizedAmount < 0) {
+    alert('Please enter a valid non-negative amount.');
+    return;
+  }
   
   state.expenses.push({
     id: Date.now(),
     description,
-    amount: parseFloat(amount),
+    amount: normalizedAmount,
     date: new Date().toISOString()
   });
   
@@ -230,13 +287,19 @@ function addExpense() {
 function renderExpenses() {
   const container = $('#expenses-container');
   if (!container) return;
+
+  if (state.expenses.length === 0) {
+    container.innerHTML = `
+      ${createExpenseTotal(0)}
+      ${createEmptyState('No expenses added yet. Track your first expense to see totals.')}
+    `;
+    return;
+  }
   
   const total = state.expenses.reduce((sum, exp) => sum + exp.amount, 0);
   
   container.innerHTML = `
-    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow mb-4">
-      <h3 class="text-lg font-bold">Total Expenses: $${total.toFixed(2)}</h3>
-    </div>
+    ${createExpenseTotal(total)}
     ${state.expenses.map(expense => `
       <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
         <div class="flex justify-between items-center">
@@ -246,7 +309,7 @@ function renderExpenses() {
           </div>
           <div class="text-right">
             <p class="text-lg font-bold">$${expense.amount.toFixed(2)}</p>
-            <button onclick="deleteExpense(${expense.id})" class="text-red-500 hover:text-red-700 text-sm">Delete</button>
+            <button data-delete-expense-id="${expense.id}" class="text-red-500 hover:text-red-700 text-sm">Delete</button>
           </div>
         </div>
       </div>
@@ -263,9 +326,33 @@ function deleteExpense(id) {
 // Tasks functionality
 function setupTasks() {
   const addBtn = $('#add-task-btn');
+  const container = $('#tasks-container');
+
   if (addBtn) {
     addBtn.addEventListener('click', addTask);
   }
+
+  if (container) {
+    container.addEventListener('click', (event) => {
+      const toggleInput = event.target.closest('[data-toggle-task-id]');
+      if (toggleInput) {
+        const taskId = Number(toggleInput.dataset.toggleTaskId);
+        if (Number.isFinite(taskId)) {
+          toggleTask(taskId);
+        }
+        return;
+      }
+
+      const deleteButton = event.target.closest('[data-delete-task-id]');
+      if (!deleteButton) return;
+
+      const taskId = Number(deleteButton.dataset.deleteTaskId);
+      if (Number.isFinite(taskId)) {
+        deleteTask(taskId);
+      }
+    });
+  }
+
   renderTasks();
 }
 
@@ -287,18 +374,23 @@ function addTask() {
 function renderTasks() {
   const container = $('#tasks-container');
   if (!container) return;
+
+  if (state.tasks.length === 0) {
+    container.innerHTML = createEmptyState('No tasks yet. Add a task to stay on track.');
+    return;
+  }
   
   container.innerHTML = state.tasks.map(task => `
     <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow flex items-center justify-between">
       <div class="flex items-center">
         <input type="checkbox" ${task.completed ? 'checked' : ''} 
-               onchange="toggleTask(${task.id})" 
+               data-toggle-task-id="${task.id}"
                class="mr-3 w-5 h-5" />
         <span class="${task.completed ? 'line-through text-gray-500' : ''}">
           ${escapeHtml(task.title)}
         </span>
       </div>
-      <button onclick="deleteTask(${task.id})" class="text-red-500 hover:text-red-700">Delete</button>
+      <button data-delete-task-id="${task.id}" class="text-red-500 hover:text-red-700">Delete</button>
     </div>
   `).join('');
 }
@@ -339,8 +431,10 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-// Make functions globally available for onclick handlers
-window.deleteNote = deleteNote;
-window.deleteExpense = deleteExpense;
-window.deleteTask = deleteTask;
-window.toggleTask = toggleTask;
+function createEmptyState(message) {
+  return `<div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow text-gray-600 dark:text-gray-400">${escapeHtml(message)}</div>`;
+}
+
+function createExpenseTotal(total) {
+  return `<div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow mb-4"><h3 class="text-lg font-bold">Total Expenses: $${total.toFixed(2)}</h3></div>`;
+}
