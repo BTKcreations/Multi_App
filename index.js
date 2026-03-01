@@ -105,6 +105,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const allGrid = document.getElementById('all-grid');
   const viewToggle = document.getElementById('view-toggle');
   const categoryChips = document.getElementById('category-chips');
+  const exploreMeta = document.getElementById('explore-meta');
+  const clearRecentButton = document.getElementById('clear-recent');
   // Command palette
   const cpModal = document.getElementById('command-palette-modal');
   const cpInput = document.getElementById('command-palette-input');
@@ -125,6 +127,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- 3. STATE VARIABLES ---
   let currentUser = null;
   let filterCategory = null;
+  let activeSearchTerm = "";
   let viewMode = (localStorage.getItem(STORAGE_KEYS.viewMode) || 'grid');
   let ctxAppId = null;
 
@@ -357,32 +360,48 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  function renderEmptyState(grid, message) {
+    if (!grid) return;
+    const wrapper = document.createElement('div');
+    wrapper.className = 'col-span-full text-sm text-gray-500 dark:text-gray-400 border border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 text-center';
+    wrapper.textContent = message;
+    grid.appendChild(wrapper);
+  }
+
   function renderDashboardGrids() {
     // Pinned
     const pins = getPinned();
-    const pinnedApps = applicationFiles.filter(a => pins.includes(a.id || a.name)).filter(a => !filterCategory || (a.category===filterCategory));
+    const searchableApps = filterAppsBySearch(activeSearchTerm);
+    const pinnedApps = searchableApps.filter(a => pins.includes(getAppId(a))).filter(a => !filterCategory || (a.category===filterCategory));
     if (pinnedApps.length) {
       pinnedSection.classList.remove('hidden');
       pinnedGrid.innerHTML = '';
       pinnedApps.forEach(app => pinnedGrid.appendChild(appCard(app)));
     } else {
       pinnedSection.classList.add('hidden');
+      pinnedGrid.innerHTML = '';
+      renderEmptyState(pinnedGrid, 'No pinned apps yet. Use Pin on any app card.');
     }
 
     // Recent
-    const recents = getRecent().filter(a => !filterCategory || (a.category===filterCategory));
+    const recents = getRecent().filter((a) => searchableApps.some((sApp) => getAppId(sApp) === getAppId(a))).filter(a => !filterCategory || (a.category===filterCategory));
     if (recents.length) {
       recentSection.classList.remove('hidden');
       recentGrid.innerHTML = '';
       recents.forEach(app => recentGrid.appendChild(appCard(app)));
+      if (clearRecentButton) clearRecentButton.classList.remove('hidden');
     } else {
       recentSection.classList.add('hidden');
+      recentGrid.innerHTML = '';
+      renderEmptyState(recentGrid, currentUser ? 'No recently opened apps yet.' : 'Sign in to see your recent apps.');
+      if (clearRecentButton) clearRecentButton.classList.add('hidden');
     }
 
     // All
-    const all = applicationFiles.filter(a => !filterCategory || (a.category===filterCategory));
+    const all = searchableApps.filter(a => !filterCategory || (a.category===filterCategory));
     allGrid.innerHTML = '';
     all.forEach(app => allGrid.appendChild(appCard(app)));
+    if (!all.length) renderEmptyState(allGrid, 'No apps match this category/filter.');
 
     // View mode styling
     const asList = (viewMode === 'list');
@@ -394,7 +413,13 @@ document.addEventListener("DOMContentLoaded", () => {
         grid.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4';
       }
     });
-    if (viewToggle) viewToggle.textContent = asList ? 'List' : 'Grid';
+    if (viewToggle) viewToggle.textContent = asList ? 'List View' : 'Grid View';
+    if (exploreMeta) {
+      const visible = all.length;
+      const total = applicationFiles.length;
+      const scope = filterCategory ? ` in ${filterCategory}` : '';
+      exploreMeta.textContent = `Showing ${visible} of ${total} apps${scope}.`;
+    }
   }
 
   function renderSidebar(searchTerm = "") {
@@ -442,7 +467,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const sortedCategories = Object.keys(groupedApps).sort();
 
     if (sortedCategories.length === 0 && lowerCaseSearchTerm) {
-      nav.innerHTML = `<p class="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">No apps found.</p>`;
+      nav.innerHTML = `<p class="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">No apps found for this search.</p>`;
       return;
     }
 
@@ -493,7 +518,21 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- 5. EVENT LISTENERS ---
 
   // Search input listener
-  appSearchInput.addEventListener("input", () => renderSidebar(appSearchInput.value));
+  appSearchInput.addEventListener("input", () => {
+    activeSearchTerm = appSearchInput.value || "";
+    renderAll();
+  });
+
+  if (clearRecentButton) {
+    clearRecentButton.addEventListener('click', () => {
+      if (!currentUser) return;
+      const hist = JSON.parse(localStorage.getItem(STORAGE_KEYS.userHistory) || '{}');
+      const userEntries = (hist[currentUser.id] || []).filter((entry) => entry.action !== 'Viewed App');
+      hist[currentUser.id] = userEntries;
+      localStorage.setItem(STORAGE_KEYS.userHistory, JSON.stringify(hist));
+      renderDashboardGrids();
+    });
+  }
 
   // Command palette open/close
   function openCommandPalette() {
@@ -780,7 +819,8 @@ function showAboutModal() {
   }
 
   function renderAll() {
-    renderSidebar(appSearchInput.value || '');
+    activeSearchTerm = appSearchInput.value || '';
+    renderSidebar(activeSearchTerm);
     renderCategoryChips();
     renderDashboardGrids();
   }

@@ -191,9 +191,10 @@
                         <div class="flex items-center justify-between mb-3">
                           <h2 class="text-xl font-semibold">Explore</h2>
                           <div class="flex items-center space-x-2">
-                            <button id="view-toggle" class="px-3 py-1 text-sm bg-gray-200 dark:bg-gray-700 rounded">Grid</button>
+                            <button id="view-toggle" class="px-3 py-1 text-sm bg-gray-200 dark:bg-gray-700 rounded">Grid View</button>
                           </div>
                         </div>
+                        <div id="explore-meta" class="mb-3 text-xs sm:text-sm text-gray-600 dark:text-gray-300"></div>
                         <div id="category-chips" class="flex flex-wrap gap-2"></div>
                       </div>
 
@@ -207,6 +208,7 @@
                       <div id="recent-section" class="hidden bg-white dark:bg-gray-800 rounded-xl shadow p-4">
                         <div class="flex items-center justify-between mb-3">
                           <h3 class="text-lg font-semibold">Recent</h3>
+                          <button id="clear-recent" class="text-sm px-3 py-1 rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600">Clear</button>
                         </div>
                         <div id="recent-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
                       </div>
