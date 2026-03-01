@@ -26,15 +26,30 @@ window.onload = function () {
 document.addEventListener("DOMContentLoaded", () => {
   // --- 1. APP DATA (loaded from apps.json) ---
   let applicationFiles = [];
+  const STORAGE_KEYS = {
+    userHistory: "userHistory",
+    loggedInUser: "loggedInUser",
+    pinnedApps: "pinnedApps",
+    viewMode: "viewMode",
+    sidebarCollapsed: "sidebarCollapsed",
+    theme: "theme",
+  };
+
+  const getAppId = (app) => app.id || app.name;
+  const filterAppsBySearch = (searchTerm = "") => {
+    const query = searchTerm.toLowerCase().trim();
+    if (!query) return applicationFiles;
+    return applicationFiles.filter((app) => app._searchText.includes(query));
+  };
 
   async function loadRegistry() {
     try {
       const res = await fetch('apps.json', { cache: 'no-cache' });
       if (!res.ok) throw new Error('Failed to load apps.json');
-      applicationFiles = await res.json();
+      prepareApplications(await res.json());
     } catch (e) {
       // Fallback registry when running from file:// or offline
-      applicationFiles = [
+      prepareApplications([
         { id: "fake-news-detection", name: "Fake News Detection", file: "Apps/Fake News Detection System.html", icon: "🔍", category: "Content Tools", keywords: "verify truth article analysis" },
         { id: "pdf-extractor", name: "PDF Extractor", file: "Apps/PDF Extraction.html", icon: "📄", category: "Productivity", keywords: "document read text data" },
         { id: "math-problem-solver", name: "Math Problem Solver", file: "Apps/Math_Problem_Solver.html", icon: "🧮", category: "Utilities", keywords: "calculate algebra calculus equation" },
@@ -51,8 +66,16 @@ document.addEventListener("DOMContentLoaded", () => {
         { id: "ai-data-analysis", name: "AI Data Analysis", file: "Apps/AI_Data_Analysis.html", icon: "📈", category: "Productivity", keywords: "data analysis charts graphs ai" },
         { id: "mermaid-diagram-editor", name: "Mermaid Diagram Editor", file: "Apps/Mermaid_Diagram_Editor.html", icon: "🧩", category: "Productivity", keywords: "mermaid diagram flowchart editor" },
         { id: "ratio-calculator", name: "Ratio Calculator", file: "Apps/Ratio_Calc.html", icon: "🧮", category: "Calc", keywords: "Ratio Calculator" }
-      ];
+      ]);
     }
+  }
+
+
+  function prepareApplications(apps) {
+    applicationFiles = apps.map((app) => ({
+      ...app,
+      _searchText: `${app.name || ""} ${app.category || ""} ${app.keywords || ""}`.toLowerCase(),
+    }));
   }
 
   // --- 2. ELEMENT REFERENCES ---
@@ -102,7 +125,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- 3. STATE VARIABLES ---
   let currentUser = null;
   let filterCategory = null;
-  let viewMode = (localStorage.getItem('viewMode') || 'grid');
+  let viewMode = (localStorage.getItem(STORAGE_KEYS.viewMode) || 'grid');
   let ctxAppId = null;
 
   // --- 4. FUNCTIONS ---
@@ -120,7 +143,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function logUserActivity(action, details) {
     if (!currentUser) return;
     const userId = currentUser.id;
-    let history = JSON.parse(localStorage.getItem("userHistory")) || {};
+    let history = JSON.parse(localStorage.getItem(STORAGE_KEYS.userHistory)) || {};
     if (!history[userId]) {
       history[userId] = [];
     }
@@ -130,7 +153,7 @@ document.addEventListener("DOMContentLoaded", () => {
       timestamp: new Date().toISOString(),
     });
     if (history[userId].length > 50) history[userId].pop();
-    localStorage.setItem("userHistory", JSON.stringify(history));
+    localStorage.setItem(STORAGE_KEYS.userHistory, JSON.stringify(history));
   }
 
   // Handles successful Google login
@@ -142,7 +165,7 @@ document.addEventListener("DOMContentLoaded", () => {
       email: credential.email,
       avatar: credential.picture,
     };
-    localStorage.setItem("loggedInUser", JSON.stringify(currentUser));
+    localStorage.setItem(STORAGE_KEYS.loggedInUser, JSON.stringify(currentUser));
     updateUIAfterLogin();
     logUserActivity("Logged In", {
       browser: navigator.userAgent,
@@ -161,7 +184,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Checks for a logged-in user on page load
   function checkSession() {
-    const storedUser = localStorage.getItem("loggedInUser");
+    const storedUser = localStorage.getItem(STORAGE_KEYS.loggedInUser);
     if (storedUser) {
       currentUser = JSON.parse(storedUser);
       updateUIAfterLogin();
@@ -178,8 +201,8 @@ document.addEventListener("DOMContentLoaded", () => {
         appIframe.src = app.file;
         showAppViewer(app.name);
         const p = new URLSearchParams(location.search);
-        p.set('app', app.id || app.name);
-        history.pushState({ app: app.id || app.name }, '', `?${p.toString()}`);
+        p.set('app', getAppId(app));
+        history.pushState({ app: getAppId(app) }, '', `?${p.toString()}`);
         logUserActivity("Viewed App", { appName: app.name });
       })
       .catch(() => {
@@ -217,9 +240,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Pinned apps management
-  const PINNED_KEY = 'pinnedApps';
-  function getPinned() { return JSON.parse(localStorage.getItem(PINNED_KEY) || '[]'); }
-  function setPinned(ids) { localStorage.setItem(PINNED_KEY, JSON.stringify(ids)); }
+    function getPinned() { return JSON.parse(localStorage.getItem(STORAGE_KEYS.pinnedApps) || '[]'); }
+  function setPinned(ids) { localStorage.setItem(STORAGE_KEYS.pinnedApps, JSON.stringify(ids)); }
   function isPinned(id) { return getPinned().includes(id); }
   function togglePin(id) {
     const pins = new Set(getPinned());
@@ -260,17 +282,17 @@ document.addEventListener("DOMContentLoaded", () => {
   // Recent apps for current user
   function getRecent(limit = 6) {
     if (!currentUser) return [];
-    const hist = JSON.parse(localStorage.getItem('userHistory') || '{}');
+    const hist = JSON.parse(localStorage.getItem(STORAGE_KEYS.userHistory) || '{}');
     const items = hist[currentUser.id] || [];
-    const names = [];
+    const names = new Set();
     const out = [];
     for (const h of items) {
       if (h.action !== 'Viewed App' || !h.details?.appName) continue;
       const app = applicationFiles.find(a => a.name === h.details.appName);
       if (!app) continue;
-      const id = app.id || app.name;
-      if (names.includes(id)) continue;
-      names.push(id);
+      const id = getAppId(app);
+      if (names.has(id)) continue;
+      names.add(id);
       out.push(app);
       if (out.length >= limit) break;
     }
@@ -281,7 +303,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function appCard(app) {
     const card = document.createElement('div');
     card.className = 'app-card cursor-pointer p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow transition flex items-start space-x-3';
-    card.setAttribute('data-app-id', app.id || app.name);
+    card.setAttribute('data-app-id', getAppId(app));
     card.innerHTML = `
       <div class="text-2xl">${app.icon || '📦'}</div>
       <div class="flex-1">
@@ -289,7 +311,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="text-sm text-gray-500 dark:text-gray-400">${app.description || ''}</div>
         <div class="mt-1 text-xs text-gray-400">${app.category || ''}</div>
       </div>
-      <div class="ml-2"><button class="pin-btn text-xs px-2 py-1 rounded bg-gray-100 dark:bg-gray-700">${isPinned(app.id || app.name) ? 'Unpin' : 'Pin'}</button></div>
+      <div class="ml-2"><button class="pin-btn text-xs px-2 py-1 rounded bg-gray-100 dark:bg-gray-700">${isPinned(getAppId(app)) ? 'Unpin' : 'Pin'}</button></div>
     `;
     card.addEventListener('click', (e) => {
       // Avoid clicks on pin button
@@ -298,7 +320,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     card.querySelector('.pin-btn').addEventListener('click', (e) => {
       e.stopPropagation();
-      togglePin(app.id || app.name);
+      togglePin(getAppId(app));
       renderAll();
     });
     // Context menu on card
@@ -379,11 +401,7 @@ document.addEventListener("DOMContentLoaded", () => {
     nav.innerHTML = "";
     const lowerCaseSearchTerm = searchTerm.toLowerCase().trim();
 
-    const filteredApps = applicationFiles.filter((app) => {
-      if (!lowerCaseSearchTerm) return true;
-      const searchableText = `${app.name} ${app.category} ${app.keywords}`.toLowerCase();
-      return searchableText.includes(lowerCaseSearchTerm);
-    });
+    const filteredApps = filterAppsBySearch(lowerCaseSearchTerm);
 
     // Split pinned and others
     const pins = new Set(getPinned());
@@ -399,8 +417,8 @@ document.addEventListener("DOMContentLoaded", () => {
       pinnedList.forEach((app) => {
         const link = document.createElement('a');
         link.className = "nav-link flex items-center px-4 py-2 text-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white transition-colors overflow-hidden";
-        link.href = `?app=${encodeURIComponent(app.id || app.name)}`;
-        link.setAttribute('data-app-id', app.id || app.name);
+        link.href = `?app=${encodeURIComponent(getAppId(app))}`;
+        link.setAttribute('data-app-id', getAppId(app));
         link.innerHTML = `
                             <span class="nav-link-icon mr-3 flex-shrink-0">${app.icon}</span>
                             <span class="sidebar-text whitespace-nowrap transition-opacity duration-200">${app.name}</span>`;
@@ -439,8 +457,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const link = document.createElement("a");
         link.className =
           "nav-link flex items-center px-4 py-2 text-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white transition-colors overflow-hidden";
-        link.href = `?app=${encodeURIComponent(app.id || app.name)}`;
-        link.setAttribute('data-app-id', app.id || app.name);
+        link.href = `?app=${encodeURIComponent(getAppId(app))}`;
+        link.setAttribute('data-app-id', getAppId(app));
         link.innerHTML = `
                             <span class="nav-link-icon mr-3 flex-shrink-0">${app.icon}</span>
                             <span class="sidebar-text whitespace-nowrap transition-opacity duration-200">${app.name}</span>`;
@@ -507,7 +525,7 @@ document.addEventListener("DOMContentLoaded", () => {
     e.preventDefault();
     logUserActivity("Logged Out");
     currentUser = null;
-    localStorage.removeItem("loggedInUser");
+    localStorage.removeItem(STORAGE_KEYS.loggedInUser);
     google.accounts.id.disableAutoSelect();
     googleSignInButton.style.display = "block";
     userMenu.classList.add("hidden");
@@ -531,7 +549,7 @@ document.addEventListener("DOMContentLoaded", () => {
   sidebarToggleButton.addEventListener("click", () => {
     document.documentElement.classList.toggle("sidebar-collapsed");
     localStorage.setItem(
-      "sidebarCollapsed",
+      STORAGE_KEYS.sidebarCollapsed,
       document.documentElement.classList.contains("sidebar-collapsed")
     );
   });
@@ -561,14 +579,11 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderCommandPaletteResults(q) {
     cpResults.innerHTML = '';
     const query = (q || '').toLowerCase().trim();
-    let items = applicationFiles;
-    if (query) {
-      items = applicationFiles.filter(a => (`${a.name} ${a.category} ${a.keywords || ''}`).toLowerCase().includes(query));
-    }
+    const items = filterAppsBySearch(query);
     items.slice(0, 50).forEach((app, i) => {
       const li = document.createElement('li');
       li.className = 'px-3 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-between';
-      li.setAttribute('data-app-id', app.id || app.name);
+      li.setAttribute('data-app-id', getAppId(app));
       li.tabIndex = 0;
       li.innerHTML = `<span><span class="mr-2">${app.icon}</span>${app.name}</span><span class="text-xs text-gray-500">${app.category || ''}</span>`;
       li.addEventListener('click', () => { closeCommandPalette(); loadApp(app); });
@@ -598,7 +613,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Context menu logic
   function showContextMenu(x, y, app) {
-    ctxAppId = app.id || app.name;
+    ctxAppId = getAppId(app);
     ctxOpenNew.onclick = () => { window.open(app.file, '_blank', 'noopener'); hideContextMenu(); };
     ctxTogglePin.textContent = isPinned(ctxAppId) ? 'Unpin' : 'Pin';
     ctxTogglePin.onclick = () => { togglePin(ctxAppId); hideContextMenu(); renderAll(); };
@@ -622,7 +637,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // About link - open as modal or new tab (here: modal inside main app)
 const aboutLink = document.getElementById("about-link");
 
-aboutLink.addEventListener("click", (e) => {
+if (aboutLink) aboutLink.addEventListener("click", (e) => {
   e.preventDefault();
   // Show About page in modal
   showAboutModal();
@@ -745,7 +760,7 @@ function showAboutModal() {
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredInstallPrompt = e;
-    installButton.classList.remove('hidden');
+    if (installButton) installButton.classList.remove('hidden');
   });
   if (installButton) {
     installButton.addEventListener('click', async () => {
@@ -772,7 +787,7 @@ function showAboutModal() {
 
   if (viewToggle) viewToggle.addEventListener('click', () => {
     viewMode = (viewMode === 'grid') ? 'list' : 'grid';
-    localStorage.setItem('viewMode', viewMode);
+    localStorage.setItem(STORAGE_KEYS.viewMode, viewMode);
     renderDashboardGrids();
   });
 
