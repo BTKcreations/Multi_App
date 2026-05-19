@@ -423,6 +423,24 @@
         // Removed the import statement for google_search.js
         // import { google_search } from '/tools/google_search.js';
 
+        function escapeHTML(str) {
+            if (!str) return '';
+            return String(str).replace(/[&<>'"']/g, function(tag) {
+                const charsToReplace = {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    "'": '&#39;',
+                    '"': '&quot;'
+                };
+                return charsToReplace[tag] || tag;
+            });
+        }
+
+        function escapeRegExp(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
         document.addEventListener('DOMContentLoaded', function () {
             const chartCtx = document.getElementById('mlAccuracyChart').getContext('2d');
             const mlAccuracyChart = new Chart(chartCtx, {
@@ -915,15 +933,16 @@
                         const jsonString = result.candidates[0].content.parts[0].text;
                         const identifiedPhrases = JSON.parse(jsonString);
 
-                        let highlightedHtml = originalText;
+                        let highlightedHtml = escapeHTML(originalText);
                         const reasonsHtml = [];
 
                         identifiedPhrases.forEach((item, index) => {
-                            const phrase = item.phrase;
-                            const reason = item.reason;
-                            const regex = new RegExp(`\\b${phrase}\\b`, 'gi'); // Use word boundary for exact phrase match
-                            highlightedHtml = highlightedHtml.replace(regex, `<span class="highlighted-phrase">${phrase}</span>`);
-                            reasonsHtml.push(`<li><strong>"${phrase}"</strong>: ${reason}</li>`);
+                            const safePhrase = escapeHTML(item.phrase);
+                            const safeReason = escapeHTML(item.reason);
+                            const regexSafePhrase = escapeRegExp(safePhrase);
+                            const regex = new RegExp(`(^|\\W)(${regexSafePhrase})(\\W|$)`, 'gi');
+                            highlightedHtml = highlightedHtml.replace(regex, `$1<span class="highlighted-phrase">$2</span>$3`);
+                            reasonsHtml.push(`<li><strong>"${safePhrase}"</strong>: ${safeReason}</li>`);
                         });
 
                         highlightedContentDiv.innerHTML = highlightedHtml;
