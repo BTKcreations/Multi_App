@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/diff_match_patch/20121119/diff_match_patch.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -169,6 +170,8 @@
                 htmlContent = markdownConverter.makeHtml(markdownText);
             }
             
+            htmlContent = DOMPurify.sanitize(htmlContent);
+
             // The diff library doesn't parse markdown, so we parse it after creating the diff.
             // This is a simplified approach, but it works for showing highlighted changes.
             // For a perfect diff, one would need to diff the HTML, not the Markdown.
@@ -180,8 +183,10 @@
                 const diffs = dmp.diff_main(oldText, newText);
                 dmp.diff_cleanupSemantic(diffs);
                 htmlContent = dmp.diff_prettyHtml(diffs);
+                htmlContent = DOMPurify.sanitize(htmlContent);
             } else {
                 htmlContent = markdownConverter.makeHtml(markdownText);
+                htmlContent = DOMPurify.sanitize(htmlContent);
             }
 
 
