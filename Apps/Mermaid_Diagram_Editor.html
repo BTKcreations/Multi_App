@@ -126,7 +126,7 @@
                 </div>
             </div>
         </main>
-        
+
         <!-- Toast Notification -->
         <div id="toast" class="fixed bottom-5 right-5 bg-gray-800 text-white py-2 px-5 rounded-lg shadow-lg opacity-0 translate-y-3 transition-all duration-300">
             <p id="toast-message"></p>
@@ -170,7 +170,7 @@
             loader.classList.remove('hidden');
             outputContainer.classList.add('hidden');
             errorDisplay.classList.add('hidden');
-            
+
             destroyEditable();
 
             try {
@@ -178,7 +178,7 @@
                 const { svg } = await mermaid.render(elementId, mermaidCode);
                 outputContainer.innerHTML = svg;
                 errorDisplay.classList.add('hidden');
-                
+
                 if (editToggle.checked) {
                     makeEditable();
                 }
@@ -328,10 +328,10 @@
         const destroyEditable = () => {
             // FIX: Prevent error if interactable is not set
             try {
+              if (interact.isSet('#output .node')) {
                 interact('#output .node').unset();
-            } catch (e) {
-                // Ignore if not set
-            }
+              }
+            } catch (e) {}
             outputContainer.querySelectorAll('.editable-text').forEach(el => el.classList.remove('editable-text'));
             outputContainer.removeEventListener('dblclick', textEditHandler);
             const editor = document.getElementById('text-editor');
@@ -356,7 +356,7 @@
             saveAs(new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' }), `diagram-${Date.now()}.svg`);
             showToast('SVG exported successfully!');
         };
-        
+
         const exportPNG = () => {
             const svgElement = outputContainer.querySelector('svg');
             if (!svgElement) return showToast('No diagram to export!', 'error');
@@ -364,11 +364,11 @@
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             const img = new Image();
-            
+
             img.crossOrigin = 'anonymous';
 
             const url = URL.createObjectURL(new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' }));
-            
+
             img.onload = () => {
                 const padding = 20;
                 canvas.width = img.width + padding * 2;
@@ -438,4 +438,3 @@
     </script>
 </body>
 </html>
-
