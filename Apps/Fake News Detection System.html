@@ -319,6 +319,10 @@
             </div>
             <div class="bg-white rounded-xl shadow-lg p-6 md:p-8 max-w-3xl mx-auto">
                 <div class="mb-6">
+                    <label for="api-key-input" class="block text-gray-700 text-sm font-bold mb-2">Gemini API Key (Required for AI features):</label>
+                    <input type="password" id="api-key-input" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Enter your Gemini API Key">
+                </div>
+                <div class="mb-6">
                     <label for="text-input" class="block text-gray-700 text-sm font-bold mb-2">Enter text for analysis:</label>
                     <textarea id="text-input" rows="6" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline resize-y" placeholder="e.g., 'BREAKING: Scientists discover cure for all diseases, but governments are hiding it!'"></textarea>
                 </div>
@@ -424,6 +428,14 @@
         // import { google_search } from '/tools/google_search.js';
 
         document.addEventListener('DOMContentLoaded', function () {
+            const apiKeyInput = document.getElementById('api-key-input');
+            if (localStorage.getItem('geminiApiKey')) {
+                apiKeyInput.value = localStorage.getItem('geminiApiKey');
+            }
+            apiKeyInput.addEventListener('change', (e) => {
+                localStorage.setItem('geminiApiKey', e.target.value.trim());
+            });
+
             const chartCtx = document.getElementById('mlAccuracyChart').getContext('2d');
             const mlAccuracyChart = new Chart(chartCtx, {
                 type: 'bar',
@@ -656,7 +668,8 @@
                         }
                     }
                 };
-                const apiKey = "AIzaSyCLXOhL8aO9tAgsdhQmFa8w36u34XXfs50";
+                const apiKey = document.getElementById("api-key-input").value.trim();
+                if (!apiKey) { alert("Please enter your Gemini API Key in the AI Analysis section."); loadingSpinnerElem.classList.add("hidden"); analyzeButtonElem.disabled = false; return; }
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
                 try {
@@ -784,7 +797,8 @@
                 chatHistory.push({ role: "user", parts: [{ text: prompt }] });
 
                 const payload = { contents: chatHistory };
-                const apiKey = "AIzaSyCLXOhL8aO9tAgsdhQmFa8w36u34XXfs50";
+                const apiKey = document.getElementById("api-key-input").value.trim();
+                if (!apiKey) { alert("Please enter your Gemini API Key in the AI Analysis section."); rewriteLoadingSpinner.classList.add("hidden"); rewriteButton.disabled = false; return; }
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
                 try {
@@ -832,7 +846,8 @@
                 chatHistory.push({ role: "user", parts: [{ text: prompt }] });
 
                 const payload = { contents: chatHistory };
-                const apiKey = "AIzaSyCLXOhL8aO9tAgsdhQmFa8w36u34XXfs50";
+                const apiKey = document.getElementById("api-key-input").value.trim();
+                if (!apiKey) { alert("Please enter your Gemini API Key in the AI Analysis section."); generateQueryLoadingSpinner.classList.add("hidden"); generateQueryButton.disabled = false; return; }
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
                 try {
@@ -898,7 +913,8 @@
                         }
                     }
                 };
-                const apiKey = "AIzaSyCLXOhL8aO9tAgsdhQmFa8w36u34XXfs50";
+                const apiKey = document.getElementById("api-key-input").value.trim();
+                if (!apiKey) { alert("Please enter your Gemini API Key in the AI Analysis section."); highlightLoadingSpinner.classList.add("hidden"); highlightPhrasesButton.disabled = false; return; }
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
                 try {
@@ -1052,7 +1068,8 @@
                 chatHistory.push({ role: "user", parts: [{ text: prompt }] });
 
                 const payload = { contents: chatHistory };
-                const apiKey = "AIzaSyCLXOhL8aO9tAgsdhQmFa8w36u34XXfs50";
+                const apiKey = document.getElementById("api-key-input").value.trim();
+                if (!apiKey) { alert("Please enter your Gemini API Key in the AI Analysis section."); summarizeLoadingSpinner.classList.add("hidden"); summarizeNewsButton.disabled = false; return; }
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
                 try {
