@@ -164,12 +164,14 @@
                     </div>
                     <!-- FIX: Wrapper for details and download button to ensure correct layout -->
                     <div class="mt-2">
-                        <div id="resized-details" class="text-sm text-center md:text-left text-slate-600"></div>
-                        <div class="flex gap-2">
-                            <a id="download-btn" href="#" class="hidden flex-1 mt-2 bg-green-600 text-white text-center font-semibold py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 transform hover:scale-105">
-                                Download
-                            </a>
-                            <button id="copy-btn" class="hidden mt-2 px-4 py-2 bg-slate-200 hover:bg-slate-300 rounded-md text-slate-900">Copy</button>
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div id="resized-details" class="text-sm text-center md:text-left text-slate-600"></div>
+                            <div class="flex gap-2 w-full sm:w-auto">
+                                <a id="download-btn" href="#" class="hidden flex-1 sm:flex-none bg-green-600 text-white text-center font-semibold py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 transform hover:scale-105">
+                                    Download
+                                </a>
+                                <button id="copy-btn" class="hidden px-4 py-2 bg-slate-200 hover:bg-slate-300 rounded-md text-slate-900">Copy</button>
+                            </div>
                         </div>
                         <!-- Compare (Before/After) -->
                         <div class="mt-3">
