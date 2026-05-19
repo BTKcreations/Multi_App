@@ -1,0 +1,27 @@
+{
+  "name": "app",
+  "version": "1.0.0",
+  "description": "> 🚀 A modern, user-friendly dashboard that brings together a suite of productivity tools, utilities, and games — all in one place!",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BTKcreations/Multi_App.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/BTKcreations/Multi_App/issues"
+  },
+  "homepage": "https://github.com/BTKcreations/Multi_App#readme",
+  "devDependencies": {
+    "@babel/core": "^7.29.0",
+    "@babel/preset-env": "^7.29.5",
+    "babel-jest": "^30.4.1",
+    "jest": "^30.4.2"
+  }
+}
