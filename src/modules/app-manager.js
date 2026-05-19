@@ -12,6 +12,33 @@ const DEFAULT_APPS_KEY = 'defaultApps';
 // In-memory app storage
 let apps = [];
 
+let saveTimeout = null;
+
+/**
+ * Schedule a deferred save to batch multiple updates together
+ */
+function scheduleAppsSave() {
+  if (saveTimeout) {
+    clearTimeout(saveTimeout);
+  }
+
+  saveTimeout = setTimeout(() => {
+    saveToStorage(APPS_KEY, apps);
+    saveTimeout = null;
+  }, 1000);
+}
+
+// Ensure pending saves are flushed before the tab is closed
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', () => {
+    if (saveTimeout) {
+      clearTimeout(saveTimeout);
+      saveToStorage(APPS_KEY, apps);
+      saveTimeout = null;
+    }
+  });
+}
+
 /**
  * Initialize apps from storage or defaults
  */
@@ -74,9 +101,10 @@ export function addApp(app) {
  * Update an existing app
  * @param {string} id - App ID
  * @param {Object} updates - Updates to apply
+ * @param {boolean} deferSave - Whether to defer saving to batch updates
  * @returns {Object|null} Updated app or null
  */
-export function updateApp(id, updates) {
+export function updateApp(id, updates, deferSave = false) {
   const index = apps.findIndex(app => app.id === id);
   
   if (index === -1) {
@@ -84,7 +112,16 @@ export function updateApp(id, updates) {
   }
   
   apps[index] = { ...apps[index], ...updates };
-  saveToStorage(APPS_KEY, apps);
+
+  if (deferSave) {
+    scheduleAppsSave();
+  } else {
+    if (saveTimeout) {
+      clearTimeout(saveTimeout);
+      saveTimeout = null;
+    }
+    saveToStorage(APPS_KEY, apps);
+  }
   
   return apps[index];
 }
@@ -119,11 +156,11 @@ export function launchApp(id) {
     return false;
   }
   
-  // Update usage stats
+  // Update usage stats (deferred save to avoid performance hit during rapid launches)
   updateApp(id, {
     lastUsed: new Date().toISOString(),
     usageCount: (app.usageCount || 0) + 1
-  });
+  }, true);
   
   // Add to recent apps
   addRecentApp(id);
