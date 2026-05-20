@@ -40,10 +40,10 @@
         }
     </style>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen py-12">
+<body class="flex items-center justify-center min-h-screen py-12 font-sans bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
 
     <div class="bg-white rounded-lg shadow-xl p-8 w-full max-w-4xl mx-4">
-        
+
         <div class="text-center mb-8">
             <h1 class="text-3xl font-bold text-gray-800">Document Extractor with Gemini AI</h1>
             <p class="text-gray-500 mt-2">Upload a PDF, Word, or Excel file to extract its text and use AI to analyze it.</p>
@@ -74,7 +74,7 @@
             </div>
             <p id="status-text" class="text-gray-600 font-medium mt-2"></p>
         </div>
-        
+
         <!-- Extracted Text Display Section -->
         <div id="result-container" class="mt-8 hidden">
              <div class="flex justify-between items-center mb-4">
@@ -84,7 +84,7 @@
             <div id="text-container" class="w-full h-96 p-4 border border-gray-200 rounded-md bg-gray-50 overflow-y-auto">
                 <pre id="extracted-text" class="whitespace-pre-wrap text-gray-800"></pre>
             </div>
-            
+
             <!-- Gemini AI Features Section -->
             <div id="gemini-actions" class="mt-6">
                 <h3 class="text-lg font-semibold text-gray-700 mb-3">✨ AI-Powered Actions</h3>
@@ -127,7 +127,7 @@
         const resultContainer = document.getElementById('result-container');
         const textContainer = document.getElementById('extracted-text');
         const resetButton = document.getElementById('reset-button');
-        
+
         // Gemini AI elements
         const summarizeBtn = document.getElementById('summarize-btn');
         const keyPointsBtn = document.getElementById('key-points-btn');
@@ -145,7 +145,7 @@
         });
 
         resetButton.addEventListener('click', resetUI);
-        
+
         closeGeminiResultBtn.addEventListener('click', () => {
             geminiResultContainer.classList.add('hidden');
         });
@@ -221,12 +221,12 @@
                 alert('Unsupported file type. Please upload a PDF, DOCX, or XLSX file.');
                 return;
             }
-            
+
             uploadContainer.classList.add('hidden');
             statusContainer.classList.remove('hidden');
             statusText.textContent = `Processing "${fileName}"...`;
             loader.classList.remove('hidden');
-            
+
             extractor(file);
         }
 
@@ -321,7 +321,7 @@
             };
             reader.readAsArrayBuffer(file);
         }
-        
+
         /**
          * Finds URLs in a string and converts them to clickable HTML anchor tags.
          * @param {string} text The input text.
@@ -348,7 +348,7 @@
             geminiResultContainer.classList.remove('hidden');
             geminiLoader.style.display = 'flex';
             geminiOutput.innerHTML = '';
-            
+
             try {
                 const resultText = await callGemini(prompt);
                 geminiOutput.innerHTML = linkify(resultText);
@@ -368,7 +368,7 @@
         async function callGemini(prompt) {
             const apiKey = "AIzaSyD_hF3zYDCo4UoGn-LPdqa0nL9lbG3v4nA"; // This will be handled by the environment
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
-            
+
             const payload = {
                 contents: [{
                     role: "user",

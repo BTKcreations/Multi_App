@@ -17,10 +17,10 @@
         }
     </style>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+<body class="flex items-center justify-center min-h-screen p-4 font-sans bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
 
     <div class="w-full max-w-4xl bg-white rounded-2xl custom-shadow overflow-hidden p-6 md:p-8 space-y-6">
-        
+
         <header class="text-center">
             <h1 class="text-3xl md:text-4xl font-bold text-gray-800">Advanced Equation Grapher</h1>
             <p class="text-gray-500 mt-2">Enter an equation like <code class="bg-gray-200 p-1 rounded-md">y = x^2</code> or <code class="bg-gray-200 p-1 rounded-md">y = sin(x)</code>.</p>
@@ -38,7 +38,7 @@
 
         <!-- Main Content Area -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
+
             <!-- Graph Canvas -->
             <div class="lg:col-span-2 bg-gray-50 border rounded-lg p-4 overflow-hidden">
                 <canvas id="graphCanvas"></canvas>
@@ -88,7 +88,7 @@
                 // Isolate the expression part of the equation
                 const expressionStr = eq.substring(eq.indexOf('=') + 1).trim();
                 if (!expressionStr) return null;
-                
+
                 // Compile the expression
                 const node = math.parse(expressionStr);
                 return node.compile();
@@ -185,11 +185,11 @@
                 const x = (px - originX) / scale;
                 try {
                     const y = compiledExpr.evaluate({ x: x });
-                    
+
                     // Check for real, finite numbers to avoid gaps from complex numbers or infinities
                     if (Number.isFinite(y)) {
                         const canvasY = originY - y * scale;
-                        
+
                         // Move to the first point, then draw lines to subsequent points
                         if (firstPoint) {
                             ctx.moveTo(px, canvasY);
@@ -255,7 +255,7 @@
                 coordinatesTable.innerHTML = ''; // Clear table
             }
         }
-        
+
         // --- Event Listeners ---
         plotButton.addEventListener('click', handlePlot);
         equationInput.addEventListener('keydown', (e) => {
@@ -273,7 +273,7 @@
                 handlePlot();
             }, 100);
         });
-        
+
         // Initial Plot
         window.onload = () => {
             setupCanvas();

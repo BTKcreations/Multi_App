@@ -19,7 +19,7 @@
         }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-700">
+<body class="font-sans bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
 
     <div id="app" class="flex h-screen">
         <!-- --- Sidebar --- -->
@@ -28,7 +28,7 @@
                  <i data-lucide="wand-2" class="text-blue-600"></i>
                  <h1 class="text-xl font-bold text-gray-800">AI Presenter</h1>
             </div>
-           
+
             <div class="flex flex-col space-y-4">
                 <textarea
                     id="topic-input"
@@ -81,7 +81,7 @@
                     <p class="mt-4 text-lg">Generating your presentation...</p>
                 </div>
             </div>
-            
+
             <div id="welcome-message" class="text-center text-gray-500">
                 <h2 class="text-2xl font-semibold">Welcome to AI Presenter</h2>
                 <p>Enter a topic on the left and click "Generate Slides" to begin.</p>
@@ -247,20 +247,20 @@
             welcomeMessage.classList.toggle('hidden', state.slides.length > 0 || state.isLoading);
             presentationContainer.classList.toggle('hidden', state.slides.length === 0 || state.isLoading);
             mainControls.classList.toggle('hidden', state.slides.length === 0);
-            
+
             if (state.slides.length > 0) {
                 const current = state.slides[state.currentSlide];
-                
+
                 // Apply theme
                 appBody.className = `${state.theme.bg} ${state.theme.content}`;
                 slideView.className = `w-full flex-grow shadow-2xl rounded-xl p-12 flex flex-col relative overflow-hidden ${state.theme.slideBg}`;
                 slideTitle.className = `text-5xl font-bold mb-6 ${state.theme.title}`;
                 slideContent.className = `space-y-4 text-2xl list-disc pl-8 ${state.theme.content}`;
-                
+
                 // Render slide content
                 slideTitle.textContent = current.title;
                 slideContent.innerHTML = current.content.map(item => `<li>${item}</li>`).join('');
-                
+
                 // Render slide image
                 slideImageLoader.classList.toggle('hidden', !current.imageIsLoading);
                 if (current.image) {
@@ -299,7 +299,7 @@
                     audioPlayer.classList.add('hidden');
                 }
             }
-            
+
             // Render image generation button state
             generateImagesBtn.disabled = state.isGeneratingImages;
             if(state.isGeneratingImages){
@@ -343,7 +343,7 @@
                 };
                 const apiKey = "AIzaSyD_hF3zYDCo4UoGn-LPdqa0nL9lbG3v4nA"; // Leave empty
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
-                
+
                 const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -424,7 +424,7 @@
 
             setState({ isGeneratingImages: false });
         }
-        
+
         async function generateSpeakerNotesForSlide() {
             const index = state.currentSlide;
             const slide = state.slides[index];
@@ -445,7 +445,7 @@
                 });
 
                 if (!response.ok) throw new Error('Failed to generate notes.');
-                
+
                 const result = await response.json();
                 if (result.candidates?.[0]?.content?.parts?.[0]?.text) {
                     const notes = result.candidates[0].content.parts[0].text;
@@ -465,7 +465,7 @@
             const index = state.currentSlide;
             const notes = state.speakerNotes[index];
             if (!notes) return;
-            
+
             setState({ isGeneratingAudio: true, audioUrl: null });
 
             const prompt = `Read the following text in a clear, professional, and engaging voice: ${notes}`;
