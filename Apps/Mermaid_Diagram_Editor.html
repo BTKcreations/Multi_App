@@ -69,8 +69,9 @@
             resize: none;
         }
     </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body class="bg-gray-100 text-gray-800 antialiased">
+<body class="antialiased font-sans bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
     <div id="app" class="flex flex-col h-screen">
         <!-- Header -->
         <header class="bg-white shadow-md p-4 z-10">
@@ -126,7 +127,7 @@
                 </div>
             </div>
         </main>
-        
+
         <!-- Toast Notification -->
         <div id="toast" class="fixed bottom-5 right-5 bg-gray-800 text-white py-2 px-5 rounded-lg shadow-lg opacity-0 translate-y-3 transition-all duration-300">
             <p id="toast-message"></p>
@@ -170,7 +171,7 @@
             loader.classList.remove('hidden');
             outputContainer.classList.add('hidden');
             errorDisplay.classList.add('hidden');
-            
+
             destroyEditable();
 
             try {
@@ -178,7 +179,7 @@
                 const { svg } = await mermaid.render(elementId, mermaidCode);
                 outputContainer.innerHTML = svg;
                 errorDisplay.classList.add('hidden');
-                
+
                 if (editToggle.checked) {
                     makeEditable();
                 }
@@ -356,7 +357,7 @@
             saveAs(new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' }), `diagram-${Date.now()}.svg`);
             showToast('SVG exported successfully!');
         };
-        
+
         const exportPNG = () => {
             const svgElement = outputContainer.querySelector('svg');
             if (!svgElement) return showToast('No diagram to export!', 'error');
@@ -364,11 +365,11 @@
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             const img = new Image();
-            
+
             img.crossOrigin = 'anonymous';
 
             const url = URL.createObjectURL(new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' }));
-            
+
             img.onload = () => {
                 const padding = 20;
                 canvas.width = img.width + padding * 2;
@@ -438,4 +439,3 @@
     </script>
 </body>
 </html>
-

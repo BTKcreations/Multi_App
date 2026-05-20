@@ -53,7 +53,7 @@
         }
         .grid-cell.placement-valid:hover { background-color: rgba(72, 187, 120, 0.5); }
         .grid-cell.placement-invalid { background-color: rgba(245, 101, 101, 0.5); cursor: not-allowed; }
-        
+
         .building {
             width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
             padding: 4px; user-select: none; border-radius: 4px; position: relative;
@@ -93,7 +93,7 @@
         .tab-btn:hover { background: #66738a; }
         .tab-btn.active { background: var(--accent-gold); transform: scale(1.05); }
         .tab-btn svg { width: 32px; height: 32px; }
-        
+
         #control-content { flex: 1; padding: 16px; overflow-x: auto; display: flex; gap: 16px; }
         .content-panel { display: none; width: 100%; align-items: center; gap: 16px; }
         .content-panel.active { display: flex; }
@@ -128,15 +128,16 @@
         }
         .modal-btn:hover { transform: scale(1.05); }
     </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body>
+<body class="font-sans bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
     <h1 class="font-bangers text-5xl text-yellow-400 tracking-wider mb-2" style="text-shadow: 2px 2px #000;">Clash of Castles</h1>
     <div id="resource-bar"></div>
 
     <div id="game-area">
         <div id="game-container"></div>
     </div>
-    
+
     <div id="control-panel">
         <div id="control-tabs"></div>
         <div id="control-content"></div>
@@ -176,7 +177,7 @@
         'train': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h-1V6h1a2 2 0 1 0-4 0V5a4 4 0 1 1 8 0v1h1a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V5a4 4 0 1 1 8 0v1h-1a2 2 0 1 0-4 0V8z"></path></svg>`,
         'attack': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.53 14.53 8.47 21.59a2 2 0 0 1-2.83 0l-1.17-1.17a2 2 0 0 1 0-2.83l7.06-7.06a2 2 0 0 1 2.83 0l1.17 1.17a2 2 0 0 1 0 2.83z"></path><path d="m22 2-1.5 1.5"></path><path d="M16 8s-2 2-4 4-4 4-4 4"></path><path d="m2 22 1.5-1.5"></path></svg>`
     };
-    
+
     // --- SPECS (same as previous version, content omitted for brevity) ---
     const TROOP_SPECS = {
         'warrior': { name: 'Warrior', svg: ICONS.warrior, cost: { elixir: 50 }, attackPower: 1, requiredBarracksLevel: 1 },
@@ -223,7 +224,7 @@
         selectedBuildingId: null,
         activeTab: 'build'
     };
-    
+
     /* const DOMElements = { ... }; // Grouping DOM elements for clarity */
     const DOMElements = {
         resourceBar: document.getElementById('resource-bar'),
@@ -264,12 +265,12 @@
         const spec = BUILDING_SPECS[building.type];
         const currentLevel = building.level;
         const currentLevelInfo = spec.levels[currentLevel - 1];
-        
+
         const title = `<div class="inline-block w-8 h-8 align-middle">${spec.svg}</div> ${spec.name} (Level ${currentLevel})`;
         let body = '';
         if (currentLevelInfo.production) body += `<p>Current Production: ${currentLevelInfo.production.amount} ${currentLevelInfo.production.type}/sec</p>`;
         if (currentLevelInfo.capacity) body += `<p>Current Capacity: ${currentLevelInfo.capacity.gold > 0 ? `${currentLevelInfo.capacity.gold} Gold` : `${currentLevelInfo.capacity.elixir} Elixir`}</p>`;
-        
+
         const buttons = [{ text: 'Close' }];
         if (currentLevel < spec.levels.length) {
             const nextLevelInfo = spec.levels[currentLevel];
@@ -359,7 +360,7 @@
         `;
         // Content
         let buildContent = '', trainContent = '';
-        
+
         // Build Panel
         Object.keys(BUILDING_SPECS).filter(b => b !== 'town-hall').forEach(type => {
             const spec = BUILDING_SPECS[type];
@@ -392,7 +393,7 @@
         } else {
             trainContent = `<p class="text-center w-full">Build Barracks to train troops.</p>`;
         }
-        
+
         // Attack Button
         const totalTroops = Object.values(gameState.troops).reduce((a, b) => a + b, 0);
         const attackBtnDisabled = totalTroops <= 0 ? 'disabled' : '';
@@ -425,12 +426,12 @@
         gameState.resources.gold -= cost.gold;
         gameState.resources.elixir -= cost.elixir;
         gameState.buildings.push({ id: Date.now(), type: gameState.buildMode, x, y, level: 1 });
-        
+
         setBuildMode(null);
         calculateResourceCaps();
         renderAll();
     }
-    
+
     function upgradeBuilding() {
         const building = gameState.buildings.find(b => b.id === gameState.selectedBuildingId);
         if (!building) return;
@@ -445,12 +446,12 @@
         gameState.resources.gold -= upgradeCost.gold;
         gameState.resources.elixir -= upgradeCost.elixir;
         building.level++;
-        
+
         calculateResourceCaps();
         renderAll();
         showModal('Upgraded!', `${spec.name} is now Level ${building.level}!`, [{text: 'Great!'}]);
     }
-    
+
     function setBuildMode(type) {
         gameState.buildMode = type;
         DOMElements.buildCursor.style.display = type ? 'block' : 'none';
@@ -471,7 +472,7 @@
         let totalAttackPower = Object.keys(gameState.troops).reduce((acc, troopType) => {
             return acc + (gameState.troops[troopType] * TROOP_SPECS[troopType].attackPower);
         }, 0);
-        
+
         if (totalAttackPower <= 0) return;
 
         const goldLoot = Math.floor(totalAttackPower * (Math.random() * 10 + 5));
@@ -479,9 +480,9 @@
 
         gameState.resources.gold = Math.min(gameState.resourceCaps.gold, gameState.resources.gold + goldLoot);
         gameState.resources.elixir = Math.min(gameState.resourceCaps.elixir, gameState.resources.elixir + elixirLoot);
-        
+
         Object.keys(gameState.troops).forEach(t => gameState.troops[t] = 0);
-        
+
         showModal('Victory!', `Your army attacked and looted ${goldLoot}G and ${elixirLoot}E.`, [{text: 'Hooray!'}]);
         renderUI();
     }
@@ -501,7 +502,7 @@
 
     function init() {
         gameState.buildings.push({ id: Date.now(), type: 'town-hall', x: 9, y: 7, level: 1 });
-        
+
         calculateResourceCaps();
         renderAll();
 
@@ -520,7 +521,7 @@
             const card = e.target.closest('.action-card');
             if (!card) return;
             const { action, type } = card.dataset;
-            
+
             if (action === 'build') {
                 setBuildMode(type);
             } else if (action === 'train') {
