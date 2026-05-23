@@ -61,14 +61,15 @@
             max-height: 70vh;
         }
     </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+<body class="flex items-center justify-center min-h-screen p-4 font-sans bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
 
     <div class="w-full max-w-3xl mx-auto">
         <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
             <h1 class="text-3xl font-bold text-center text-gray-800 mb-2">Math Problem Solver</h1>
             <p class="text-center text-gray-500 mb-6">Enter any math question or use your camera to get a solution from Gemini.</p>
-            
+
             <div class="space-y-4">
                 <div class="flex flex-col sm:flex-row gap-4">
                     <input type="text" id="math-question" placeholder="Type your math problem here..." class="flex-grow p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none transition">
@@ -98,7 +99,7 @@
                     <button id="snap-button" class="w-full bg-red-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-red-700 shadow-md">Snap Photo</button>
                 </div>
                 <canvas id="canvas" class="hidden"></canvas>
-                
+
                 <div id="image-preview-container" class="text-center hidden">
                     <img id="image-preview" src="#" alt="Image Preview" class="max-w-xs mx-auto rounded-lg shadow-md"/>
                 </div>
@@ -244,7 +245,7 @@
             canvas.width = videoStream.videoWidth;
             canvas.height = videoStream.videoHeight;
             context.drawImage(videoStream, 0, 0, canvas.width, canvas.height);
-            
+
             stream.getTracks().forEach(track => track.stop());
 
             const dataUrl = canvas.toDataURL('image/jpeg');
@@ -254,7 +255,7 @@
         function handleImageUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
-            
+
             const reader = new FileReader();
             reader.onloadend = () => {
                 openCropper(reader.result);
@@ -294,13 +295,13 @@
             imagePreview.src = dataUrl;
             imagePreviewContainer.classList.remove('hidden');
             setLoading(true, "Extracting question from image...");
-            
+
             try {
                 const base64Data = dataUrl.split(',')[1];
                 const extractionPrompt = "Extract the mathematical question from this image. Return only the text of the question itself, with no extra phrases or explanations.";
                 const imageData = { mimeType: mimeType, data: base64Data };
                 const extractedText = await callGeminiWithRetry(extractionPrompt, null, imageData);
-                
+
                 mathQuestionInput.value = extractedText;
                 await handleSolveClick();
             } catch (error) {
@@ -343,7 +344,7 @@
             const prompt = `You are a student writing notes. Based on "${currentQuestion}", create one new practice problem and solve it. Respond with a JSON object following the schema. The title should be the new problem. The content should be the quick, note-style solution.`;
             await fetchAndDisplayExtraContent(practiceButton, prompt, "practice problem");
         }
-        
+
         async function handleMistakesClick() {
             const prompt = `You are a student writing notes. For the problem type "${currentQuestion}", list 2-3 common mistakes. Respond with a JSON object following the schema. The title should be "Common Mistakes". The content should be a short, bulleted list.`;
             await fetchAndDisplayExtraContent(mistakesButton, prompt, "list of common mistakes");
@@ -356,7 +357,7 @@
 
         async function fetchAndDisplayExtraContent(button, prompt, featureName) {
             if (!currentQuestion) return;
-            
+
             setFeatureButtonLoading(button, true);
             hideError();
             extraContentContainer.classList.add('hidden');
@@ -391,7 +392,7 @@
         async function callGeminiAPI(prompt, schema, imageData) {
             const apiKey = "AIzaSyD_hF3zYDCo4UoGn-LPdqa0nL9lbG3v4nA"; // Provided by the environment
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
-            
+
             const parts = [{ text: prompt }];
             if (imageData) {
                 parts.push({ inlineData: { mimeType: imageData.mimeType, data: imageData.data } });
@@ -408,7 +409,7 @@
 
             const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
             if (!response.ok) throw new Error(`API call failed with status: ${response.status}`);
-            
+
             const result = await response.json();
             const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
             if (!text) throw new Error("Invalid response structure from API.");
@@ -484,7 +485,7 @@
             if (spinner) spinner.classList.toggle('hidden', !isLoading);
             if (text) text.classList.toggle('opacity-75', isLoading);
         }
-        
+
         function hideAllContainers(keepImagePreview = false) {
             hideError();
             solutionContainer.classList.add('hidden');

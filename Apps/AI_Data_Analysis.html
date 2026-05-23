@@ -4,25 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Data Analysis Dashboard</title>
-    
+
     <!-- Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
+
     <!-- Plotly.js for charting -->
     <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
-    
+
     <!-- PapaParse for CSV parsing -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
     <!-- jsPDF for PDF export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    
+
     <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
+
     <style>
         /* Custom styles for a polished look */
         body {
@@ -121,17 +121,17 @@
         }
     </style>
 </head>
-<body class="antialiased">
+<body class="antialiased font-sans bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
     <div class="min-h-screen p-4 sm:p-6 lg:p-8">
         <div class="max-w-7xl mx-auto">
-            
+
             <header class="text-center mb-8">
                 <h1 class="text-3xl sm:text-4xl font-bold text-white tracking-tight">Advanced AI Data Dashboard</h1>
                 <p class="mt-2 text-lg text-gray-400">Instant analysis, dynamic charts, and data exploration.</p>
             </header>
 
             <main id="main-content">
-                
+
                 <section id="upload-section" class="w-full max-w-2xl mx-auto">
                     <label for="file-upload" class="file-input-label flex flex-col items-center justify-center w-full h-64 p-6 rounded-2xl">
                         <svg class="w-12 h-12 mb-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/></svg>
@@ -146,7 +146,7 @@
                     <div class="loader"></div>
                     <p id="loader-text" class="mt-4 text-lg text-gray-300">Analyzing your data...</p>
                 </section>
-                
+
                 <section id="error-section" class="hidden text-center py-20">
                     <div class="max-w-md mx-auto bg-red-900/50 border border-red-700 rounded-lg p-6">
                         <h3 class="text-xl font-semibold text-red-300">Analysis Failed</h3>
@@ -165,13 +165,13 @@
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" id="summary-stats"></div>
-                    
+
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div class="chart-container lg:col-span-2" id="heatmap-parent">
                             <h2 class="text-xl font-bold mb-4 text-gray-200">Correlation Heatmap</h2>
                             <div id="heatmap-container" class="w-full h-96 sm:h-[500px]"></div>
                         </div>
-                        
+
                         <div class="chart-container lg:col-span-2">
                             <h2 class="text-xl font-bold mb-4 text-gray-200">Data Distributions</h2>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-8" id="distribution-charts"></div>
@@ -225,7 +225,7 @@
                     </div>
 
                 </section>
-                
+
             </main>
         </div>
     </div>
@@ -257,7 +257,7 @@
             const errorMessage = document.getElementById('error-message');
             const dashboardSection = document.getElementById('dashboard-section');
             const fileInputLabel = document.querySelector('.file-input-label');
-            
+
             // --- UI Control Functions ---
             const showLoader = (text) => {
                 uploadSection.classList.add('hidden');
@@ -278,7 +278,7 @@
                 errorSection.classList.remove('hidden');
                 errorMessage.textContent = message;
             };
-            
+
             // --- Event Listeners Setup ---
             fileInputLabel.addEventListener('dragover', e => { e.preventDefault(); fileInputLabel.classList.add('dragover'); });
             fileInputLabel.addEventListener('dragleave', e => { e.preventDefault(); fileInputLabel.classList.remove('dragover'); });
@@ -332,7 +332,7 @@
                     const { numericCols, categoricalCols } = classifyColumns(data, headers);
                     AppState.numericCols = numericCols;
                     AppState.categoricalCols = categoricalCols;
-                    
+
                     if (numericCols.length === 0 && categoricalCols.length === 0) {
                         showError("No usable numeric or categorical columns found for analysis.");
                         return;
@@ -340,7 +340,7 @@
 
                     showLoader('Calculating statistics...');
                     renderSummaryStats(data, numericCols, data.length);
-                    
+
                     showLoader('Generating automated visualizations...');
                     if (numericCols.length > 1) {
                         const matrix = calculateCorrelationMatrix(data, numericCols);
@@ -350,7 +350,7 @@
                     }
                     renderDistributions(data, numericCols, categoricalCols);
                     renderScatterPlots(data, numericCols);
-                    
+
                     showLoader('Preparing interactive tools...');
                     setupDynamicChartCreator();
                     renderTable();
@@ -370,7 +370,7 @@
                 yaxis: { gridcolor: '#374151', linecolor: '#4b5563', zerolinecolor: '#4b5563' },
                 margin: { l: 50, r: 20, b: 50, t: 50, pad: 4 },
             };
-            
+
             function renderHeatmap(matrix, labels) {
                 Plotly.newPlot('heatmap-container', [{
                     z: matrix, x: labels, y: labels, type: 'heatmap', colorscale: 'Blues', reversescale: true,
@@ -410,7 +410,7 @@
                 const plotData = [{ x: data.map(r => r[xCol]), y: data.map(r => r[yCol]), mode: 'markers', type: 'scatter', marker: { color: '#8b5cf6', size: 5, opacity: 0.7 }}];
                 Plotly.newPlot(chartDiv, plotData, { ...PLOTLY_DARK_LAYOUT, title: `${yCol} vs. ${xCol}`, xaxis: { title: xCol }, yaxis: { title: yCol } }, {responsive: true});
             }
-            
+
             // --- DYNAMIC CHART CREATOR ---
             function setupDynamicChartCreator() {
                 const xSelect = document.getElementById('x-axis-col');
@@ -425,7 +425,7 @@
                 const yContainer = document.getElementById('y-axis-container');
                 const xSelect = document.getElementById('x-axis-col');
                 const ySelect = document.getElementById('y-axis-col');
-                
+
                 if (chartType === 'pie') {
                     yContainer.style.display = 'block';
                     xSelect.innerHTML = AppState.categoricalCols.map(h => `<option value="${h}">${h}</option>`).join('');
@@ -447,7 +447,7 @@
                 const yCol = document.getElementById('y-axis-col').value;
                 const container = 'dynamic-chart-container';
                 let plotData, layout;
-                
+
                 const xData = AppState.data.map(r => r[xCol]);
                 const yData = AppState.data.map(r => r[yCol]);
 
@@ -485,14 +485,14 @@
             function renderTable() {
                 const head = document.getElementById('table-head');
                 const body = document.getElementById('table-body');
-                
+
                 // Header
                 head.innerHTML = `<tr>${AppState.headers.map(h => `<th data-col="${h}">${h}</th>`).join('')}</tr>`;
-                
+
                 // Sort and Filter Data
                 let displayData = [...AppState.data];
                 if (AppState.table.filter) {
-                    displayData = displayData.filter(row => 
+                    displayData = displayData.filter(row =>
                         Object.values(row).some(val => String(val).toLowerCase().includes(AppState.table.filter))
                     );
                 }
@@ -512,7 +512,7 @@
                 const paginatedData = displayData.slice(startIndex, endIndex);
 
                 // Body
-                body.innerHTML = paginatedData.map(row => 
+                body.innerHTML = paginatedData.map(row =>
                     `<tr>${AppState.headers.map(h => `<td>${row[h]}</td>`).join('')}</tr>`
                 ).join('');
 
@@ -526,7 +526,7 @@
                 const totalPages = Math.ceil(totalRows / rowsPerPage);
                 const startIndex = (currentPage - 1) * rowsPerPage;
                 const endIndex = startIndex + rowsPerPage;
-                
+
                 controls.innerHTML = `
                     <p class="text-sm text-gray-400">Showing ${Math.min(startIndex + 1, totalRows)} to ${Math.min(endIndex, totalRows)} of ${totalRows} entries</p>
                     <div class="flex gap-2">
@@ -535,7 +535,7 @@
                         <button id="next-page" class="btn btn-secondary pagination-btn" ${currentPage === totalPages || totalPages === 0 ? 'disabled' : ''}>Next</button>
                     </div>
                 `;
-                
+
                 document.getElementById('prev-page').addEventListener('click', () => {
                     if (AppState.table.currentPage > 1) {
                         AppState.table.currentPage--;
@@ -572,11 +572,11 @@
                 const dashboard = document.getElementById('dashboard-section');
                 const btn = document.getElementById('export-pdf-btn');
                 const originalTitle = btn.innerHTML;
-                
+
                 btn.innerHTML = 'Exporting...';
                 btn.disabled = true;
 
-                html2canvas(dashboard, { 
+                html2canvas(dashboard, {
                     backgroundColor: '#111827',
                     scale: 2 // Higher scale for better quality
                 }).then(canvas => {
@@ -597,7 +597,7 @@
                     btn.disabled = false;
                 });
             }
-            
+
             // --- Calculation Helpers ---
             function classifyColumns(data, headers) {
                 const numericCols = [], categoricalCols = [];
@@ -647,4 +647,3 @@
     </script>
 </body>
 </html>
-

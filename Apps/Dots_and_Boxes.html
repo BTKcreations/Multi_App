@@ -767,12 +767,12 @@
         }
 
         @keyframes celebration {
-            0% { 
-                transform: translateX(-50%) scale(1); 
+            0% {
+                transform: translateX(-50%) scale(1);
                 box-shadow: 0 8px 20px rgba(168, 237, 234, 0.3);
             }
-            100% { 
-                transform: translateX(-50%) scale(1.05); 
+            100% {
+                transform: translateX(-50%) scale(1.05);
                 box-shadow: 0 15px 30px rgba(168, 237, 234, 0.5);
             }
         }
@@ -819,11 +819,11 @@
         }
 
         @keyframes menuSlideUp {
-            from { 
+            from {
                 opacity: 0;
                 transform: translateY(50px) scale(0.9);
             }
-            to { 
+            to {
                 opacity: 1;
                 transform: translateY(0) scale(1);
             }
@@ -1035,8 +1035,10 @@
             }
         }
     </style>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body>
+<body class="font-sans bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
     <!-- Welcome Screen -->
     <div class="welcome-screen" id="welcomeScreen">
         <div class="welcome-container">
@@ -1210,7 +1212,7 @@
                 this.gameId = null;
                 this.peerId = null;
                 this.isHost = false;
-                
+
                 // Zoom and Pan properties
                 this.scale = 1;
                 this.minScale = 0.5;
@@ -1219,29 +1221,29 @@
                 this.panY = 0;
                 this.isDragging = false;
                 this.lastPanPoint = { x: 0, y: 0 };
-                
+
                 // Touch properties
                 this.touches = [];
                 this.lastTouchDistance = 0;
-                
+
                 // Connection properties
                 this.peer = null;
                 this.connection = null;
                 this.connectionRetries = 0;
                 this.maxRetries = 3;
-                
+
                 // Player colors
                 this.playerColors = {
                     1: { primary: '#ff6b6b', secondary: '#ee5a52', light: 'rgba(255, 107, 107, 0.3)' },
                     2: { primary: '#4ecdc4', secondary: '#44a08d', light: 'rgba(78, 205, 196, 0.3)' }
                 };
-                
+
                 // Game state
                 this.horizontalLines = [];
                 this.verticalLines = [];
                 this.boxes = [];
                 this.lineOwnership = { horizontal: [], vertical: [] };
-                
+
                 this.initGame();
                 this.setupEventListeners();
             }
@@ -1302,7 +1304,7 @@
 
             handlePeerError(err) {
                 let message = 'Connection error';
-                
+
                 switch (err.type) {
                     case 'peer-unavailable':
                         message = 'Friend is not available. Please check the link.';
@@ -1322,7 +1324,7 @@
                     default:
                         message = `Connection error: ${err.message || 'Unknown error'}`;
                 }
-                
+
                 this.showToast(message, 'error');
                 this.updateConnectionStatus('error', message);
             }
@@ -1338,7 +1340,7 @@
                         conn2.style.display = 'block';
                         conn2.className = 'connection-indicator connected';
                     }
-                    
+
                     if (this.isHost) {
                         this.sendGameState();
                     }
@@ -1371,7 +1373,7 @@
                 if (!this.peer) return;
 
                 this.updateConnectionStatus('connecting', 'Connecting to friend...');
-                
+
                 try {
                     this.connection = this.peer.connect(peerId, {
                         reliable: true
@@ -1379,7 +1381,7 @@
                     this.isHost = false;
                     this.playerId = 2;
                     this.isMyTurn = false;
-                    
+
                     this.setupConnection();
                 } catch (error) {
                     console.error('Failed to connect:', error);
@@ -1451,7 +1453,7 @@
                 this.gameOver = data.gameOver;
                 this.gridSize = data.gridSize;
                 this.playerNames = data.playerNames;
-                
+
                 this.isMyTurn = (this.currentPlayer === this.playerId);
                 this.updateUI();
                 this.draw();
@@ -1459,7 +1461,7 @@
 
             applyRemoteMove(data) {
                 const { line, player, completedBoxes } = data;
-                
+
                 if (line.type === 'horizontal') {
                     this.horizontalLines[line.row][line.col] = true;
                     this.lineOwnership.horizontal[line.row][line.col] = player;
@@ -1489,16 +1491,16 @@
                 const statusElement = document.getElementById('connectionStatus');
                 const statusText = document.getElementById('statusText');
                 const spinner = document.getElementById('loadingSpinner');
-                
+
                 if (statusElement) {
                     statusElement.style.display = 'block';
                     statusElement.className = `connection-status ${status}`;
                 }
-                
+
                 if (statusText) {
                     statusText.textContent = message;
                 }
-                
+
                 if (spinner) {
                     spinner.style.display = status === 'connecting' ? 'block' : 'none';
                 }
@@ -1507,12 +1509,12 @@
             showToast(message, type = 'success') {
                 const toast = document.getElementById('toast');
                 const toastMessage = document.getElementById('toastMessage');
-                
+
                 if (toast && toastMessage) {
                     toastMessage.textContent = message;
                     toast.className = `toast ${type}`;
                     toast.classList.add('show');
-                    
+
                     setTimeout(() => {
                         toast.classList.remove('show');
                     }, 3000);
@@ -1531,7 +1533,7 @@
                 const canvasSize = Math.min(800, maxSize);
                 this.canvas.width = canvasSize;
                 this.canvas.height = canvasSize;
-                
+
                 this.cellSize = (canvasSize - 100) / (this.gridSize + 1);
                 this.dotRadius = Math.max(6, this.cellSize * 0.08);
                 this.lineWidth = Math.max(4, this.cellSize * 0.06);
@@ -1583,13 +1585,13 @@
                 this.gameOver = false;
                 this.moveHistory = [];
                 this.hoveredLine = null;
-                
+
                 if (this.gameMode === 'offline') {
                     this.isMyTurn = true;
                 } else {
                     this.isMyTurn = (this.currentPlayer === this.playerId);
                 }
-                
+
                 this.updateUI();
             }
 
@@ -1599,10 +1601,10 @@
                 this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
                 this.canvas.addEventListener('mouseup', (e) => this.handleMouseUp(e));
                 this.canvas.addEventListener('mouseleave', (e) => this.handleMouseLeave(e));
-                
+
                 // Use passive: false only when necessary for preventDefault
                 this.canvas.addEventListener('wheel', (e) => this.handleWheel(e), { passive: false });
-                
+
                 // Touch events with passive: false for preventDefault
                 this.canvas.addEventListener('touchstart', (e) => this.handleTouchStart(e), { passive: false });
                 this.canvas.addEventListener('touchmove', (e) => this.handleTouchMove(e), { passive: false });
@@ -1623,7 +1625,7 @@
 
                 // Prevent context menu
                 this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
-                
+
                 // Window events
                 window.addEventListener('beforeunload', () => {
                     this.cleanup();
@@ -1654,25 +1656,25 @@
                 const rect = this.canvas.getBoundingClientRect();
                 const x = (clientX - rect.left) * (this.canvas.width / rect.width);
                 const y = (clientY - rect.top) * (this.canvas.height / rect.height);
-                
+
                 const transformedX = (x - this.panX) / this.scale;
                 const transformedY = (y - this.panY) / this.scale;
-                
+
                 return { x: transformedX, y: transformedY };
             }
 
             handleMouseDown(e) {
                 e.preventDefault();
-                
+
                 if (this.gameMode === 'online' && !this.isMyTurn) {
                     this.canvas.classList.add('disabled');
                     return;
                 } else {
                     this.canvas.classList.remove('disabled');
                 }
-                
+
                 const coords = this.getCanvasCoordinates(e.clientX, e.clientY);
-                
+
                 if (e.button === 0) {
                     if (e.ctrlKey || e.metaKey || this.scale > 1.1) {
                         this.isDragging = true;
@@ -1687,14 +1689,14 @@
             handleMouseMove(e) {
                 e.preventDefault();
                 const coords = this.getCanvasCoordinates(e.clientX, e.clientY);
-                
+
                 if (this.isDragging) {
                     const deltaX = e.clientX - this.lastPanPoint.x;
                     const deltaY = e.clientY - this.lastPanPoint.y;
-                    
+
                     this.panX += deltaX;
                     this.panY += deltaY;
-                    
+
                     this.lastPanPoint = { x: e.clientX, y: e.clientY };
                     this.draw();
                 } else if (!this.gameOver && this.showPreview && this.isMyTurn) {
@@ -1735,10 +1737,10 @@
                 const rect = this.canvas.getBoundingClientRect();
                 const mouseX = (e.clientX - rect.left) * (this.canvas.width / rect.width);
                 const mouseY = (e.clientY - rect.top) * (this.canvas.height / rect.height);
-                
+
                 const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
                 const newScale = Math.max(this.minScale, Math.min(this.maxScale, this.scale * zoomFactor));
-                
+
                 if (newScale !== this.scale) {
                     this.panX = mouseX - (mouseX - this.panX) * (newScale / this.scale);
                     this.panY = mouseY - (mouseY - this.panY) * (newScale / this.scale);
@@ -1750,14 +1752,14 @@
             // Touch event handlers
             handleTouchStart(e) {
                 e.preventDefault();
-                
+
                 if (this.gameMode === 'online' && !this.isMyTurn) {
                     this.canvas.classList.add('disabled');
                     return;
                 }
-                
+
                 this.touches = Array.from(e.touches);
-                
+
                 if (this.touches.length === 1) {
                     const touch = this.touches[0];
                     this.lastPanPoint = { x: touch.clientX, y: touch.clientY };
@@ -1774,15 +1776,15 @@
             handleTouchMove(e) {
                 e.preventDefault();
                 const newTouches = Array.from(e.touches);
-                
+
                 if (newTouches.length === 1 && this.touches.length === 1) {
                     const touch = newTouches[0];
                     const deltaX = touch.clientX - this.lastPanPoint.x;
                     const deltaY = touch.clientY - this.lastPanPoint.y;
-                    
+
                     this.panX += deltaX;
                     this.panY += deltaY;
-                    
+
                     this.lastPanPoint = { x: touch.clientX, y: touch.clientY };
                     this.draw();
                 } else if (newTouches.length === 2 && this.touches.length === 2) {
@@ -1792,47 +1794,47 @@
                         Math.pow(touch2.clientX - touch1.clientX, 2) +
                         Math.pow(touch2.clientY - touch1.clientY, 2)
                     );
-                    
+
                     if (this.lastTouchDistance > 0) {
                         const zoomFactor = currentDistance / this.lastTouchDistance;
                         const newScale = Math.max(this.minScale, Math.min(this.maxScale, this.scale * zoomFactor));
-                        
+
                         if (newScale !== this.scale) {
                             const centerX = (touch1.clientX + touch2.clientX) / 2;
                             const centerY = (touch1.clientY + touch2.clientY) / 2;
                             const rect = this.canvas.getBoundingClientRect();
                             const canvasX = (centerX - rect.left) * (this.canvas.width / rect.width);
                             const canvasY = (centerY - rect.top) * (this.canvas.height / rect.height);
-                            
+
                             this.panX = canvasX - (canvasX - this.panX) * (newScale / this.scale);
                             this.panY = canvasY - (canvasY - this.panY) * (newScale / this.scale);
                             this.scale = newScale;
                             this.draw();
                         }
                     }
-                    
+
                     this.lastTouchDistance = currentDistance;
                 }
-                
+
                 this.touches = newTouches;
             }
 
             handleTouchEnd(e) {
                 e.preventDefault();
                 const remainingTouches = Array.from(e.touches);
-                
+
                 if (this.touches.length === 1 && remainingTouches.length === 0) {
                     const touch = this.touches[0];
                     const coords = this.getCanvasCoordinates(touch.clientX, touch.clientY);
-                    
+
                     const deltaX = Math.abs(touch.clientX - this.lastPanPoint.x);
                     const deltaY = Math.abs(touch.clientY - this.lastPanPoint.y);
-                    
+
                     if (deltaX < 10 && deltaY < 10 && this.isMyTurn) {
                         this.handleGameClick(coords.x, coords.y);
                     }
                 }
-                
+
                 this.touches = remainingTouches;
                 this.lastTouchDistance = 0;
             }
@@ -1842,7 +1844,7 @@
                 if (newScale !== this.scale) {
                     const centerX = this.canvas.width / 2;
                     const centerY = this.canvas.height / 2;
-                    
+
                     this.panX = centerX - (centerX - this.panX) * (newScale / this.scale);
                     this.panY = centerY - (centerY - this.panY) * (newScale / this.scale);
                     this.scale = newScale;
@@ -1855,7 +1857,7 @@
                 if (newScale !== this.scale) {
                     const centerX = this.canvas.width / 2;
                     const centerY = this.canvas.height / 2;
-                    
+
                     this.panX = centerX - (centerX - this.panX) * (newScale / this.scale);
                     this.panY = centerY - (centerY - this.panY) * (newScale / this.scale);
                     this.scale = newScale;
@@ -1869,12 +1871,12 @@
 
             handleGameClick(x, y) {
                 if (this.gameOver || (this.gameMode === 'online' && !this.isMyTurn)) return;
-                
+
                 const clickedLine = this.getClickedLine(x, y);
                 if (clickedLine && this.drawLine(clickedLine)) {
                     const completedBoxes = this.checkCompletedBoxes();
                     let nextPlayer = this.currentPlayer;
-                    
+
                     if (completedBoxes.length === 0) {
                         nextPlayer = this.currentPlayer === 1 ? 2 : 1;
                     } else {
@@ -1883,13 +1885,13 @@
                             this.boxes[box.row][box.col] = this.currentPlayer;
                         });
                     }
-                    
+
                     this.moveHistory.push({
                         line: clickedLine,
                         player: this.currentPlayer,
                         completedBoxes: completedBoxes.length
                     });
-                    
+
                     // Send move to remote player if in online mode
                     if (this.gameMode === 'online') {
                         this.sendMessage({
@@ -1898,12 +1900,12 @@
                             player: this.currentPlayer,
                             completedBoxes: completedBoxes
                         });
-                        
+
                         if (completedBoxes.length === 0) {
                             this.isMyTurn = false;
                         }
                     }
-                    
+
                     this.currentPlayer = nextPlayer;
                     this.draw();
                     this.updateUI();
@@ -1914,15 +1916,15 @@
             getClickedLine(x, y) {
                 const tolerance = Math.max(30, this.cellSize * 0.4);
                 const offset = this.getOffset();
-                
+
                 // Check horizontal lines
                 for (let row = 0; row <= this.gridSize; row++) {
                     for (let col = 0; col < this.gridSize; col++) {
                         const lineY = row * this.cellSize + offset;
                         const lineX1 = col * this.cellSize + offset;
                         const lineX2 = (col + 1) * this.cellSize + offset;
-                        
-                        if (Math.abs(y - lineY) < tolerance && 
+
+                        if (Math.abs(y - lineY) < tolerance &&
                             x >= lineX1 - tolerance && x <= lineX2 + tolerance) {
                             if (!this.horizontalLines[row][col]) {
                                 return { type: 'horizontal', row, col };
@@ -1930,15 +1932,15 @@
                         }
                     }
                 }
-                
+
                 // Check vertical lines
                 for (let row = 0; row < this.gridSize; row++) {
                     for (let col = 0; col <= this.gridSize; col++) {
                         const lineX = col * this.cellSize + offset;
                         const lineY1 = row * this.cellSize + offset;
                         const lineY2 = (row + 1) * this.cellSize + offset;
-                        
-                        if (Math.abs(x - lineX) < tolerance && 
+
+                        if (Math.abs(x - lineX) < tolerance &&
                             y >= lineY1 - tolerance && y <= lineY2 + tolerance) {
                             if (!this.verticalLines[row][col]) {
                                 return { type: 'vertical', row, col };
@@ -1946,7 +1948,7 @@
                         }
                     }
                 }
-                
+
                 return null;
             }
 
@@ -1963,25 +1965,25 @@
 
             undoLastMove() {
                 if (this.moveHistory.length === 0 || this.gameOver) return;
-                
+
                 if (this.gameMode === 'online') {
                     const lastMove = this.moveHistory[this.moveHistory.length - 1];
                     if (lastMove.player !== this.playerId && !this.isMyTurn) {
                         this.showToast("You can only undo your own moves", 'warning');
                         return;
                     }
-                    
+
                     this.sendMessage({ type: 'undo' });
                 }
-                
+
                 this.performUndo();
             }
 
             performUndo() {
                 if (this.moveHistory.length === 0) return;
-                
+
                 const lastMove = this.moveHistory.pop();
-                
+
                 if (lastMove.line.type === 'horizontal') {
                     this.horizontalLines[lastMove.line.row][lastMove.line.col] = false;
                     this.lineOwnership.horizontal[lastMove.line.row][lastMove.line.col] = 0;
@@ -1989,7 +1991,7 @@
                     this.verticalLines[lastMove.line.row][lastMove.line.col] = false;
                     this.lineOwnership.vertical[lastMove.line.row][lastMove.line.col] = 0;
                 }
-                
+
                 if (lastMove.completedBoxes > 0) {
                     this.scores[lastMove.player - 1] -= lastMove.completedBoxes;
                     for (let row = 0; row < this.gridSize; row++) {
@@ -1999,7 +2001,7 @@
                                 const bottom = this.horizontalLines[row + 1][col];
                                 const left = this.verticalLines[row][col];
                                 const right = this.verticalLines[row][col + 1];
-                                
+
                                 if (!(top && bottom && left && right)) {
                                     this.boxes[row][col] = 0;
                                 }
@@ -2009,11 +2011,11 @@
                 } else {
                     this.currentPlayer = lastMove.player;
                 }
-                
+
                 if (this.gameMode === 'online') {
                     this.isMyTurn = (this.currentPlayer === this.playerId);
                 }
-                
+
                 this.draw();
                 this.updateUI();
             }
@@ -2024,7 +2026,7 @@
 
             checkCompletedBoxes() {
                 const newBoxes = [];
-                
+
                 for (let row = 0; row < this.gridSize; row++) {
                     for (let col = 0; col < this.gridSize; col++) {
                         if (this.boxes[row][col] === 0) {
@@ -2032,34 +2034,34 @@
                             const bottom = this.horizontalLines[row + 1][col];
                             const left = this.verticalLines[row][col];
                             const right = this.verticalLines[row][col + 1];
-                            
+
                             if (top && bottom && left && right) {
                                 newBoxes.push({ row, col });
                             }
                         }
                     }
                 }
-                
+
                 return newBoxes;
             }
 
             draw() {
                 this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-                
+
                 this.ctx.save();
                 this.ctx.translate(this.panX, this.panY);
                 this.ctx.scale(this.scale, this.scale);
-                
+
                 this.drawBackground();
-                
+
                 if (this.hoveredLine && this.showPreview && this.isMyTurn) {
                     this.drawHoverPreview();
                 }
-                
+
                 this.drawDots();
                 this.drawLines();
                 this.drawBoxes();
-                
+
                 this.ctx.restore();
             }
 
@@ -2068,14 +2070,14 @@
                 this.ctx.strokeStyle = '#f0f0f0';
                 this.ctx.lineWidth = 2;
                 this.ctx.setLineDash([5, 5]);
-                
+
                 for (let row = 0; row <= this.gridSize; row++) {
                     for (let col = 0; col < this.gridSize; col++) {
                         if (!this.horizontalLines[row][col]) {
                             const y = row * this.cellSize + offset;
                             const x1 = col * this.cellSize + offset + this.dotRadius;
                             const x2 = (col + 1) * this.cellSize + offset - this.dotRadius;
-                            
+
                             this.ctx.beginPath();
                             this.ctx.moveTo(x1, y);
                             this.ctx.lineTo(x2, y);
@@ -2083,14 +2085,14 @@
                         }
                     }
                 }
-                
+
                 for (let row = 0; row < this.gridSize; row++) {
                     for (let col = 0; col <= this.gridSize; col++) {
                         if (!this.verticalLines[row][col]) {
                             const x = col * this.cellSize + offset;
                             const y1 = row * this.cellSize + offset + this.dotRadius;
                             const y2 = (row + 1) * this.cellSize + offset - this.dotRadius;
-                            
+
                             this.ctx.beginPath();
                             this.ctx.moveTo(x, y1);
                             this.ctx.lineTo(x, y2);
@@ -2098,25 +2100,25 @@
                         }
                     }
                 }
-                
+
                 this.ctx.setLineDash([]);
             }
 
             drawHoverPreview() {
                 if (!this.hoveredLine) return;
-                
+
                 const offset = this.getOffset();
                 this.ctx.lineWidth = this.lineWidth;
                 this.ctx.lineCap = 'round';
                 this.ctx.strokeStyle = this.playerColors[this.currentPlayer].primary;
                 this.ctx.globalAlpha = 0.7;
                 this.ctx.setLineDash([12, 6]);
-                
+
                 if (this.hoveredLine.type === 'horizontal') {
                     const y = this.hoveredLine.row * this.cellSize + offset;
                     const x1 = this.hoveredLine.col * this.cellSize + offset + this.dotRadius;
                     const x2 = (this.hoveredLine.col + 1) * this.cellSize + offset - this.dotRadius;
-                    
+
                     this.ctx.beginPath();
                     this.ctx.moveTo(x1, y);
                     this.ctx.lineTo(x2, y);
@@ -2125,13 +2127,13 @@
                     const x = this.hoveredLine.col * this.cellSize + offset;
                     const y1 = this.hoveredLine.row * this.cellSize + offset + this.dotRadius;
                     const y2 = (this.hoveredLine.row + 1) * this.cellSize + offset - this.dotRadius;
-                    
+
                     this.ctx.beginPath();
                     this.ctx.moveTo(x, y1);
                     this.ctx.lineTo(x, y2);
                     this.ctx.stroke();
                 }
-                
+
                 this.ctx.setLineDash([]);
                 this.ctx.globalAlpha = 1.0;
             }
@@ -2143,18 +2145,18 @@
                 this.ctx.shadowBlur = 8;
                 this.ctx.shadowOffsetX = 4;
                 this.ctx.shadowOffsetY = 4;
-                
+
                 for (let row = 0; row <= this.gridSize; row++) {
                     for (let col = 0; col <= this.gridSize; col++) {
                         const x = col * this.cellSize + offset;
                         const y = row * this.cellSize + offset;
-                        
+
                         this.ctx.beginPath();
                         this.ctx.arc(x, y, this.dotRadius, 0, 2 * Math.PI);
                         this.ctx.fill();
                     }
                 }
-                
+
                 this.ctx.shadowBlur = 0;
                 this.ctx.shadowOffsetX = 0;
                 this.ctx.shadowOffsetY = 0;
@@ -2168,18 +2170,18 @@
                 this.ctx.shadowBlur = 6;
                 this.ctx.shadowOffsetX = 3;
                 this.ctx.shadowOffsetY = 3;
-                
+
                 // Draw horizontal lines
                 for (let row = 0; row <= this.gridSize; row++) {
                     for (let col = 0; col < this.gridSize; col++) {
                         if (this.horizontalLines[row][col]) {
                             const player = this.lineOwnership.horizontal[row][col];
                             this.ctx.strokeStyle = this.playerColors[player].primary;
-                            
+
                             const y = row * this.cellSize + offset;
                             const x1 = col * this.cellSize + offset + this.dotRadius;
                             const x2 = (col + 1) * this.cellSize + offset - this.dotRadius;
-                            
+
                             this.ctx.beginPath();
                             this.ctx.moveTo(x1, y);
                             this.ctx.lineTo(x2, y);
@@ -2187,18 +2189,18 @@
                         }
                     }
                 }
-                
+
                 // Draw vertical lines
                 for (let row = 0; row < this.gridSize; row++) {
                     for (let col = 0; col <= this.gridSize; col++) {
                         if (this.verticalLines[row][col]) {
                             const player = this.lineOwnership.vertical[row][col];
                             this.ctx.strokeStyle = this.playerColors[player].primary;
-                            
+
                             const x = col * this.cellSize + offset;
                             const y1 = row * this.cellSize + offset + this.dotRadius;
                             const y2 = (row + 1) * this.cellSize + offset - this.dotRadius;
-                            
+
                             this.ctx.beginPath();
                             this.ctx.moveTo(x, y1);
                             this.ctx.lineTo(x, y2);
@@ -2206,7 +2208,7 @@
                         }
                     }
                 }
-                
+
                 this.ctx.shadowBlur = 0;
                 this.ctx.shadowOffsetX = 0;
                 this.ctx.shadowOffsetY = 0;
@@ -2217,19 +2219,19 @@
                 this.ctx.font = `bold ${Math.min(32, this.cellSize / 3)}px Arial`;
                 this.ctx.textAlign = 'center';
                 this.ctx.textBaseline = 'middle';
-                
+
                 for (let row = 0; row < this.gridSize; row++) {
                     for (let col = 0; col < this.gridSize; col++) {
                         if (this.boxes[row][col] > 0) {
                             const x = col * this.cellSize + this.cellSize / 2 + offset;
                             const y = row * this.cellSize + this.cellSize / 2 + offset;
                             const player = this.boxes[row][col];
-                            
+
                             // Draw box background
                             const gradient = this.ctx.createRadialGradient(x, y, 0, x, y, this.cellSize / 2);
                             gradient.addColorStop(0, this.playerColors[player].light);
                             gradient.addColorStop(1, 'rgba(255, 255, 255, 0.1)');
-                            
+
                             this.ctx.fillStyle = gradient;
                             this.ctx.fillRect(
                                 col * this.cellSize + offset + this.dotRadius + 4,
@@ -2237,7 +2239,7 @@
                                 this.cellSize - 2 * this.dotRadius - 8,
                                 this.cellSize - 2 * this.dotRadius - 8
                             );
-                            
+
                             // Draw border
                             this.ctx.strokeStyle = this.playerColors[player].primary;
                             this.ctx.lineWidth = 4;
@@ -2247,18 +2249,18 @@
                                 this.cellSize - 2 * this.dotRadius - 8,
                                 this.cellSize - 2 * this.dotRadius - 8
                             );
-                            
+
                             // Draw player initial
                             this.ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
                             this.ctx.shadowBlur = 4;
                             this.ctx.shadowOffsetX = 2;
                             this.ctx.shadowOffsetY = 2;
                             this.ctx.fillStyle = this.playerColors[player].secondary;
-                            
+
                             const playerName = this.playerNames[player - 1];
                             const initial = playerName.charAt(0).toUpperCase();
                             this.ctx.fillText(initial, x, y);
-                            
+
                             this.ctx.shadowBlur = 0;
                             this.ctx.shadowOffsetX = 0;
                             this.ctx.shadowOffsetY = 0;
@@ -2273,12 +2275,12 @@
                 const score2 = document.getElementById('player2ScoreDisplay');
                 if (score1) score1.textContent = this.scores[0];
                 if (score2) score2.textContent = this.scores[1];
-                
+
                 // Update player overlays
                 const player1Overlay = document.getElementById('player1Overlay');
                 const player2Overlay = document.getElementById('player2Overlay');
                 const undoBtn = document.getElementById('undoBtn');
-                
+
                 // Update active player display
                 if (this.gameMode === 'offline') {
                     if (this.currentPlayer === 1) {
@@ -2307,12 +2309,12 @@
                         }
                     }
                 }
-                
+
                 // Update undo button
                 if (undoBtn) {
                     undoBtn.disabled = this.moveHistory.length === 0 || this.gameOver;
                 }
-                
+
                 // Update status
                 const statusElement = document.getElementById('gameStatus');
                 if (statusElement) {
@@ -2347,7 +2349,7 @@
             checkGameOver() {
                 let totalPossibleBoxes = this.gridSize * this.gridSize;
                 let completedBoxes = this.scores[0] + this.scores[1];
-                
+
                 if (completedBoxes === totalPossibleBoxes) {
                     this.gameOver = true;
                     this.updateUI();
@@ -2365,10 +2367,10 @@
                     player1Score: this.scores[0],
                     player2Score: this.scores[1],
                     totalMoves: this.moveHistory.length,
-                    winner: this.scores[0] > this.scores[1] ? this.playerNames[0] : 
+                    winner: this.scores[0] > this.scores[1] ? this.playerNames[0] :
                             this.scores[1] > this.scores[0] ? this.playerNames[1] : 'Tie'
                 };
-                
+
                 try {
                     const history = JSON.parse(localStorage.getItem('dotsBoxesHistory') || '[]');
                     history.unshift(gameData);
@@ -2390,14 +2392,14 @@
             currentMode = mode;
             document.getElementById('welcomeScreen').classList.add('hidden');
             document.getElementById('startScreen').classList.add('active');
-            
+
             const modeSubtitle = document.getElementById('modeSubtitle');
             const onlineOptions = document.getElementById('onlineOptions');
             const connectionStatus = document.getElementById('connectionStatus');
             const player2Input = document.getElementById('player2Name');
             const gridSizeSelect = document.getElementById('gridSize');
             const difficultySelect = document.getElementById('difficulty');
-            
+
             switch (mode) {
                 case 'online':
                     if (modeSubtitle) modeSubtitle.textContent = 'Online Multiplayer';
@@ -2428,7 +2430,7 @@
         function goBack() {
             document.getElementById('startScreen').classList.remove('active');
             document.getElementById('welcomeScreen').classList.remove('hidden');
-            
+
             // Cleanup connections
             if (game && game.connection) {
                 game.connection.close();
@@ -2441,10 +2443,10 @@
         function switchTab(tabName) {
             const tabs = document.querySelectorAll('.option-tab');
             const contents = document.querySelectorAll('.tab-content');
-            
+
             tabs.forEach(tab => tab.classList.remove('active'));
             contents.forEach(content => content.classList.remove('active'));
-            
+
             document.querySelector(`.option-tab:nth-child(${tabName === 'create' ? 1 : 2})`).classList.add('active');
             document.getElementById(`${tabName}Tab`).classList.add('active');
         }
@@ -2453,16 +2455,16 @@
             try {
                 game = new MultiplayerDotsAndBoxes();
                 game.gameMode = 'online';
-                
+
                 // Check if joining existing game
                 const urlParams = new URLSearchParams(window.location.search);
                 const joinGameId = urlParams.get('join');
-                
+
                 if (joinGameId) {
                     // Switch to join tab
                     switchTab('join');
                     document.getElementById('joinInput').value = window.location.href;
-                    
+
                     // Initialize peer and join
                     await game.initPeerJS();
                     setTimeout(() => {
@@ -2474,7 +2476,7 @@
                     game.playerId = 1;
                     await game.initPeerJS();
                 }
-                
+
             } catch (error) {
                 console.error('Failed to initialize online mode:', error);
                 if (game) {
@@ -2489,17 +2491,17 @@
             if (shareLink) {
                 shareLink.select();
                 shareLink.setSelectionRange(0, 99999);
-                
+
                 try {
                     document.execCommand('copy') || navigator.clipboard.writeText(shareLink.value);
                     if (game) game.showToast('Link copied to clipboard!', 'success');
-                    
+
                     const copyBtn = document.getElementById('copyBtn');
                     if (copyBtn) {
                         const originalText = copyBtn.textContent;
                         copyBtn.textContent = 'Copied!';
                         copyBtn.style.background = 'linear-gradient(45deg, #28a745, #20c997)';
-                        
+
                         setTimeout(() => {
                             copyBtn.textContent = originalText;
                             copyBtn.style.background = '';
@@ -2517,17 +2519,17 @@
             const player2Name = document.getElementById('player2Name')?.value.trim() || 'Player 2';
             const gridSize = parseInt(document.getElementById('gridSize')?.value || '4');
             const showPreview = document.getElementById('difficulty')?.value === 'easy';
-            
+
             if (currentMode === 'online') {
                 const activeTab = document.querySelector('.tab-content.active')?.id;
-                
+
                 if (activeTab === 'joinTab') {
                     const joinInput = document.getElementById('joinInput');
                     if (!joinInput?.value.trim()) {
                         if (game) game.showToast('Please enter a game link', 'error');
                         return;
                     }
-                    
+
                     try {
                         const url = new URL(joinInput.value.trim());
                         const gameId = url.searchParams.get('join');
@@ -2535,47 +2537,47 @@
                             if (game) game.showToast('Invalid game link', 'error');
                             return;
                         }
-                        
+
                         if (!game) {
                             game = new MultiplayerDotsAndBoxes();
                             game.gameMode = 'online';
                         }
-                        
+
                         game.initPeerJS().then(() => {
                             setTimeout(() => {
                                 game.joinGame(gameId);
                             }, 1000);
                         });
-                        
+
                     } catch (error) {
                         if (game) game.showToast('Invalid game link format', 'error');
                         return;
                     }
                 }
-                
+
                 // Check connection status
                 if (!game || (!game.connection || !game.connection.open) && !game.isHost) {
                     if (game) game.showToast('Please wait for connection or create a new game', 'warning');
                     return;
                 }
             }
-            
+
             if (!game) {
                 game = new MultiplayerDotsAndBoxes();
                 game.gameMode = currentMode;
             }
-            
+
             // Set game parameters
             game.playerNames = [player1Name, player2Name];
             game.gridSize = gridSize;
             game.showPreview = showPreview;
-            
+
             // Update display names
             const p1Display = document.getElementById('player1DisplayName');
             const p2Display = document.getElementById('player2DisplayName');
             if (p1Display) p1Display.textContent = player1Name;
             if (p2Display) p2Display.textContent = player2Name;
-            
+
             // Hide connection indicators for offline mode
             if (currentMode === 'offline') {
                 const conn1 = document.getElementById('player1Connection');
@@ -2588,19 +2590,19 @@
                 if (conn1) conn1.style.display = 'block';
                 if (conn2) conn2.style.display = 'block';
             }
-            
+
             // Hide start screen and show game screen
             document.getElementById('startScreen').classList.remove('active');
             document.getElementById('gameScreen').classList.add('active');
-            
+
             // Initialize game
             game.initGame();
-            
+
             // Clear URL parameters
             if (window.history.replaceState) {
                 window.history.replaceState({}, document.title, window.location.pathname);
             }
-            
+
             // Handle resize for responsive canvas
             window.addEventListener('resize', () => {
                 if (game) {
@@ -2622,7 +2624,7 @@
             closeMenu();
             if (game) {
                 game.initGame();
-                
+
                 // Send restart message to remote player
                 if (game.gameMode === 'online') {
                     game.sendMessage({ type: 'restart' });
@@ -2635,7 +2637,7 @@
             if (game) {
                 game.resetGameState();
                 game.draw();
-                
+
                 // Send restart message to remote player
                 if (game.gameMode === 'online') {
                     game.sendMessage({ type: 'restart' });
@@ -2645,7 +2647,7 @@
 
         function leaveGame() {
             closeMenu();
-            
+
             // Cleanup connections
             if (game && game.connection) {
                 game.connection.close();
@@ -2653,30 +2655,30 @@
             if (game && game.peer) {
                 game.peer.destroy();
             }
-            
+
             document.getElementById('gameScreen').classList.remove('active');
             document.getElementById('welcomeScreen').classList.remove('hidden');
-            
+
             // Reset game
             game = null;
         }
 
         function showConnectionInfo() {
             closeMenu();
-            
+
             let info = `Game Mode: ${currentMode.charAt(0).toUpperCase() + currentMode.slice(1)}\n`;
-            
+
             if (game) {
                 if (game.gameMode === 'online') {
                     info += `Peer ID: ${game.peerId || 'Not connected'}\n`;
                     info += `Connection Status: ${game.connection && game.connection.open ? 'Connected' : 'Disconnected'}\n`;
                     info += `Player Role: ${game.isHost ? 'Host' : 'Guest'}\n`;
                 }
-                
+
                 info += `Player ID: ${game.playerId}\n`;
                 info += `Grid Size: ${game.gridSize}x${game.gridSize}`;
             }
-            
+
             alert(info);
         }
 
@@ -2687,7 +2689,7 @@
             if (urlParams.get('join')) {
                 selectMode('online');
             }
-            
+
             // Load saved player names
             try {
                 const savedNames = localStorage.getItem('dotsBoxesPlayerNames');
@@ -2726,7 +2728,7 @@
         // Close modals when clicking outside
         window.onclick = function(event) {
             const menuModal = document.getElementById('menuModal');
-            
+
             if (event.target === menuModal) {
                 closeMenu();
             }

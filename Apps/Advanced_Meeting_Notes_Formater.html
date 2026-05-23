@@ -24,7 +24,7 @@
             border-bottom-color: #4f46e5;
             color: #4f46e5;
         }
-        
+
         /* Styling for the parsed UI preview and diffs */
         .prose-preview {
             max-width: none;
@@ -61,10 +61,10 @@
         }
     </style>
 </head>
-<body class="bg-slate-100 text-slate-800 flex items-center justify-center min-h-screen p-4">
+<body class="flex items-center justify-center min-h-screen p-4 font-sans bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
 
     <div class="w-full max-w-4xl mx-auto bg-white rounded-2xl shadow-lg p-6 md:p-8">
-        
+
         <div class="text-center mb-6">
             <h1 class="text-3xl md:text-4xl font-bold text-slate-900">Advanced AI Meeting Notes Formatter</h1>
             <p class="text-slate-500 mt-2">Generate, preview, refine, and see changes highlighted.</p>
@@ -102,7 +102,7 @@
         const loader = document.getElementById('loader');
         const notesHistoryContainer = document.getElementById('notes-history');
         const messageBox = document.getElementById('message-box');
-        
+
         const markdownConverter = new showdown.Converter({
             ghCompatibleHeaderId: true,
             simpleLineBreaks: true,
@@ -115,7 +115,7 @@
         let lastMarkdownText = ""; // Store the most recent markdown for diffing
 
         async function callGemini(history) {
-            const apiKey = "AIzaSyD_hF3zYDCo4UoGn-LPdqa0nL9lbG3v4nA"; 
+            const apiKey = "AIzaSyD_hF3zYDCo4UoGn-LPdqa0nL9lbG3v4nA";
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
             const payload = { contents: history };
             let retries = 3, delay = 1000;
@@ -161,7 +161,7 @@
             } else {
                 htmlContent = markdownConverter.makeHtml(markdownText);
             }
-            
+
             // The diff library doesn't parse markdown, so we do it after creating the diff.
             htmlContent = markdownConverter.makeHtml(htmlContent);
 
@@ -207,7 +207,7 @@
                 const activeButton = currentCard.querySelector(`[data-tab="${tabName}"]`);
                 activeButton.classList.add('tab-active');
                 activeButton.classList.remove('text-slate-500', 'hover:text-slate-700', 'hover:border-slate-300');
-                
+
                 tabContents.forEach(content => content.classList.add('hidden'));
                 currentCard.querySelector(`[data-tab-content="${tabName}"]`).classList.remove('hidden');
             };
@@ -218,7 +218,7 @@
             tabButtons.forEach(button => {
                 button.addEventListener('click', () => activateTab(button.dataset.tab));
             });
-            
+
             currentCard.querySelector('.copy-btn').addEventListener('click', () => {
                 navigator.clipboard.writeText(markdownText).then(() => {
                     messageBox.classList.remove('hidden');
@@ -245,12 +245,12 @@
             } else {
                 const notes = rawNotesTextarea.value.trim();
                 if (!notes) { alert("Please enter some notes first."); return; }
-                
+
                 const now = new Date();
                 const tenMinutesAgo = new Date(now.getTime() - 10 * 60 * 1000);
                 const defaultDate = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
                 const defaultTime = tenMinutesAgo.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-                
+
                 // --- REVERTED TO THE MORE DETAILED PROMPT ---
                 prompt = `You are an expert meeting assistant. Your task is to take the following raw, unstructured meeting conversation notes and transform them into a clean, well-organized summary in Markdown format.
 
@@ -284,7 +284,7 @@ Analyze the text to identify all the required information. If a section has no r
 Here are the raw notes:
 ---
 ${notes}`;
-                
+
                 conversationHistory = [{ role: "user", parts: [{ text: prompt }] }];
                 currentHistory = conversationHistory;
             }
@@ -296,11 +296,11 @@ ${notes}`;
             try {
                 const formattedNotes = await callGemini(currentHistory);
                 currentHistory.push({ role: "model", parts: [{ text: formattedNotes }] });
-                
+
                 if (!isRefinement) {
                     conversationHistory = currentHistory;
                 }
-                
+
                 createNoteCard(formattedNotes, currentHistory, previousMarkdown);
                 lastMarkdownText = formattedNotes; // Update the last version
 

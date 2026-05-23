@@ -31,13 +31,13 @@
         /* Animation utility classes */
         .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
         .animate-slide-up { animation: slideUpFadeIn 0.35s ease-out forwards; }
-        
+
         /* Custom modal for alerts */
         .modal-overlay { transition: opacity 0.3s ease; }
         .modal-content { transition: transform 0.3s ease, opacity 0.3s ease; }
     </style>
 </head>
-<body class="min-h-screen p-4 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 text-slate-200">
+<body class="min-h-screen p-4 from-slate-950 via-slate-900 to-slate-800 font-sans bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
 
     <!-- Main Application Container -->
     <div class="w-full max-w-6xl bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-6 md:p-8 animate-fade-in mx-auto">
@@ -48,7 +48,7 @@
 
         <!-- Main Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-            
+
             <!-- Left Column: Upload and Controls -->
             <div class="flex flex-col space-y-6">
                 <!-- File Upload Area -->
@@ -301,7 +301,7 @@
             void element.offsetWidth;
             element.classList.add(animationClass);
         }
-        
+
         function formatBytes(bytes, decimals = 2) {
             if (bytes === 0) return '0 Bytes';
             const k = 1024;
@@ -399,7 +399,7 @@
                  modal.classList.add('pointer-events-none');
             }, 300);
         }
-        
+
         modalCloseBtn.addEventListener('click', hideModal);
 
         // Open/close advanced controls based on screen size for responsiveness
@@ -522,7 +522,7 @@
 
                     controls.classList.remove('hidden');
                     triggerAnimation(controls, 'animate-slide-up');
-                    
+
                     resizedImageContainer.innerHTML = '<p class="text-slate-500">Waiting for resize</p>';
                     resizedDetails.innerHTML = '';
                     downloadBtn.classList.add('hidden');
@@ -539,7 +539,7 @@
 
             reader.readAsDataURL(file);
         }
-        
+
         widthInput.addEventListener('input', () => {
             if (aspectRatioCheckbox.checked && originalImage) {
                 const newHeight = Math.round(widthInput.value / originalAspectRatio);
@@ -658,7 +658,7 @@
             const format = formatSelect.value.toLowerCase();
             const quality = parseFloat(qualitySlider.value);
             const mimeType = `image/${format}`;
-            
+
             // Fill background if exporting to lossy without alpha
             if (format === 'jpeg' || format === 'webp') {
                 ctx.fillStyle = bgColorInput.value || '#ffffff';
@@ -707,7 +707,7 @@
             resizedImgElement.src = resizedImageDataUrl;
             resizedImgElement.className = 'w-full h-full object-contain rounded-md animate-fade-in';
             resizedImageContainer.appendChild(resizedImgElement);
-            
+
             const head = `data:${mimeType};base64,`;
             const imageSizeInBytes = Math.round((resizedImageDataUrl.length - head.length) * 3 / 4);
             resizedDetails.innerHTML = `<p>${width} x ${height}px &nbsp;&bull;&nbsp; Est. ${formatBytes(imageSizeInBytes)}</p>`;
@@ -715,7 +715,7 @@
 
             const fileExtension = format === 'jpeg' ? 'jpg' : (format === 'webp' ? 'webp' : 'png');
             const newFilename = originalFilename.replace(/\.[^/.]+$/, "") + `.${fileExtension}`;
-            
+
             downloadBtn.href = resizedImageDataUrl;
             downloadBtn.download = `resized-${newFilename}`;
             downloadBtn.classList.remove('hidden');
