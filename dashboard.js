@@ -234,9 +234,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             ${apps
               .map(
                 (app) => `
-                <div class="p-4 bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-lg transition cursor-pointer"
-                     onclick="window.location.href='${app.url}'"
-                     oncontextmenu="event.preventDefault(); window.__showContextMenu && window.__showContextMenu(event.clientX, event.clientY, ${JSON.stringify(app).replace(/"/g, '&quot;')});">
+                <div class="p-4 bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-lg transition cursor-pointer app-card"
+                     data-app-id="${app.id}"
+                     data-app-url="${app.url}">
                   <h3 class="font-semibold text-lg dark:text-white">${app.name}</h3>
                   ${app.description ? `<p class="text-sm text-gray-600 dark:text-gray-400 mt-2">${app.description}</p>` : ''}
                 </div>`
@@ -245,6 +245,29 @@ document.addEventListener('DOMContentLoaded', async () => {
           </div>
         </div>`)
       .join('');
+
+    // Attach event delegation for app cards if not already attached
+    if (!dashboardContent.dataset.delegationAttached) {
+      dashboardContent.addEventListener('click', (e) => {
+        const card = e.target.closest('.app-card');
+        if (card && card.dataset.appUrl) {
+          window.location.href = card.dataset.appUrl;
+        }
+      });
+
+      dashboardContent.addEventListener('contextmenu', (e) => {
+        const card = e.target.closest('.app-card');
+        if (card && card.dataset.appId) {
+          e.preventDefault();
+          const app = appRegistry.find(a => String(a.id) === card.dataset.appId);
+          if (app) {
+            showContextMenu(e.clientX, e.clientY, app);
+          }
+        }
+      });
+
+      dashboardContent.dataset.delegationAttached = 'true';
+    }
   };
 
   // expose for inline handler safety (used above)
