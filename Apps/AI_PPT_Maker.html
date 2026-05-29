@@ -374,9 +374,18 @@
             setState({ slides: newSlides });
 
             const keyword = encodeURIComponent(slide.title);
-            const PIXABAY_API_KEY = "42796876-d1de2f58b781abc8e58c5354b"; // <-- Replace with your Pixabay API key
+            let PIXABAY_API_KEY = localStorage.getItem("pixabayApiKey");
+            if (!PIXABAY_API_KEY) {
+                PIXABAY_API_KEY = prompt("Please enter your Pixabay API key to generate images:");
+                if (PIXABAY_API_KEY) {
+                    localStorage.setItem("pixabayApiKey", PIXABAY_API_KEY);
+                }
+            }
             const fallbackImage = "https://via.placeholder.com/800x600?text=No+Image";
             try {
+                if (!PIXABAY_API_KEY) {
+                    throw new Error("Pixabay API key is required to generate images.");
+                }
                 // Pixabay API for images
                 const apiUrl = `https://pixabay.com/api/?key=${PIXABAY_API_KEY}&q=${keyword}&image_type=photo&orientation=horizontal&safesearch=true&per_page=3`;
                 const response = await fetch(apiUrl);
