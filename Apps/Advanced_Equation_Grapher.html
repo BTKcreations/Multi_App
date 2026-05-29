@@ -214,27 +214,28 @@
          */
         function populateCoordinates(compiledExpr) {
             coordinatesTable.innerHTML = ''; // Clear previous data
-            let html = '';
             for (let x = -10; x <= 10; x++) {
+                const tr = document.createElement('tr');
+                tr.className = 'border-b border-gray-200 hover:bg-gray-100';
+
+                const tdX = document.createElement('td');
+                tdX.className = 'py-2 px-4';
+                tdX.textContent = x;
+                tr.appendChild(tdX);
+
+                const tdY = document.createElement('td');
+                tdY.className = 'py-2 px-4';
+
                 try {
                     const y = compiledExpr.evaluate({ x: x });
-                    const yDisplay = Number.isFinite(y) ? y.toFixed(3) : 'undefined';
-                    html += `
-                        <tr class="border-b border-gray-200 hover:bg-gray-100">
-                            <td class="py-2 px-4">${x}</td>
-                            <td class="py-2 px-4">${yDisplay}</td>
-                        </tr>
-                    `;
+                    tdY.textContent = Number.isFinite(y) ? y.toFixed(3) : 'undefined';
                 } catch (e) {
-                     html += `
-                        <tr class="border-b border-gray-200 hover:bg-gray-100">
-                            <td class="py-2 px-4">${x}</td>
-                            <td class="py-2 px-4">Error</td>
-                        </tr>
-                    `;
+                    tdY.textContent = 'Error';
                 }
+
+                tr.appendChild(tdY);
+                coordinatesTable.appendChild(tr);
             }
-            coordinatesTable.innerHTML = html;
         }
 
         /**
