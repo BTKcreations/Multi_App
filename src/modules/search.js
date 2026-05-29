@@ -11,27 +11,31 @@
  * @returns {Array} Filtered apps
  */
 export function filterApps(apps, searchQuery = '', category = 'all') {
-  let filtered = apps;
+  const hasCategoryFilter = category && category !== 'all';
+  const hasSearchFilter = searchQuery && searchQuery.trim() !== '';
 
-  // Filter by category
-  if (category && category !== 'all') {
-    filtered = filtered.filter(app => app.category === category);
+  if (!hasCategoryFilter && !hasSearchFilter) {
+    return apps;
   }
 
-  // Filter by search query
-  if (searchQuery && searchQuery.trim() !== '') {
-    const query = searchQuery.toLowerCase().trim();
-    filtered = filtered.filter(app => {
+  const query = hasSearchFilter ? searchQuery.toLowerCase().trim() : '';
+
+  return apps.filter(app => {
+    if (hasCategoryFilter && app.category !== category) {
+      return false;
+    }
+
+    if (hasSearchFilter) {
       return (
         app.name.toLowerCase().includes(query) ||
         (app.description && app.description.toLowerCase().includes(query)) ||
         (app.category && app.category.toLowerCase().includes(query)) ||
         (app.tags && app.tags.some(tag => tag.toLowerCase().includes(query)))
       );
-    });
-  }
+    }
 
-  return filtered;
+    return true;
+  });
 }
 
 /**
